@@ -1,3 +1,4 @@
+import { copyText } from "./clipboard";
 import { useEffect, useState } from "react";
 import { api, post, type Category } from "./api";
 import { Modal, ErrorText } from "./ui";
@@ -60,6 +61,25 @@ export function CategoriesDialog(p: DialogProps) {
       setBusy(false);
     }
   }
+  async function move(index: number, delta: number) {
+    const next = [...list];
+    [next[index], next[index + delta]] = [next[index + delta], next[index]];
+    setBusy(true);
+    setError("");
+    try {
+      await post(
+        `/ledgers/${ledger}/categories/order`,
+        { kind, codes: next.map((c) => c.code) },
+        "PUT",
+      );
+      setList(next);
+      p.notify("분류 순서를 저장했어요.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <Modal
       title="가계부 분류 관리"
@@ -95,12 +115,16 @@ export function CategoriesDialog(p: DialogProps) {
           수입 분류
         </button>
       </div>
-      {list.map((c) => (
+      {list.map((c, index) => (
         <CategoryRow
           key={ledger + kind + c.code}
           category={c}
           disabled={busy}
           save={save}
+          up={() => move(index, -1)}
+          down={() => move(index, 1)}
+          first={index === 0}
+          last={index === list.length - 1}
         />
       ))}
       <form
@@ -135,14 +159,40 @@ function CategoryRow({
   category: c,
   disabled,
   save,
+  up,
+  down,
+  first,
+  last,
 }: {
   category: Category;
   disabled: boolean;
   save: (c: Category) => void;
+  up: () => void;
+  down: () => void;
+  first: boolean;
+  last: boolean;
 }) {
   const [name, setName] = useState(c.name);
   return (
     <div className="category-manage-row">
+      <div className="order-buttons">
+        <button
+          className="icon-button"
+          aria-label={`${c.name} 위로`}
+          disabled={disabled || first}
+          onClick={up}
+        >
+          ↑
+        </button>
+        <button
+          className="icon-button"
+          aria-label={`${c.name} 아래로`}
+          disabled={disabled || last}
+          onClick={down}
+        >
+          ↓
+        </button>
+      </div>
       <input
         aria-label={`${c.name} 분류 이름`}
         className="field-input"
@@ -179,6 +229,7 @@ export function AdminDialog(p: DialogProps) {
   const [open, setOpen] = useState(false);
   const [invitations, setInvitations] = useState<AccountInvite[]>([]);
   const [link, setLink] = useState("");
+  const [linkId, setLinkId] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function load() {
@@ -237,7 +288,10 @@ export function AdminDialog(p: DialogProps) {
         disabled={busy}
         onClick={() =>
           run(async () => {
-            const v = await post<{ token: string }>("/admin/invitations");
+            const v = await post<{ token: string; id: string }>(
+              "/admin/invitations",
+            );
+            setLinkId(v.id);
             setLink(
               location.origin + "/#invite=" + encodeURIComponent(v.token),
             );
@@ -250,7 +304,8 @@ export function AdminDialog(p: DialogProps) {
       {link && (
         <div className="modal-note">
           <p>
-            48시간 동안 한 번만 사용할 수 있어요. 새 계정 테스트는 다른 브라우저나 시크릿 창에서 진행하세요. 가계부 공유는 별도로
+            48시간 동안 한 번만 사용할 수 있어요. 새 계정 테스트는 다른
+            브라우저나 시크릿 창에서 진행하세요. 가계부 공유는 별도로
             설정합니다.
           </p>
           <input
@@ -264,9 +319,7 @@ export function AdminDialog(p: DialogProps) {
             className="secondary-button"
             onClick={() =>
               run(async () => {
-                if (!navigator.clipboard)
-                  throw new Error("링크를 선택해 직접 복사해 주세요.");
-                await navigator.clipboard.writeText(link);
+                await copyText(link);
                 p.notify("초대 링크를 복사했어요.");
               })
             }
@@ -275,34 +328,88 @@ export function AdminDialog(p: DialogProps) {
           </button>
         </div>
       )}
-      {invitations.map((i) => (
-        <div className="setting-row" key={i.id}>
-          <div>
-            <strong>
-              {i.used
-                ? `${i.name} 가입 완료`
-                : i.cancelled
-                  ? "취소된 초대"
-                  : i.expires_at * 1000 < Date.now()
-                    ? "만료된 초대"
-                    : "가입 대기"}
-            </strong>
-            <p>{new Date(i.expires_at * 1000).toLocaleString()} 만료</p>
+      {invitations
+        .filter((i) => !i.cancelled)
+        .map((i) => (
+          <div className="setting-row" key={i.id}>
+            <div>
+              <strong>
+                {i.used
+                  ? `${i.name} 가입 완료`
+                  : i.cancelled
+                    ? "취소된 초대"
+                    : i.expires_at * 1000 < Date.now()
+                      ? "만료된 초대"
+                      : "가입 대기"}
+              </strong>
+              <p>{new Date(i.expires_at * 1000).toLocaleString()} 만료</p>
+            </div>
+            {!i.used && !i.cancelled && (
+              <button
+                className="text-link"
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    await post(`/admin/invitations/${i.id}/cancel`);
+                    if (linkId === i.id) setLink("");
+                    await load();
+                  })
+                }
+              >
+                취소
+              </button>
+            )}
           </div>
-          {!i.used && !i.cancelled && (
-            <button
-              className="text-link"
-              disabled={busy}
-              onClick={() =>
-                run(async () => {
-                  await post(`/admin/invitations/${i.id}/cancel`);
-                  await load();
-                })
+        ))}
+      <ErrorText error={error} />
+    </Modal>
+  );
+}
+
+export function AccountTrashDialog(p: DialogProps) {
+  const [items, setItems] = useState<
+    { id: string; name: string; ledger_name: string }[]
+  >([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const load = () => api<typeof items>("/accounts/trash").then(setItems);
+  useEffect(() => {
+    load().catch((e) => setError(e.message));
+  }, []);
+  return (
+    <Modal
+      title="삭제한 계좌"
+      subtitle="복구하면 기록과 기존 공유 권한도 다시 활성화됩니다."
+      onClose={p.close}
+    >
+      {!items.length && <p>삭제한 계좌가 없어요.</p>}
+      {items.map((ac) => (
+        <div className="setting-row" key={ac.id}>
+          <div>
+            <strong>{ac.name}</strong>
+            <p>{ac.ledger_name}</p>
+          </div>
+          <button
+            className="secondary-button"
+            disabled={busy}
+            onClick={async () => {
+              if (!confirm("계좌·기록과 기존 공유 권한을 다시 활성화할까요?"))
+                return;
+              setBusy(true);
+              try {
+                await post(`/accounts/${ac.id}/restore`);
+                await load();
+                await p.refresh();
+                p.notify("계좌를 복구했어요.");
+              } catch (e) {
+                setError((e as Error).message);
+              } finally {
+                setBusy(false);
               }
-            >
-              취소
-            </button>
-          )}
+            }}
+          >
+            복구
+          </button>
         </div>
       ))}
       <ErrorText error={error} />

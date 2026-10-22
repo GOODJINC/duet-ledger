@@ -8,11 +8,26 @@ func (a *App) migrate() error {
 	if err := a.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 2 {
+	if version > 3 {
 		return fmt.Errorf("unsupported database version: %d", version)
 	}
-	if version == 2 {
+	if version == 3 {
 		return nil
+	}
+	if version == 2 {
+		tx, err := a.DB.Begin()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if _, err = tx.Exec(`ALTER TABLE accounts ADD COLUMN deleted_at TEXT;
+ALTER TABLE ledgers ADD COLUMN tagline TEXT NOT NULL DEFAULT '';
+CREATE TABLE ledger_order(user_id TEXT NOT NULL REFERENCES users(id),ledger_id TEXT NOT NULL REFERENCES ledgers(id),position INTEGER NOT NULL,PRIMARY KEY(user_id,ledger_id));
+CREATE TABLE category_order(ledger_id TEXT NOT NULL REFERENCES ledgers(id),kind TEXT NOT NULL,code TEXT NOT NULL,position INTEGER NOT NULL,PRIMARY KEY(ledger_id,kind,code));
+INSERT INTO schema_version VALUES(3);`); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	tx, err := a.DB.Begin()
 	if err != nil {
@@ -32,5 +47,8 @@ func (a *App) migrate() error {
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	return a.migrate()
 }

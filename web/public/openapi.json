@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.0-alpha.2",
+    "version": "0.1.0-alpha.3",
     "description": "Cookie-authenticated local web API. Financial values use integer strings. Cross-account transfers require edit permission on every side. Remote API tokens and MCP are not implemented yet."
   },
   "servers": [
@@ -855,6 +855,69 @@
             }
           }
         }
+      },
+      "delete": {
+        "summary": "Owner moves an account to recoverable trash",
+        "operationId": "delete__api_accounts_id",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirm_name",
+                  "version"
+                ],
+                "properties": {
+                  "confirm_name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Hides this account and its postings/receipts from every user. Transfer counterpart balance remains intact. Pending account invitations are cancelled. Existing grants resume on restore."
       }
     },
     "/api/accounts/{id}/grant": {
@@ -1068,7 +1131,8 @@
               }
             }
           }
-        }
+        },
+        "description": "New manual transactions accept only income, expense and transfer. Existing refund/adjustment data and migration imports remain compatible."
       }
     },
     "/api/transactions/{id}": {
@@ -1120,7 +1184,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Returns id and posting_ids (account ID to posting ID) for authorized affected accounts. Existing refund/adjustment records may retain their original kind; ordinary records cannot be converted to a retired kind."
       }
     },
     "/api/transactions/{id}/trash": {
@@ -2307,7 +2372,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Cancelled invitations are retained internally to reject tokens, but excluded from this list."
       },
       "post": {
         "summary": "Administrator creates a one-use 48 hour account invitation",
@@ -2353,6 +2419,206 @@
           },
           "default": {
             "description": "400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/ledgers/order": {
+      "put": {
+        "summary": "Save the caller own ledger display order",
+        "operationId": "put__api_ledgers_order",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ids"
+                ],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "maxItems": 500,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ledgers/{id}/categories/order": {
+      "put": {
+        "summary": "Owner saves the complete category display order for one kind",
+        "operationId": "put__api_ledgers_id_categories_order",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "codes"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "income",
+                      "expense"
+                    ]
+                  },
+                  "codes": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/trash": {
+      "get": {
+        "summary": "List caller owned deleted accounts in active ledgers",
+        "operationId": "get__api_accounts_trash",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{id}/restore": {
+      "post": {
+        "summary": "Owner restores an account and existing sharing access",
+        "operationId": "post__api_accounts_id_restore",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
             "content": {
               "application/json": {
                 "schema": {
@@ -2449,6 +2715,11 @@
           "timezone": {
             "type": "string",
             "default": "Asia/Seoul"
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Optional home subtitle. Empty uses the default message."
           }
         }
       },
@@ -2781,6 +3052,11 @@
           },
           "timezone": {
             "type": "string"
+          },
+          "tagline": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Optional home subtitle. Empty uses the default message."
           }
         }
       },

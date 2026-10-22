@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.2"
+const Version = "0.1.0-alpha.3"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -226,6 +226,8 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/security/totp/confirm", a.confirmTOTP, true)
 	add("POST /api/security/totp/disable", a.disableTOTP, true)
 	add("GET /api/ledgers", a.listLedgers, true)
+	add("PUT /api/ledgers/order", a.orderLedgers, true)
+	add("PUT /api/ledgers/{id}/categories/order", a.orderCategories, true)
 	add("POST /api/ledgers", a.createLedger, true)
 	add("PATCH /api/ledgers/{id}", a.updateLedger, true)
 	add("DELETE /api/ledgers/{id}", a.deleteLedger, true)
@@ -241,6 +243,9 @@ func (a *App) Routes() http.Handler {
 	add("DELETE /api/ledgers/{id}/membership", a.leaveLedger, true)
 	add("GET /api/accounts", a.listAccounts, true)
 	add("POST /api/accounts", a.createAccount, true)
+	add("DELETE /api/accounts/{id}", a.deleteAccount, true)
+	add("GET /api/accounts/trash", a.trashedAccounts, true)
+	add("POST /api/accounts/{id}/restore", a.restoreAccount, true)
 	add("PATCH /api/accounts/{id}", a.updateAccount, true)
 	add("DELETE /api/accounts/{id}/grant", a.leaveAccount, true)
 	add("GET /api/transactions", a.listTransactions, true)

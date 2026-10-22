@@ -292,10 +292,29 @@ func (a *App) writeEvent(tx *sql.Tx, u *User, v TxInput, id string, create bool)
 	}
 	return firstID, nil
 }
+func eventPostings(q queryer, event string) (map[string]string, error) {
+	rows, err := q.Query("SELECT account_id,id FROM postings WHERE event_id=?", event)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var account, id string
+		if err = rows.Scan(&account, &id); err != nil {
+			return nil, err
+		}
+		out[account] = id
+	}
+	return out, rows.Err()
+}
 func (a *App) createTransaction(w http.ResponseWriter, r *http.Request, u *User) error {
 	var v TxInput
 	if err := decode(r, &v); err != nil {
 		return err
+	}
+	if v.Kind != "income" && v.Kind != "expense" && v.Kind != "transfer" {
+		return bad("새 기록은 지출·수입·이체만 입력할 수 있어요.")
 	}
 	if _, _, err := a.validateTx(a.DB, u, &v); err != nil {
 		return err
@@ -410,6 +429,15 @@ func (a *App) updateTransaction(w http.ResponseWriter, r *http.Request, u *User)
 	if version != v.Version {
 		return conflict("다른 사람이 수정한 기록이에요. 새로고침 후 다시 확인해 주세요.")
 	}
+	if v.Kind == "refund" || v.Kind == "adjustment" {
+		var originalKind string
+		if err = tx.QueryRow("SELECT kind FROM events WHERE id=?", event).Scan(&originalKind); err != nil {
+			return err
+		}
+		if originalKind != v.Kind {
+			return bad("새 환불·잔액 조정 기록은 만들 수 없어요.")
+		}
+	}
 	pid, err := a.writeEvent(tx, u, v, event, false)
 	if err != nil {
 		return err
@@ -417,10 +445,14 @@ func (a *App) updateTransaction(w http.ResponseWriter, r *http.Request, u *User)
 	if err = audit(tx, u, "updated", "transaction", event); err != nil {
 		return err
 	}
+	postingIDs, err := eventPostings(tx, event)
+	if err != nil {
+		return err
+	}
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	writeJSON(w, 200, map[string]string{"id": pid})
+	writeJSON(w, 200, map[string]any{"id": pid, "posting_ids": postingIDs})
 	return nil
 }
 func (a *App) trashTransaction(w http.ResponseWriter, r *http.Request, u *User) error {

@@ -16,6 +16,7 @@ export type Ledger = {
   kind: "personal" | "shared";
   role: "owner" | "editor" | "viewer";
   timezone: string;
+  tagline?: string;
 };
 export type Account = {
   id: string;

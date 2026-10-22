@@ -8,3 +8,5 @@ design-preview
 docs
 *.sqlite*
 *.test
+
+temp

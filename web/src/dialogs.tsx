@@ -29,6 +29,8 @@ export type DialogProps = {
   refresh: () => Promise<void>;
   close: () => void;
   notify: (text: string) => void;
+  categoryVersion?: number;
+  manageCategories?: (ledgerId?: string) => void;
 };
 function useTask() {
   const [busy, setBusy] = useState(false);
@@ -60,6 +62,22 @@ export function EntryDialog(
   const negative = tx?.legs.find((l) => BigInt(l.amount) < 0n);
   const first = negative || tx?.legs[0];
   const [kind, setKind] = useState(tx?.kind || "expense");
+  const [mobileTime, setMobileTime] = useState(
+    () => !!window.matchMedia?.("(pointer: coarse)").matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia?.("(pointer: coarse)");
+    if (!media) return;
+    const change = () => setMobileTime(media.matches);
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
+  const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
+  const [photoTarget, setPhotoTarget] = useState(firstPhotoTarget());
+  function firstPhotoTarget() {
+    return tx?.legs[0]?.account_id || "";
+  }
+
   const [accountId, setAccountId] = useState(
     first?.account_id ||
       (editable.some((a) => a.id === p.accountId) ? p.accountId : undefined) ||
@@ -105,6 +123,7 @@ export function EntryDialog(
   );
   const [file, setFile] = useState<File | null>(null);
   const [savedId, setSavedId] = useState("");
+  const [savedPhotoId, setSavedPhotoId] = useState("");
   const [requestKey] = useState(
     () =>
       crypto.randomUUID?.() ||
@@ -122,6 +141,10 @@ export function EntryDialog(
   useEffect(() => {
     if (!targets.some((a) => a.id === target)) setTarget(targets[0]?.id || "");
   }, [accountId]);
+  useEffect(() => {
+    if (photoTarget !== accountId && photoTarget !== target)
+      setPhotoTarget(accountId);
+  }, [accountId, target, photoTarget]);
   useEffect(() => {
     if (!accountId) {
       setChoices([]);
@@ -149,7 +172,7 @@ export function EntryDialog(
     return () => {
       active = false;
     };
-  }, [accountId, categoryKind]);
+  }, [accountId, categoryKind, p.categoryVersion]);
   async function submit(e: FormEvent) {
     e.preventDefault();
     await task.run(async () => {
@@ -158,6 +181,7 @@ export function EntryDialog(
       if (kind !== "transfer" && !category)
         throw new Error("분류를 먼저 설정해 주세요.");
       let id = savedId;
+      let photoId = savedPhotoId;
       if (!id) {
         const payload = {
           kind,
@@ -174,7 +198,10 @@ export function EntryDialog(
           target_note: kind === "transfer" ? targetNote : "",
           version: tx?.version || 0,
         };
-        const result = await post<{ id: string }>(
+        const result = await post<{
+          id: string;
+          posting_ids?: Record<string, string>;
+        }>(
           tx ? `/transactions/${tx.id}` : "/transactions",
           payload,
           tx ? "PUT" : "POST",
@@ -182,12 +209,21 @@ export function EntryDialog(
         );
         id = result.id;
         setSavedId(id);
+        photoId = result.posting_ids?.[photoTarget] || id;
+        setSavedPhotoId(photoId);
         await p.refresh();
+      }
+      for (const receiptId of removedPhotos) {
+        await api(`/receipts/${receiptId}`, { method: "DELETE" });
+        setRemovedPhotos((old) => old.filter((value) => value !== receiptId));
       }
       if (file) {
         const body = new FormData();
         body.append("file", file);
-        await api(`/transactions/${id}/receipts`, { method: "POST", body });
+        await api(
+          `/transactions/${tx && kind === "transfer" ? photoId : id}/receipts`,
+          { method: "POST", body },
+        );
         await p.refresh();
       }
       p.notify(tx ? "기록을 수정했어요." : "기록을 저장했어요.");
@@ -200,7 +236,7 @@ export function EntryDialog(
       subtitle="저장 전 계좌와 공개 대상을 확인해 주세요."
       onClose={p.close}
     >
-      <form onSubmit={submit}>
+      <form onSubmit={submit} className="entry-form">
         <fieldset disabled={task.busy || !!savedId} className="plain-fieldset">
           <div className="entry-types">
             {[
@@ -277,28 +313,26 @@ export function EntryDialog(
                       : "예: 점심 식사"
             }
           />
-          <div className="form-two-cols">
-            <div>
-              <label className="form-label" htmlFor="entry-account">
-                {kind === "transfer" ? "보내는 계좌" : "계좌"}
-              </label>
-              <select
-                id="entry-account"
-                className="field-select"
-                value={accountId}
-                onChange={(e) => setAccountId(e.target.value)}
-                required
-              >
-                <option value="" disabled>
-                  계좌 선택
-                </option>
-                {editable.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} · {a.shared ? "공유" : "개인"} · {a.currency}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <label className="form-label" htmlFor="entry-account">
+            {kind === "transfer" ? "보내는 계좌" : "계좌"}
+          </label>
+          <select
+            id="entry-account"
+            className="field-select"
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            required
+          >
+            <option value="" disabled>
+              계좌 선택
+            </option>
+            {editable.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} · {a.shared ? "공유" : "개인"} · {a.currency}
+              </option>
+            ))}
+          </select>
+          <div className="form-two-cols entry-date-time">
             <div>
               <label className="form-label" htmlFor="entry-date">
                 날짜
@@ -314,21 +348,33 @@ export function EntryDialog(
                 required
               />
             </div>
+            <div>
+              <label className="form-label" htmlFor="entry-time">
+                시간 (선택)
+              </label>
+              <input
+                id="entry-time"
+                type={mobileTime ? "time" : "text"}
+                inputMode={mobileTime ? undefined : "numeric"}
+                className="field-input"
+                value={clock}
+                placeholder="HH:mm"
+                maxLength={5}
+                pattern={
+                  mobileTime ? undefined : "([01][0-9]|2[0-3]):[0-5][0-9]"
+                }
+                title="24시간 형식으로 입력하세요. 예: 14:30"
+                onChange={(e) => setClock(e.target.value)}
+                onBlur={() => {
+                  const v = clock.trim();
+                  if (/^\d{4}$/.test(v))
+                    setClock(v.slice(0, 2) + ":" + v.slice(2));
+                  else if (/^\d{1,2}:\d{2}$/.test(v))
+                    setClock(v.padStart(5, "0"));
+                }}
+              />
+            </div>
           </div>
-          <label className="form-label" htmlFor="entry-time">
-            시간 · 선택
-          </label>
-          <input
-            id="entry-time"
-            type="time"
-            className="field-input"
-            value={clock}
-            onChange={(e) => setClock(e.target.value)}
-          />
-          <p className="entry-hint">
-            {tx?.timezone || p.user.timezone} 기준 · 기존에 시간이 없던 기록은
-            비워 둘 수 있어요.
-          </p>
           {kind === "transfer" ? (
             <>
               <label className="form-label" htmlFor="entry-target">
@@ -359,9 +405,25 @@ export function EntryDialog(
             </>
           ) : (
             <>
-              <span className="form-label">
-                {categoryKind === "income" ? "수입 분류" : "지출 분류"}
-              </span>
+              <div className="entry-category-heading">
+                <span className="form-label">
+                  {categoryKind === "income" ? "수입 분류" : "지출 분류"}
+                </span>
+                {p.manageCategories &&
+                  account?.ledger_id &&
+                  p.ledgers.some(
+                    (l) => l.id === account.ledger_id && l.role === "owner",
+                  ) && (
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label="분류 관리 열기"
+                      onClick={() => p.manageCategories?.(account.ledger_id)}
+                    >
+                      <Icon name="settings" />
+                    </button>
+                  )}
+              </div>
               <div className="category-picker">
                 {choices.map((c) => (
                   <button
@@ -387,14 +449,12 @@ export function EntryDialog(
                     </button>
                   )}
               </div>
-              <p className="entry-hint">
-                분류 추가·수정·삭제는 설정 → 가계부 분류 관리에서 할 수 있어요.
-              </p>
+
               <ErrorText error={categoryError} />
             </>
           )}
           <label className="form-label" htmlFor="entry-note">
-            {kind === "transfer" ? "보내는 계좌에 남길 메모" : "메모"} · 선택
+            {kind === "transfer" ? "보내는 계좌에 남길 메모" : "메모"} (선택)
           </label>
           <textarea
             id="entry-note"
@@ -407,7 +467,7 @@ export function EntryDialog(
           {kind === "transfer" && (
             <>
               <label className="form-label" htmlFor="target-note">
-                받는 계좌에 남길 메모 · 선택
+                받는 계좌에 남길 메모 (선택)
               </label>
               <textarea
                 id="target-note"
@@ -440,54 +500,101 @@ export function EntryDialog(
               </div>
             </div>
           )}
-          <label className="form-label" htmlFor="entry-kind-more">
-            환불·잔액 조정이 필요할 때
-          </label>
-          <select
-            id="entry-kind-more"
-            className="field-select"
-            value={kind}
-            onChange={(e) => setKind(e.target.value)}
-          >
-            {Object.entries(kindNames).map(([id, label]) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <p className="entry-hint">
-            환불: 반품 등 돌려받은 금액으로 지출에서 차감해요. 잔액 조정: 실제
-            잔액과의 차이만 더하거나 빼며 수입·지출 통계에 넣지 않아요.
-          </p>
-          {kind === "adjustment" && (
+          {tx && !["income", "expense", "transfer"].includes(tx.kind) && (
             <p className="entry-hint">
-              잔액에 더할 차액을 입력하세요. 줄이려면 음수를 사용합니다.
-              수입·지출에서는 제외돼요.
+              이전 버전의 {kindNames[tx.kind]} 기록입니다. 기존 계산 방식으로
+              유지됩니다.
             </p>
           )}
         </fieldset>
-        {kind !== "transfer" && (
-          <label className="receipt-button">
-            <Icon name="camera" />
-            {file ? file.name : "영수증 사진 첨부 · JPG/PNG 5MB 이하"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png"
-              className="visually-hidden"
-              disabled={task.busy}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f && f.size > 5 * 1024 * 1024) {
-                  task.setError("사진은 5MB까지 첨부할 수 있어요.");
-                  e.target.value = "";
-                } else setFile(f || null);
-              }}
-            />
-          </label>
+        {tx && (
+          <div className="receipt-gallery edit-receipts">
+            {tx.legs.flatMap((leg) =>
+              leg.receipts.map((ref) => (
+                <div
+                  key={ref.id}
+                  className={
+                    removedPhotos.includes(ref.id)
+                      ? "pending-photo-removal"
+                      : ""
+                  }
+                >
+                  <a
+                    href={`/api/receipts/${ref.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img src={`/api/receipts/${ref.id}`} alt="첨부 영수증" />
+                  </a>
+                  <button
+                    type="button"
+                    className="text-link"
+                    disabled={task.busy || !!savedId}
+                    onClick={() => {
+                      if (removedPhotos.includes(ref.id))
+                        setRemovedPhotos((old) =>
+                          old.filter((id) => id !== ref.id),
+                        );
+                      else if (
+                        confirm(
+                          "사진 첨부를 해제할까요? 수정 저장 시 반영됩니다.",
+                        )
+                      )
+                        setRemovedPhotos((old) => [...old, ref.id]);
+                    }}
+                  >
+                    {removedPhotos.includes(ref.id) ? "해제 취소" : "첨부 해제"}
+                  </button>
+                </div>
+              )),
+            )}
+          </div>
+        )}
+        {(kind !== "transfer" || !!tx) && (
+          <>
+            {kind === "transfer" && tx && (
+              <>
+                <label className="form-label" htmlFor="photo-target">
+                  사진을 첨부할 거래
+                </label>
+                <select
+                  id="photo-target"
+                  className="field-select"
+                  value={photoTarget}
+                  onChange={(e) => setPhotoTarget(e.target.value)}
+                >
+                  {[account, p.accounts.find((a) => a.id === target)]
+                    .filter((a): a is Account => !!a)
+                    .map((ac) => (
+                      <option key={ac.id} value={ac.id}>
+                        {ac.name}의 거래
+                      </option>
+                    ))}
+                </select>
+              </>
+            )}
+            <label className="receipt-button">
+              <Icon name="camera" />
+              {file ? file.name : "이 거래에 영수증 첨부 · JPG/PNG 5MB 이하"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png"
+                className="visually-hidden"
+                disabled={task.busy}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f && f.size > 5 * 1024 * 1024) {
+                    task.setError("사진은 5MB까지 첨부할 수 있어요.");
+                    e.target.value = "";
+                  } else setFile(f || null);
+                }}
+              />
+            </label>
+          </>
         )}
         {savedId && task.error && (
           <div className="inline-warning">
-            거래는 이미 저장됐어요. 사진 첨부만 다시 시도하거나 창을 닫아도
+            거래는 이미 저장됐어요. 사진 변경만 다시 시도하거나 창을 닫아도
             됩니다.
           </div>
         )}
@@ -498,12 +605,38 @@ export function EntryDialog(
         >
           <Busy busy={task.busy}>
             {savedId
-              ? "사진 첨부 다시 시도"
+              ? "사진 변경 다시 시도"
               : tx
                 ? "수정 저장하기"
                 : "기록 저장하기"}
           </Busy>
         </button>
+        {tx && !savedId && (
+          <button
+            type="button"
+            className="text-link danger-text entry-trash"
+            disabled={task.busy}
+            onClick={() =>
+              task.run(async () => {
+                if (
+                  !confirm(
+                    "이 기록을 휴지통으로 옮길까요? 설정에서 복구할 수 있어요.",
+                  )
+                )
+                  return;
+                await post(`/transactions/${tx.id}/trash`, {
+                  version: tx.version,
+                });
+                await p.refresh();
+                p.notify("기록을 휴지통으로 옮겼어요.");
+                p.close();
+              })
+            }
+          >
+            <Icon name="trash" />
+            기록 삭제
+          </button>
+        )}
       </form>
     </Modal>
   );
@@ -521,6 +654,7 @@ export function LedgerDialog(
   const [name, setName] = useState("");
   const [kind, setKind] = useState("personal");
   const [timezone, setTimezone] = useState(p.user.timezone);
+  const [tagline, setTagline] = useState("");
   const [trash, setTrash] = useState<Ledger[]>([]);
   const task = useTask();
   const owned = p.ledgers.filter((l) => l.role === "owner");
@@ -531,6 +665,7 @@ export function LedgerDialog(
   function edit(l: Ledger) {
     setEditId(l.id);
     setName(l.name);
+    setTagline(l.tagline || "");
     setTimezone(l.timezone);
     setCreating(false);
   }
@@ -561,22 +696,53 @@ export function LedgerDialog(
               </div>
               {!p.selected && <Icon name="check" />}
             </button>
-            {p.ledgers.map((l) => (
-              <button
-                className="profile-choice"
-                key={l.id}
-                onClick={() => {
-                  p.select(l.id);
-                  p.close();
-                }}
-              >
-                <Icon name={l.kind === "personal" ? "lock" : "people"} />
-                <div>
-                  <strong>{l.name}</strong>
-                  <p>{l.kind === "personal" ? "개인 가계부" : "공유 가계부"}</p>
+            {p.ledgers.map((l, index) => (
+              <div className="ledger-sort-row" key={l.id}>
+                <button
+                  className="profile-choice"
+                  key={l.id}
+                  onClick={() => {
+                    p.select(l.id);
+                    p.close();
+                  }}
+                >
+                  <Icon name={l.kind === "personal" ? "lock" : "people"} />
+                  <div>
+                    <strong>{l.name}</strong>
+                    <p>
+                      {l.kind === "personal" ? "개인 가계부" : "공유 가계부"}
+                    </p>
+                  </div>
+                  {p.selected === l.id && <Icon name="check" />}
+                </button>
+                <div className="order-buttons">
+                  {[-1, 1].map((delta) => (
+                    <button
+                      key={delta}
+                      className="icon-button"
+                      disabled={
+                        task.busy ||
+                        index + delta < 0 ||
+                        index + delta >= p.ledgers.length
+                      }
+                      aria-label={`${l.name} ${delta < 0 ? "위로" : "아래로"}`}
+                      onClick={() =>
+                        task.run(async () => {
+                          const ids = p.ledgers.map((l) => l.id);
+                          [ids[index], ids[index + delta]] = [
+                            ids[index + delta],
+                            ids[index],
+                          ];
+                          await post("/ledgers/order", { ids }, "PUT");
+                          await p.refresh();
+                        })
+                      }
+                    >
+                      {delta < 0 ? "↑" : "↓"}
+                    </button>
+                  ))}
                 </div>
-                {p.selected === l.id && <Icon name="check" />}
-              </button>
+              </div>
             ))}
           </div>
           <button className="text-link" onClick={() => setManage(true)}>
@@ -592,6 +758,7 @@ export function LedgerDialog(
                 setCreating(true);
                 setEditId("");
                 setName("");
+                setTagline("");
               }}
             >
               새 가계부 만들기
@@ -628,11 +795,11 @@ export function LedgerDialog(
                   if (editing) {
                     await post(
                       `/ledgers/${editing.id}`,
-                      { name, timezone },
+                      { name, timezone, tagline },
                       "PATCH",
                     );
                   } else {
-                    await post("/ledgers", { name, kind, timezone });
+                    await post("/ledgers", { name, kind, timezone, tagline });
                   }
                   await p.refresh();
                   setCreating(false);
@@ -654,6 +821,17 @@ export function LedgerDialog(
                 maxLength={60}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+              />
+              <label className="form-label" htmlFor="ledger-tagline">
+                홈 소개 문구 (선택)
+              </label>
+              <input
+                id="ledger-tagline"
+                className="field-input"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                maxLength={120}
+                placeholder="나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게."
               />
               {!editing && (
                 <>
@@ -831,7 +1009,7 @@ export function AccountDialog(
               style={{ marginTop: 20 }}
               onClick={() => setEditing(true)}
             >
-              계좌 이름·보관 설정 <Icon name="arrow" />
+              계좌 설정 <Icon name="arrow" />
             </button>
           )}
         </>
@@ -970,8 +1148,33 @@ export function AccountDialog(
                 checked={archived}
                 onChange={(e) => setArchived(e.target.checked)}
               />
-              계좌 보관 · 기존 기록은 유지
+              계좌 보관 (기존 기록은 유지)
             </label>
+          )}
+          {ac && (
+            <button
+              type="button"
+              className="secondary-button danger-text"
+              disabled={task.busy}
+              onClick={() =>
+                task.run(async () => {
+                  const answer = prompt(
+                    `계좌와 내역을 숨기고 공유 접근을 중단합니다. 이체 상대 계좌의 기록은 남습니다. 설정에서 복구할 수 있어요. 삭제하려면 계좌 이름 '${ac.name}'을 입력해 주세요.`,
+                  );
+                  if (answer === null) return;
+                  await post(
+                    `/accounts/${ac.id}`,
+                    { confirm_name: answer, version: ac.version },
+                    "DELETE",
+                  );
+                  await p.refresh();
+                  p.notify("계좌를 휴지통으로 옮겼어요.");
+                  p.close();
+                })
+              }
+            >
+              계좌 삭제
+            </button>
           )}
           <ErrorText error={task.error} />
           <button className="primary-button entry-submit" disabled={task.busy}>
@@ -986,9 +1189,6 @@ export function DetailDialog(
   p: DialogProps & { transaction: Transaction; edit: () => void },
 ) {
   const t = p.transaction;
-  const [refs, setRefs] = useState<Record<string, Receipt[]>>(() =>
-    Object.fromEntries(t.legs.map((l) => [l.id, l.receipts])),
-  );
   const task = useTask();
   async function toggle() {
     await task.run(async () => {
@@ -1052,7 +1252,7 @@ export function DetailDialog(
             )}
             {!t.deleted && (
               <div className="receipt-gallery">
-                {(refs[l.id] || []).map((ref) => (
+                {l.receipts.map((ref) => (
                   <div key={ref.id}>
                     <a
                       href={`/api/receipts/${ref.id}`}
@@ -1061,57 +1261,21 @@ export function DetailDialog(
                     >
                       <img src={`/api/receipts/${ref.id}`} alt="첨부 영수증" />
                     </a>
-                    {!!ac && ac.role !== "viewer" && (
-                      <button
-                        className="text-link"
-                        disabled={task.busy}
-                        onClick={() =>
-                          task.run(async () => {
-                            await api(`/receipts/${ref.id}`, {
-                              method: "DELETE",
-                            });
-                            setRefs({
-                              ...refs,
-                              [l.id]: refs[l.id].filter((r) => r.id !== ref.id),
-                            });
-                            await p.refresh();
-                          })
-                        }
-                      >
-                        첨부 해제
-                      </button>
-                    )}
+                    <button
+                      className="text-link"
+                      onClick={() =>
+                        download(
+                          `/receipts/${ref.id}`,
+                          `receipt-${ref.id}.jpg`,
+                        ).catch((e) => task.setError(e.message))
+                      }
+                    >
+                      <Icon name="download" />
+                      사진 다운로드
+                    </button>
                   </div>
                 ))}
               </div>
-            )}
-            {!t.deleted && !!ac && ac.role !== "viewer" && (
-              <label className="receipt-button">
-                <Icon name="camera" />이 계좌에 영수증 첨부
-                <input
-                  className="visually-hidden"
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  disabled={task.busy}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    task.run(async () => {
-                      const body = new FormData();
-                      body.append("file", f);
-                      const ref = await api<Receipt>(
-                        `/transactions/${l.id}/receipts`,
-                        { method: "POST", body },
-                      );
-                      setRefs({
-                        ...refs,
-                        [l.id]: [...(refs[l.id] || []), ref],
-                      });
-                      await p.refresh();
-                    });
-                  }}
-                />
-              </label>
             )}
           </section>
         );
@@ -1130,14 +1294,16 @@ export function DetailDialog(
               수정하기
             </button>
           )}
-          <button
-            className="secondary-button"
-            disabled={task.busy}
-            onClick={toggle}
-          >
-            <Icon name={t.deleted ? "restore" : "trash"} />
-            {t.deleted ? "복구하기" : "휴지통으로"}
-          </button>
+          {t.deleted && (
+            <button
+              className="secondary-button"
+              disabled={task.busy}
+              onClick={toggle}
+            >
+              <Icon name="restore" />
+              복구하기
+            </button>
+          )}
         </div>
       ) : (
         <div className="modal-note">

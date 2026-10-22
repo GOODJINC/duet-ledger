@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
@@ -74,7 +75,39 @@ func (a *App) categoryList(q queryer, ledger, kind string) ([]Category, error) {
 			out = append(out, Category{Code: code, Name: baseCategoryName(code), Kind: kind})
 		}
 	}
-	return out, legacy.Err()
+	if err = legacy.Err(); err != nil {
+		return nil, err
+	}
+	legacy.Close()
+	positions := map[string]int{}
+	ordered, err := q.Query("SELECT code,position FROM category_order WHERE ledger_id=? AND kind=?", ledger, kind)
+	if err != nil {
+		return nil, err
+	}
+	defer ordered.Close()
+	for ordered.Next() {
+		var code string
+		var pos int
+		if err = ordered.Scan(&code, &pos); err != nil {
+			return nil, err
+		}
+		positions[code] = pos
+	}
+	if err = ordered.Err(); err != nil {
+		return nil, err
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		pi, ok := positions[out[i].Code]
+		if !ok {
+			pi = 2147483647
+		}
+		pj, ok := positions[out[j].Code]
+		if !ok {
+			pj = 2147483647
+		}
+		return pi < pj
+	})
+	return out, nil
 }
 func (a *App) listCategories(w http.ResponseWriter, r *http.Request, u *User) error {
 	kind := r.URL.Query().Get("kind")
@@ -232,7 +265,7 @@ func (a *App) listAccountInvitations(w http.ResponseWriter, r *http.Request, u *
 	if !u.Admin {
 		return forbidden()
 	}
-	rows, err := a.DB.Query("SELECT i.id,i.expires_at,i.cancelled,i.claimant_id IS NOT NULL,COALESCE(u.name,'') FROM account_invitations i LEFT JOIN users u ON u.id=i.claimant_id ORDER BY i.created_at DESC LIMIT 100")
+	rows, err := a.DB.Query("SELECT i.id,i.expires_at,i.cancelled,i.claimant_id IS NOT NULL,COALESCE(u.name,'') FROM account_invitations i LEFT JOIN users u ON u.id=i.claimant_id WHERE i.cancelled=0 ORDER BY i.created_at DESC LIMIT 100")
 	if err != nil {
 		return err
 	}

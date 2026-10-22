@@ -17,6 +17,7 @@ type Ledger struct {
 	Kind     string `json:"kind"`
 	Role     string `json:"role"`
 	Timezone string `json:"timezone"`
+	Tagline  string `json:"tagline"`
 }
 type Account struct {
 	ID         string `json:"id"`
@@ -73,7 +74,7 @@ func (a *App) ledgerRole(q queryer, u *User, id string) (string, error) {
 	return role, err
 }
 func (a *App) accounts(q queryer, u *User) ([]Account, error) {
-	rows, err := q.Query(`SELECT a.id,a.ledger_id,l.name,a.name,a.kind,a.currency,a.scale,a.opening,a.archived,a.version,l.owner_id,l.kind,COALESCE(m.role,''),COALESCE(g.role,''),EXISTS(SELECT 1 FROM grants gg WHERE gg.account_id=a.id),o.name FROM accounts a JOIN ledgers l ON l.id=a.ledger_id JOIN users o ON o.id=l.owner_id LEFT JOIN members m ON m.ledger_id=l.id AND m.user_id=? LEFT JOIN grants g ON g.account_id=a.id AND g.user_id=? WHERE l.deleted_at IS NULL AND (l.owner_id=? OR (m.user_id IS NOT NULL AND l.kind='shared') OR g.user_id IS NOT NULL) ORDER BY a.archived,a.created_at,a.id`, u.ID, u.ID, u.ID)
+	rows, err := q.Query(`SELECT a.id,a.ledger_id,l.name,a.name,a.kind,a.currency,a.scale,a.opening,a.archived,a.version,l.owner_id,l.kind,COALESCE(m.role,''),COALESCE(g.role,''),EXISTS(SELECT 1 FROM grants gg WHERE gg.account_id=a.id),o.name FROM accounts a JOIN ledgers l ON l.id=a.ledger_id JOIN users o ON o.id=l.owner_id LEFT JOIN members m ON m.ledger_id=l.id AND m.user_id=? LEFT JOIN grants g ON g.account_id=a.id AND g.user_id=? WHERE a.deleted_at IS NULL AND l.deleted_at IS NULL AND (l.owner_id=? OR (m.user_id IS NOT NULL AND l.kind='shared') OR g.user_id IS NOT NULL) ORDER BY a.archived,a.created_at,a.id`, u.ID, u.ID, u.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func (a *App) listAccounts(w http.ResponseWriter, r *http.Request, u *User) erro
 	return nil
 }
 func (a *App) listLedgers(w http.ResponseWriter, r *http.Request, u *User) error {
-	rows, err := a.DB.Query("SELECT l.id,l.name,l.kind,CASE WHEN l.owner_id=? THEN 'owner' ELSE m.role END,l.timezone FROM ledgers l LEFT JOIN members m ON m.ledger_id=l.id AND m.user_id=? WHERE ((l.owner_id=? OR (m.user_id IS NOT NULL AND l.kind='shared')) AND l.deleted_at IS NULL AND ?=false) OR (l.owner_id=? AND l.deleted_at IS NOT NULL AND ?=true) ORDER BY l.created_at", u.ID, u.ID, u.ID, r.URL.Query().Get("trash") == "true", u.ID, r.URL.Query().Get("trash") == "true")
+	rows, err := a.DB.Query("SELECT l.id,l.name,l.kind,CASE WHEN l.owner_id=? THEN 'owner' ELSE m.role END,l.timezone,l.tagline FROM ledgers l LEFT JOIN members m ON m.ledger_id=l.id AND m.user_id=? WHERE ((l.owner_id=? OR (m.user_id IS NOT NULL AND l.kind='shared')) AND l.deleted_at IS NULL AND ?=false) OR (l.owner_id=? AND l.deleted_at IS NOT NULL AND ?=true) ORDER BY COALESCE((SELECT position FROM ledger_order lo WHERE lo.ledger_id=l.id AND lo.user_id=?),2147483647),l.created_at,l.id", u.ID, u.ID, u.ID, r.URL.Query().Get("trash") == "true", u.ID, r.URL.Query().Get("trash") == "true", u.ID)
 	if err != nil {
 		return err
 	}
@@ -145,7 +146,7 @@ func (a *App) listLedgers(w http.ResponseWriter, r *http.Request, u *User) error
 	out := []Ledger{}
 	for rows.Next() {
 		var v Ledger
-		if err = rows.Scan(&v.ID, &v.Name, &v.Kind, &v.Role, &v.Timezone); err != nil {
+		if err = rows.Scan(&v.ID, &v.Name, &v.Kind, &v.Role, &v.Timezone, &v.Tagline); err != nil {
 			return err
 		}
 		out = append(out, v)
@@ -161,11 +162,16 @@ func (a *App) createLedger(w http.ResponseWriter, r *http.Request, u *User) erro
 		Name     string `json:"name"`
 		Kind     string `json:"kind"`
 		Timezone string `json:"timezone"`
+		Tagline  string `json:"tagline"`
 	}
 	if err := decode(r, &v); err != nil {
 		return err
 	}
 	v.Name = strings.TrimSpace(v.Name)
+	if len([]rune(v.Tagline)) > 120 {
+		return bad("소개 문구는 120자까지 입력해 주세요.")
+	}
+	v.Tagline = strings.TrimSpace(v.Tagline)
 	if !validName(v.Name, 60) || (v.Kind != "personal" && v.Kind != "shared") {
 		return bad("가계부 이름과 종류를 확인해 주세요.")
 	}
@@ -181,7 +187,7 @@ func (a *App) createLedger(w http.ResponseWriter, r *http.Request, u *User) erro
 		return err
 	}
 	defer tx.Rollback()
-	if _, err = tx.Exec("INSERT INTO ledgers(id,name,kind,owner_id,timezone,created_at) VALUES(?,?,?,?,?,?)", id, v.Name, v.Kind, u.ID, v.Timezone, now()); err != nil {
+	if _, err = tx.Exec("INSERT INTO ledgers(id,name,kind,owner_id,timezone,created_at,tagline) VALUES(?,?,?,?,?,?,?)", id, v.Name, v.Kind, u.ID, v.Timezone, now(), v.Tagline); err != nil {
 		return err
 	}
 	if err = audit(tx, u, "created", "ledger", id); err != nil {
@@ -204,9 +210,13 @@ func (a *App) updateLedger(w http.ResponseWriter, r *http.Request, u *User) erro
 	var v struct {
 		Name     string `json:"name"`
 		Timezone string `json:"timezone"`
+		Tagline  string `json:"tagline"`
 	}
 	if err = decode(r, &v); err != nil {
 		return err
+	}
+	if len([]rune(v.Tagline)) > 120 {
+		return bad("소개 문구는 120자까지 입력해 주세요.")
 	}
 	if !validName(v.Name, 60) {
 		return bad("가계부 이름을 확인해 주세요.")
@@ -214,7 +224,7 @@ func (a *App) updateLedger(w http.ResponseWriter, r *http.Request, u *User) erro
 	if _, err = time.LoadLocation(v.Timezone); err != nil {
 		return bad("시간대를 확인해 주세요.")
 	}
-	_, err = a.DB.Exec("UPDATE ledgers SET name=?,timezone=? WHERE id=?", strings.TrimSpace(v.Name), v.Timezone, r.PathValue("id"))
+	_, err = a.DB.Exec("UPDATE ledgers SET name=?,timezone=?,tagline=? WHERE id=?", strings.TrimSpace(v.Name), v.Timezone, strings.TrimSpace(v.Tagline), r.PathValue("id"))
 	if err != nil {
 		return err
 	}

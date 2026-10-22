@@ -261,7 +261,7 @@ describe("실제 입력 화면", () => {
     await actor.click(screen.getByRole("button", { name: "기록 저장하기" }));
     expect(await screen.findByText("사진 전송 실패")).toBeTruthy();
     await actor.click(
-      screen.getByRole("button", { name: "사진 첨부 다시 시도" }),
+      screen.getByRole("button", { name: "사진 변경 다시 시도" }),
     );
     await waitFor(() => expect(p.close).toHaveBeenCalled());
     expect(post).toHaveBeenCalledTimes(1);

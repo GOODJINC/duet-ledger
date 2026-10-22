@@ -143,16 +143,12 @@ it("가족 가계부에서 개인 계좌를 제외하고 수입 분류·시간�
   );
   await actor.click(screen.getByRole("button", { name: "수입" }));
   expect(screen.getByPlaceholderText("예: 10월 월급")).toBeTruthy();
-  expect(
-    await screen.findByRole("button", { name: "월급" }),
-  ).toBeTruthy();
-  expect(
-    screen.queryByRole("button", { name: "식비" }),
-  ).toBeNull();
+  expect(await screen.findByRole("button", { name: "월급" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "식비" })).toBeNull();
   expect(screen.queryByLabelText("직접 분류 입력")).toBeNull();
   await actor.type(screen.getByLabelText("금액"), "100000");
   await actor.type(screen.getByLabelText("내용"), "월급");
-  const clock = screen.getByLabelText("시간 · 선택") as HTMLInputElement;
+  const clock = screen.getByLabelText("시간 (선택)") as HTMLInputElement;
   await actor.clear(clock);
   await actor.type(clock, "13:45");
   await actor.click(screen.getByRole("button", { name: "기록 저장하기" }));

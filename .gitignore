@@ -25,3 +25,5 @@ duet-ledger-transactions*.csv
 *.test
 coverage.out
 .DS_Store
+
+/temp/

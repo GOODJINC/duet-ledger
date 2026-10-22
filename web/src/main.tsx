@@ -51,10 +51,21 @@ import {
   BackupDialog,
   SecurityDialog,
 } from "./management";
-import { CategoriesDialog, AdminDialog } from "./preferences";
+import {
+  CategoriesDialog,
+  AdminDialog,
+  AccountTrashDialog,
+} from "./preferences";
 import "./app.css";
 
-type Page = "home" | "ledger" | "stats" | "accounts" | "settings";
+type Page =
+  | "home"
+  | "ledger"
+  | "stats"
+  | "accounts"
+  | "settings"
+  | "account-settings"
+  | "administration";
 type ModalState =
   | { kind: "entry"; tx?: Transaction; account?: string }
   | { kind: "account"; account?: Account }
@@ -69,7 +80,8 @@ type ModalState =
         | "lifecycle"
         | "admin"
         | "categories"
-        | "ledger-manage";
+        | "ledger-manage"
+        | "account-trash";
     }
   | null;
 const navigation: {
@@ -491,7 +503,7 @@ export function Auth({
   );
 }
 
-function Application({
+export function Application({
   user,
   setUser,
   invite,
@@ -529,7 +541,39 @@ function Application({
   const [theme, setTheme] = useState(
     () => localStorage.getItem("duet-ledger-theme") || "light",
   );
+  const [userMenu, setUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const [categoryLedger, setCategoryLedger] = useState<string | undefined>();
+  const [categoryPopup, setCategoryPopup] = useState(false);
+  const [categoryVersion, setCategoryVersion] = useState(0);
+  const [accent, setAccent] = useState(
+    () => localStorage.getItem(`duet-ledger-accent-${user.id}`) || "green",
+  );
+  const isSettings = [
+    "settings",
+    "account-settings",
+    "administration",
+  ].includes(page);
   const en = user.locale === "en";
+  useEffect(() => {
+    document.body.dataset.accent = accent;
+    localStorage.setItem(`duet-ledger-accent-${user.id}`, accent);
+  }, [accent, user.id]);
+  useEffect(() => {
+    if (!userMenu) return;
+    const close = (e: PointerEvent) => {
+      if (!userMenuRef.current?.contains(e.target as Node)) setUserMenu(false);
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setUserMenu(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [userMenu]);
   const requestVersion = useRef(0);
   const [from, to] = dateRange(date, page === "ledger" ? period : "month");
   const params = useMemo(
@@ -642,6 +686,8 @@ function Application({
       setCurrency(currencies[0]);
   }, [accounts, ledger, scope]);
   function navigate(p: Page) {
+    if (p === "administration" && !user.admin) return;
+    setUserMenu(false);
     setPage(p);
     setPageNumber(1);
     setTrash(false);
@@ -666,6 +712,11 @@ function Application({
     refresh,
     close: () => setModal(null),
     notify: setToast,
+    categoryVersion,
+    manageCategories: (id) => {
+      setCategoryLedger(id);
+      setCategoryPopup(true);
+    },
   };
   function openEntry(account?: string) {
     if (!visibleAccounts.some((a) => !a.archived && a.role !== "viewer")) {
@@ -702,6 +753,16 @@ function Application({
       "/export?" +
         new URLSearchParams({
           ...Object.fromEntries(params),
+          ...(format === "csv"
+            ? {
+                from: dateRange(date, period)[0],
+                to: dateRange(date, period)[1],
+                search: searchTerm,
+                account: accountFilter,
+                type: typeFilter,
+                trash: String(trash),
+              }
+            : {}),
           format,
         }).toString(),
       format === "csv"
@@ -717,7 +778,8 @@ function Application({
         ]
       : [
           "돈의 흐름을 한눈에.",
-          "나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게.",
+          selectedLedger?.tagline ||
+            "나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게.",
         ],
     ledger: en
       ? ["One day at a time.", "Find, review and record your transactions."]
@@ -740,6 +802,11 @@ function Application({
           "나의 자산, 우리의 생활.",
           "계좌는 한 번만 등록하고, 필요한 계좌만 함께 볼 수 있어요.",
         ],
+    "account-settings": [
+      "나의 계정, 안전하게.",
+      "프로필과 로그인 보안을 관리해요.",
+    ],
+    administration: ["서버 관리.", "가입 정책과 전체 서버 백업을 관리해요."],
     settings: en
       ? ["Make yourself at home.", "Manage your space, sharing and security."]
       : [
@@ -934,7 +1001,12 @@ function Application({
             {navigation.map((n) => (
               <button
                 key={n.id}
-                className={"nav-item " + (page === n.id ? "active" : "")}
+                className={
+                  "nav-item " +
+                  (page === n.id || (n.id === "settings" && isSettings)
+                    ? "active"
+                    : "")
+                }
                 aria-current={page === n.id ? "page" : undefined}
                 onClick={() => navigate(n.id)}
               >
@@ -988,7 +1060,10 @@ function Application({
           )}
           <div className="sidebar-bottom">
             <span className="local-dot" />
-            나의 기록, 나의 공간 <Icon name="leaf" />
+            {selectedLedger?.kind === "shared"
+              ? "우리의 기록, 우리의 공간"
+              : "나의 기록, 나의 공간"}{" "}
+            <Icon name="leaf" />
           </div>
         </aside>
         <div className="main-shell">
@@ -1001,22 +1076,64 @@ function Application({
                 {selectedLedger?.name || "나의 공간"}
                 <span>/</span>
                 <strong>
-                  {navigation.find((n) => n.id === page)?.[en ? "en" : "label"]}
+                  {page === "account-settings"
+                    ? "계정 설정"
+                    : page === "administration"
+                      ? "관리"
+                      : navigation.find((n) => n.id === page)?.[
+                          en ? "en" : "label"
+                        ]}
                 </strong>
               </span>
             </div>
             <div className="header-right">
               {loading && <Icon name="loader" className="spin loading-mark" />}
               <span className="alpha-tag">초기 개발판</span>
-              <button
-                className="profile-button"
-                onClick={() => navigate("settings")}
-                aria-label="내 설정"
-              >
-                <span className="avatar mint">{user.name.slice(0, 1)}</span>
-                <span>{user.name}</span>
-                <Icon name="down" />
-              </button>
+              <div className="user-menu-wrap" ref={userMenuRef}>
+                <button
+                  className="profile-button"
+                  onClick={() => setUserMenu(!userMenu)}
+                  aria-label="사용자 메뉴"
+                  aria-expanded={userMenu}
+                  aria-controls="user-dropdown"
+                >
+                  <span className="avatar mint">{user.name.slice(0, 1)}</span>
+                  <span>{user.name}</span>
+                  <Icon name="down" />
+                </button>
+                {userMenu && (
+                  <div className="user-dropdown" id="user-dropdown">
+                    <button onClick={() => navigate("account-settings")}>
+                      <Icon name="user" />
+                      계정 설정
+                    </button>
+                    <button onClick={() => navigate("settings")}>
+                      <Icon name="settings" />
+                      설정
+                    </button>
+                    {user.admin && (
+                      <button onClick={() => navigate("administration")}>
+                        <Icon name="shield" />
+                        관리
+                      </button>
+                    )}
+                    <button
+                      onClick={() =>
+                        post("/logout")
+                          .then(() =>
+                            window.dispatchEvent(
+                              new Event("duet-ledger:unauthorized"),
+                            ),
+                          )
+                          .catch((e) => setToast(e.message))
+                      }
+                    >
+                      <Icon name="logout" />
+                      로그아웃
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
           <main id="main-content">
@@ -1060,7 +1177,7 @@ function Application({
                     <Icon name="plus" />
                     계좌 만들기
                   </button>
-                ) : page === "settings" ? null : (
+                ) : isSettings ? null : (
                   <button
                     className="primary-button"
                     onClick={() => openEntry()}
@@ -1071,7 +1188,7 @@ function Application({
                 )}
               </div>
             </div>
-            {page !== "settings" && (
+            {!isSettings && (
               <div className="view-toolbar">
                 {!ledger && (
                   <div
@@ -1187,6 +1304,20 @@ function Application({
             )}
             {page === "ledger" && (
               <>
+                {trash && (
+                  <div className="inline-warning trash-mode">
+                    <span>기록 휴지통 · 삭제한 기록을 보고 있어요.</span>
+                    <button
+                      className="secondary-button"
+                      onClick={() => {
+                        setTrash(false);
+                        setPageNumber(1);
+                      }}
+                    >
+                      일반 내역으로 돌아가기
+                    </button>
+                  </div>
+                )}
                 <div className="search-filter-bar">
                   <label className="search-field">
                     <Icon name="search" />
@@ -1200,6 +1331,62 @@ function Application({
                       placeholder="내용·분류·메모·작성자 이름·아이디로 검색"
                     />
                   </label>
+                  <div className="advanced-filters">
+                    <select
+                      aria-label="계좌 필터"
+                      className="compact-select"
+                      value={accountFilter}
+                      onChange={(e) => {
+                        setAccountFilter(e.target.value);
+                        setPageNumber(1);
+                      }}
+                    >
+                      <option value="">모든 계좌</option>
+                      {visibleAccounts
+                        .filter((a) => a.currency === currency)
+                        .map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                    </select>
+                    <select
+                      aria-label="거래 종류 필터"
+                      className="compact-select"
+                      value={typeFilter}
+                      onChange={(e) => {
+                        setTypeFilter(e.target.value);
+                        setPageNumber(1);
+                      }}
+                    >
+                      <option value="">모든 거래</option>
+                      {Object.entries(kindNames)
+                        .filter(
+                          ([id]) =>
+                            ["expense", "income", "transfer"].includes(id) ||
+                            report.items.some((t) => t.kind === id),
+                        )
+                        .map(([id, name]) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        ))}
+                    </select>
+                    <input
+                      aria-label="기준 날짜"
+                      type="date"
+                      value={date}
+                      className="compact-date"
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setDate(e.target.value);
+                          setPageNumber(1);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="ledger-view-controls">
                   <div className="filter-buttons">
                     <div
                       className="segment-control"
@@ -1248,72 +1435,7 @@ function Application({
                     </div>
                   </div>
                 </div>
-                <div className="advanced-filters">
-                  <select
-                    aria-label="계좌 필터"
-                    className="compact-select"
-                    value={accountFilter}
-                    onChange={(e) => {
-                      setAccountFilter(e.target.value);
-                      setPageNumber(1);
-                    }}
-                  >
-                    <option value="">모든 계좌</option>
-                    {visibleAccounts
-                      .filter((a) => a.currency === currency)
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name}
-                        </option>
-                      ))}
-                  </select>
-                  <select
-                    aria-label="거래 종류 필터"
-                    className="compact-select"
-                    value={typeFilter}
-                    onChange={(e) => {
-                      setTypeFilter(e.target.value);
-                      setPageNumber(1);
-                    }}
-                  >
-                    <option value="">모든 거래</option>
-                    {Object.entries(kindNames).map(([id, name]) => (
-                      <option key={id} value={id}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    aria-label="기준 날짜"
-                    type="date"
-                    value={date}
-                    className="compact-date"
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setDate(e.target.value);
-                        setPageNumber(1);
-                      }
-                    }}
-                  />
-                  <button
-                    className={"secondary-button " + (trash ? "selected" : "")}
-                    onClick={() => {
-                      setTrash(!trash);
-                      setPageNumber(1);
-                    }}
-                  >
-                    <Icon name="trash" />
-                    휴지통
-                  </button>
-                  <button
-                    className="secondary-button"
-                    onClick={() => exportFile("csv")}
-                  >
-                    <Icon name="download" />
-                    CSV
-                  </button>
-                </div>
-                <div className="scope-explanation">
+                <div className="scope-explanation ledger-summary">
                   <Icon name="info" />
                   {from} ~ {to} · {report.count}건 ·{" "}
                   {trash
@@ -1513,22 +1635,36 @@ function Application({
                 </p>
               </>
             )}
-            {page === "settings" && (
+            {isSettings && (
               <SettingsView
+                section={
+                  page as "settings" | "account-settings" | "administration"
+                }
                 user={user}
                 refresh={refresh}
-                open={(kind) => setModal({ kind })}
+                navigate={navigate}
+                open={(kind) => {
+                  if (kind === "categories") setCategoryLedger(undefined);
+                  setModal({ kind });
+                }}
                 theme={theme}
                 setTheme={setTheme}
                 notify={setToast}
                 exportJSON={() => exportFile("json")}
+                exportCSV={() => exportFile("csv")}
+                showTrash={() => {
+                  navigate("ledger");
+                  setTrash(true);
+                }}
+                accent={accent}
+                setAccent={setAccent}
               />
             )}
           </main>
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.2
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.3
             </span>
           </footer>
         </div>
@@ -1537,7 +1673,12 @@ function Application({
         {navigation.map((n) => (
           <button
             key={n.id}
-            className={"nav-item " + (page === n.id ? "active" : "")}
+            className={
+              "nav-item " +
+              (page === n.id || (n.id === "settings" && isSettings)
+                ? "active"
+                : "")
+            }
             aria-current={page === n.id ? "page" : undefined}
             onClick={() => navigate(n.id)}
           >
@@ -1591,7 +1732,25 @@ function Application({
           edit={() => setModal({ kind: "entry", tx: modal.tx })}
         />
       )}
-      {modal?.kind === "categories" && <CategoriesDialog {...dialogProps} />}
+      {categoryPopup && (
+        <CategoriesDialog
+          {...dialogProps}
+          selectedLedger={categoryLedger}
+          close={() => {
+            setCategoryPopup(false);
+            setCategoryVersion((v) => v + 1);
+          }}
+        />
+      )}
+      {modal?.kind === "categories" && (
+        <CategoriesDialog
+          {...dialogProps}
+          selectedLedger={categoryLedger || ledger}
+        />
+      )}
+      {modal?.kind === "account-trash" && (
+        <AccountTrashDialog {...dialogProps} />
+      )}
       {modal?.kind === "admin" && user.admin && (
         <AdminDialog {...dialogProps} />
       )}
@@ -1999,7 +2158,7 @@ function CalendarView({
     </section>
   );
 }
-function SettingsView({
+export function SettingsView({
   user,
   refresh,
   open,
@@ -2007,6 +2166,12 @@ function SettingsView({
   setTheme,
   notify,
   exportJSON,
+  exportCSV,
+  showTrash,
+  accent,
+  setAccent,
+  section,
+  navigate,
 }: {
   user: User;
   refresh: () => Promise<void>;
@@ -2016,28 +2181,48 @@ function SettingsView({
       | "security"
       | "import"
       | "backup"
-      | "ledgers"
       | "lifecycle"
       | "admin"
       | "categories"
-      | "ledger-manage",
+      | "ledger-manage"
+      | "account-trash",
   ) => void;
   theme: string;
   setTheme: (v: string) => void;
   notify: (s: string) => void;
   exportJSON: () => void;
+  exportCSV: () => void;
+  showTrash: () => void;
+  accent: string;
+  setAccent: (s: string) => void;
+  section: "settings" | "account-settings" | "administration";
+  navigate: (p: Page) => void;
 }) {
   const [name, setName] = useState(user.name);
+  const [locale, setLocale] = useState(user.locale);
+  const [timezone, setTimezone] = useState(user.timezone);
   const [showSidebar, setShowSidebar] = useState(
     user.show_sidebar_message !== false,
   );
-  const [locale, setLocale] = useState(user.locale);
-  const [timezone, setTimezone] = useState(user.timezone);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+    setName(user.name);
+    setLocale(user.locale);
+    setTimezone(user.timezone);
+    setShowSidebar(user.show_sidebar_message !== false);
+    setError("");
+  }, [
+    section,
+    user.name,
+    user.locale,
+    user.timezone,
+    user.show_sidebar_message,
+  ]);
   async function save(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setError("");
     try {
       await post(
         "/me",
@@ -2045,271 +2230,277 @@ function SettingsView({
         "PATCH",
       );
       await refresh();
-      notify("내 설정을 저장했어요.");
-      setError("");
+      notify("설정을 저장했어요.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "저장하지 못했어요.");
+      setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
+  const row = (
+    title: string,
+    description: string,
+    action: () => void,
+    label = "관리",
+  ) => (
+    <div className="setting-row" key={title}>
+      <div>
+        <strong>{title}</strong>
+        <p>{description}</p>
+      </div>
+      <button className="secondary-button" onClick={action}>
+        {label}
+      </button>
+    </div>
+  );
   return (
-    <div className="settings-layout">
-      <section className="panel">
-        <div className="setting-group">
-          <h2>나의 공간</h2>
-          <form onSubmit={save}>
-            <label className="form-label" htmlFor="profile-name-field">
-              표시할 이름
-            </label>
-            <input
-              id="profile-name-field"
-              className="field-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={40}
-            />
-            <div className="form-two-cols">
-              <div>
-                <label className="form-label" htmlFor="locale">
-                  언어
-                </label>
-                <select
-                  id="locale"
-                  className="field-select"
-                  value={locale}
-                  onChange={(e) => setLocale(e.target.value as User["locale"])}
-                >
-                  <option value="ko">한국어</option>
-                  <option value="en">English · 주요 화면</option>
-                </select>
-              </div>
-              <div>
-                <label className="form-label" htmlFor="timezone">
-                  시간대
-                </label>
-                <select
-                  id="timezone"
-                  className="field-select"
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                >
-                  {[
-                    ...new Set([
-                      user.timezone,
-                      "Asia/Seoul",
-                      "Asia/Tokyo",
-                      "UTC",
-                      "America/New_York",
-                      "America/Los_Angeles",
-                      "Europe/London",
-                      "Europe/Berlin",
-                    ]),
-                  ].map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <label className="setting-row">
-              <span>왼쪽 소개 문구 표시</span>
-              <input
-                type="checkbox"
-                checked={showSidebar}
-                onChange={(e) => setShowSidebar(e.target.checked)}
-              />
-            </label>
-            <ErrorText error={error} />
-            <button
-              className="secondary-button"
-              style={{ marginTop: 16 }}
-              disabled={busy}
-            >
-              설정 저장
-            </button>
-          </form>
-          <div className="setting-row">
-            <div>
-              <strong>화면 테마</strong>
-              <p>편안한 밝기로 기록을 살펴보세요.</p>
-            </div>
-            <div className="theme-buttons">
-              {[
-                ["light", "sun", "밝게"],
-                ["dark", "moon", "어둡게"],
-              ].map(([id, icon, label]) => (
-                <button
-                  key={id}
-                  className={theme === id ? "active" : ""}
-                  onClick={() => setTheme(id)}
-                >
-                  <Icon name={icon as IconName} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="setting-group">
-          <h2>가계부와 공유</h2>
-          <div className="setting-row">
-            <div>
-              <strong>가계부 분류 관리</strong>
-              <p>가계부별 수입·지출 분류 추가·수정·삭제</p>
-            </div>
-            <button
-              className="secondary-button"
-              onClick={() => open("categories")}
-            >
-              분류 관리
-            </button>
-          </div>
-          {user.admin && (
-            <div className="setting-row">
-              <div>
-                <strong>사용자와 가입 관리</strong>
-                <p>공개 회원가입 허용·새 사용자 초대</p>
-              </div>
-              <button
-                className="secondary-button"
-                onClick={() => open("admin")}
-              >
-                가입·초대 관리
-              </button>
-            </div>
-          )}
-          <div className="setting-row">
-            <div>
-              <strong>가계부 관리</strong>
-              <p>개인·공유 가계부를 여러 개 만들 수 있어요.</p>
-            </div>
-            <button
-              className="secondary-button"
-              onClick={() => open("ledger-manage")}
-            >
-              관리
-            </button>
-          </div>
-          <div className="setting-row">
-            <div>
-              <strong>공유 관리</strong>
-              <p>초대·승인·역할 변경·공유 해제</p>
-            </div>
-            <button
-              className="secondary-button"
-              onClick={() => open("sharing")}
-            >
-              살펴보기
-            </button>
-          </div>
-        </div>
-        <div className="setting-group">
-          <h2>공유 종료와 책임자</h2>
-          <div className="setting-row">
-            <div>
-              <strong>책임자 이전·공유 나가기</strong>
-              <p>금융 기록을 지우지 않고 공유 관계를 정리해요.</p>
-            </div>
-            <button
-              className="secondary-button"
-              onClick={() => open("lifecycle")}
-            >
-              관리
-            </button>
-          </div>
-        </div>
-        <div className="setting-group">
-          <h2>내 기록과 보안</h2>
-          <div className="setting-row">
-            <div>
-              <strong>로그인 보안</strong>
-              <p>
-                2단계 인증 {user.totp_enabled ? "사용 중" : "미사용"} ·
-                비밀번호·복구 코드
-              </p>
-            </div>
-            <button
-              className="secondary-button"
-              onClick={() => open("security")}
-            >
-              관리
-            </button>
-          </div>
-          <div className="setting-row">
-            <div>
-              <strong>JSON 자료 내보내기</strong>
-              <p>현재 선택한 범위의 전체 기간 자료. 사진·공유 권한 제외.</p>
-            </div>
-            <button className="secondary-button" onClick={exportJSON}>
-              <Icon name="json" />
-              내보내기
-            </button>
-          </div>
-          <div className="setting-row">
-            <div>
-              <strong>CSV·JSON 가져오기</strong>
-              <p>먼저 미리 보고, 중복을 확인한 후 반영해요.</p>
-            </div>
-            <button className="secondary-button" onClick={() => open("import")}>
-              가져오기
-            </button>
-          </div>
-          {user.admin && (
-            <div className="setting-row">
-              <div>
-                <strong>서버 운영 백업</strong>
-                <p>모든 사용자의 자료·사진 포함. 관리자 전용.</p>
-              </div>
-              <button
-                className="secondary-button"
-                onClick={() => open("backup")}
-              >
-                <Icon name="archive" />
-                백업
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-      <aside>
-        <section className="panel panel-pad">
-          <div className="settings-demo-person">
-            <span className="avatar mint">{user.name.slice(0, 1)}</span>
-            <div>
-              <h3>{user.name}의 공간</h3>
-              <p>@{user.username}</p>
-            </div>
-          </div>
-          <p className="settings-demo-note">
-            개인적인 기록과 함께 쓰는 기록이
-            <br />
-            자연스럽게 이어지도록.
-          </p>
+    <div className="settings-page">
+      <nav className="settings-tabs" aria-label="설정 구분">
+        {[
+          ["account-settings", "계정 설정"],
+          ["settings", "설정"],
+          ...(user.admin ? [["administration", "관리"]] : []),
+        ].map(([id, label]) => (
           <button
-            className="text-link"
-            style={{ marginTop: 20 }}
-            onClick={() =>
-              post("/logout")
-                .then(() =>
-                  window.dispatchEvent(new Event("duet-ledger:unauthorized")),
-                )
-                .catch((e) => notify(e.message))
-            }
+            key={id}
+            aria-current={section === id ? "page" : undefined}
+            className={section === id ? "active" : ""}
+            onClick={() => navigate(id as Page)}
           >
-            <Icon name="logout" />
-            로그아웃
+            {label}
           </button>
+        ))}
+      </nav>
+      {section === "account-settings" && (
+        <section className="panel">
+          <div className="setting-group">
+            <h2>프로필</h2>
+            <p className="panel-subtitle">@{user.username}</p>
+            <form onSubmit={save}>
+              <label className="form-label" htmlFor="profile-name-field">
+                표시할 이름
+              </label>
+              <input
+                id="profile-name-field"
+                className="field-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={40}
+                required
+              />
+              <button
+                className="secondary-button settings-save"
+                disabled={busy}
+              >
+                저장
+              </button>
+              <ErrorText error={error} />
+            </form>
+          </div>
+          <div className="setting-group">
+            <h2>로그인과 보안</h2>
+            {row(
+              "로그인 보안",
+              `2단계 인증 ${user.totp_enabled ? "사용 중" : "미사용"} · 비밀번호·복구 코드`,
+              () => open("security"),
+            )}
+          </div>
         </section>
-        <div className="shared-note" style={{ marginTop: 18 }}>
-          <h3>내 기록은 나에게만.</h3>
-          <p>
-            공유는 선택이에요.
-            <br />
-            공유하지 않으면 개인 가계부로 사용할 수 있어요.
-          </p>
-        </div>
-      </aside>
+      )}
+      {section === "settings" && (
+        <>
+          <section className="panel">
+            <div className="setting-group">
+              <h2>화면과 표시</h2>
+              <div className="setting-row">
+                <div>
+                  <strong>화면 밝기</strong>
+                  <p>이 브라우저에 적용해요.</p>
+                </div>
+                <div className="theme-buttons">
+                  {[
+                    ["light", "밝게", "sun"],
+                    ["dark", "어둡게", "moon"],
+                  ].map(([id, label, icon]) => (
+                    <button
+                      key={id}
+                      className={theme === id ? "active" : ""}
+                      aria-pressed={theme === id}
+                      onClick={() => setTheme(id)}
+                    >
+                      <Icon name={icon as IconName} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="setting-row">
+                <div>
+                  <strong>테마 색상</strong>
+                  <p>이 계정의 현재 브라우저에 적용해요.</p>
+                </div>
+                <div className="accent-options">
+                  {[
+                    ["green", "그린"],
+                    ["rose", "로즈"],
+                    ["blue", "블루"],
+                    ["violet", "바이올렛"],
+                  ].map(([id, label]) => (
+                    <button
+                      key={id}
+                      className={`accent-choice ${id}`}
+                      aria-pressed={accent === id}
+                      onClick={() => setAccent(id)}
+                    >
+                      <i />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <form onSubmit={save}>
+                <div className="form-two-cols">
+                  <div>
+                    <label className="form-label" htmlFor="locale">
+                      언어
+                    </label>
+                    <select
+                      id="locale"
+                      className="field-select"
+                      value={locale}
+                      onChange={(e) =>
+                        setLocale(e.target.value as User["locale"])
+                      }
+                    >
+                      <option value="ko">한국어</option>
+                      <option value="en">English · 주요 화면</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label" htmlFor="timezone">
+                      시간대
+                    </label>
+                    <select
+                      id="timezone"
+                      className="field-select"
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                    >
+                      {[
+                        ...new Set([
+                          user.timezone,
+                          "Asia/Seoul",
+                          "Asia/Tokyo",
+                          "UTC",
+                          "America/New_York",
+                          "America/Los_Angeles",
+                          "Europe/London",
+                          "Europe/Berlin",
+                        ]),
+                      ].map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <label className="setting-row">
+                  <span>왼쪽 소개 문구 표시</span>
+                  <input
+                    type="checkbox"
+                    checked={showSidebar}
+                    onChange={(e) => setShowSidebar(e.target.checked)}
+                  />
+                </label>
+                <ErrorText error={error} />
+                <button
+                  className="secondary-button settings-save"
+                  disabled={busy}
+                >
+                  설정 저장
+                </button>
+              </form>
+            </div>
+          </section>
+          <section className="panel">
+            <div className="setting-group">
+              <h2>가계부와 공유</h2>
+              {row(
+                "가계부 관리",
+                "만들기·소개 문구·수정·삭제. 목록 순서는 가계부 선택 화면에서 바꿔요.",
+                () => open("ledger-manage"),
+              )}
+              {row(
+                "가계부 분류 관리",
+                "수입·지출 분류 추가·수정·순서 변경",
+                () => open("categories"),
+                "분류 관리",
+              )}
+              {row("공유 관리", "초대·승인·역할 변경·공유 해제", () =>
+                open("sharing"),
+              )}
+              {row(
+                "책임자 이전·공유 나가기",
+                "기록을 유지하고 공유 관계를 정리해요.",
+                () => open("lifecycle"),
+              )}
+            </div>
+          </section>
+          <section className="panel">
+            <div className="setting-group">
+              <h2>자료 관리</h2>
+              {row(
+                "기록 휴지통",
+                "현재 가계부 범위의 삭제한 기록을 조회·복구해요.",
+                showTrash,
+                "열기",
+              )}
+              {row(
+                "삭제한 계좌",
+                "책임자인 계좌를 복구해요.",
+                () => open("account-trash"),
+                "열기",
+              )}
+              {row(
+                "CSV 내보내기",
+                "현재 가계부·통화와 가계부 화면의 기간·검색 조건을 사용해요.",
+                exportCSV,
+                "내보내기",
+              )}
+              {row(
+                "JSON 자료 내보내기",
+                "현재 선택한 범위의 전체 기간 자료. 사진·공유 권한 제외.",
+                exportJSON,
+                "내보내기",
+              )}
+              {row(
+                "CSV·JSON 가져오기",
+                "미리 보기와 중복 확인 후 반영해요.",
+                () => open("import"),
+                "가져오기",
+              )}
+            </div>
+          </section>
+        </>
+      )}
+      {section === "administration" && user.admin && (
+        <section className="panel">
+          <div className="setting-group">
+            <h2>서버 관리</h2>
+            {row(
+              "사용자와 가입 관리",
+              "공개 회원가입 허용·새 사용자 초대",
+              () => open("admin"),
+              "가입·초대 관리",
+            )}
+            {row(
+              "서버 운영 백업",
+              "모든 사용자의 자료와 사진이 포함됩니다. 관리자 전용.",
+              () => open("backup"),
+              "백업",
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

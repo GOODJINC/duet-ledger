@@ -1,3 +1,4 @@
+import { copyText } from "./clipboard";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import { api, post, download, setCSRF, type User, type Sharing } from "./api";
 import { PasswordInput, Modal, Icon, ErrorText, Busy } from "./ui";
@@ -332,9 +333,7 @@ export function SharingDialog(p: DialogProps) {
             className="secondary-button"
             onClick={() =>
               task.run(async () => {
-                if (!navigator.clipboard)
-                  throw new Error("입력칸의 링크를 선택해 직접 복사해 주세요.");
-                await navigator.clipboard.writeText(link);
+                await copyText(link);
                 p.notify("초대 링크를 복사했어요.");
               })
             }
@@ -798,9 +797,7 @@ export function SecurityDialog(p: DialogProps) {
             className="secondary-button"
             onClick={() =>
               task.run(async () => {
-                if (!navigator.clipboard)
-                  throw new Error("코드를 선택해 직접 복사해 주세요.");
-                await navigator.clipboard.writeText(codes.join("\n"));
+                await copyText(codes.join("\n"));
                 p.notify("복구 코드를 복사했어요.");
               })
             }
