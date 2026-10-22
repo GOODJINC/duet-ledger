@@ -435,7 +435,7 @@ func (a *App) importJSON(w http.ResponseWriter, r *http.Request, u *User) error 
 				}
 			}
 			n, _ := strconv.ParseInt(leg.Amount, 10, 64)
-			if _, err = tx.Exec("INSERT INTO postings VALUES(?,?,?,?,?,?,?)", newID(), event, mapping[leg.AccountID], n, leg.Title, category, leg.Note); err != nil {
+			if _, err = tx.Exec("INSERT INTO postings(id,event_id,account_id,amount,title,category,note) VALUES(?,?,?,?,?,?,?)", newID(), event, mapping[leg.AccountID], n, leg.Title, category, leg.Note); err != nil {
 				return err
 			}
 		}

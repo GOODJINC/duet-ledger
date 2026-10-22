@@ -45,19 +45,20 @@ type Transaction struct {
 	eventID         string
 }
 type TxInput struct {
-	LedgerID   string `json:"ledger_id"`
-	Kind       string `json:"kind"`
-	Date       string `json:"date"`
-	Time       string `json:"time"`
-	Timezone   string `json:"timezone"`
-	Amount     string `json:"amount"`
-	AccountID  string `json:"account_id"`
-	ToID       string `json:"to_id"`
-	Title      string `json:"title"`
-	Category   string `json:"category"`
-	Note       string `json:"note"`
-	TargetNote string `json:"target_note"`
-	Version    int    `json:"version"`
+	allowRemoved bool
+	LedgerID     string `json:"ledger_id"`
+	Kind         string `json:"kind"`
+	Date         string `json:"date"`
+	Time         string `json:"time"`
+	Timezone     string `json:"timezone"`
+	Amount       string `json:"amount"`
+	AccountID    string `json:"account_id"`
+	ToID         string `json:"to_id"`
+	Title        string `json:"title"`
+	Category     string `json:"category"`
+	Note         string `json:"note"`
+	TargetNote   string `json:"target_note"`
+	Version      int    `json:"version"`
 }
 type CurrencyTotal struct {
 	Currency string `json:"currency"`
@@ -160,6 +161,23 @@ func (a *App) validateTx(q queryer, u *User, v *TxInput) ([]Account, int64, erro
 	}
 	if source.Role == "viewer" {
 		return nil, 0, forbidden()
+	}
+	if v.Kind != "transfer" && !v.allowRemoved {
+		var ledger string
+		if err = q.QueryRow("SELECT ledger_id FROM accounts WHERE id=?", source.ID).Scan(&ledger); err != nil {
+			return nil, 0, err
+		}
+		kind := "expense"
+		if v.Kind == "income" {
+			kind = "income"
+		}
+		var removed int
+		if err = q.QueryRow("SELECT COUNT(*) FROM removed_categories WHERE ledger_id=? AND kind=? AND code=?", ledger, kind, v.Category).Scan(&removed); err != nil {
+			return nil, 0, err
+		}
+		if removed > 0 {
+			return nil, 0, bad("삭제된 분류예요. 다른 분류를 선택해 주세요.")
+		}
 	}
 	if source.Role != "owner" && v.Kind != "transfer" {
 		known := false
@@ -270,7 +288,7 @@ func (a *App) writeEvent(tx *sql.Tx, u *User, v TxInput, id string, create bool)
 		if i == 0 {
 			firstID = pid
 		}
-		if _, err = tx.Exec("INSERT INTO postings(id,event_id,account_id,amount,title,category,note) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET amount=excluded.amount,title=excluded.title,category=excluded.category,note=excluded.note", pid, id, ac.ID, delta, v.Title, category, note); err != nil {
+		if _, err = tx.Exec("INSERT INTO postings(id,event_id,account_id,amount,title,category,note) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET amount=excluded.amount,title=excluded.title,category_label=CASE WHEN postings.category=excluded.category THEN postings.category_label ELSE '' END,category=excluded.category,note=excluded.note", pid, id, ac.ID, delta, v.Title, category, note); err != nil {
 			return "", err
 		}
 		delete(existing, ac.ID)
@@ -438,6 +456,11 @@ func (a *App) updateTransaction(w http.ResponseWriter, r *http.Request, u *User)
 			return bad("새 환불·잔액 조정 기록은 만들 수 없어요.")
 		}
 	}
+	var original int
+	if err = tx.QueryRow("SELECT COUNT(*) FROM postings p JOIN events e ON e.id=p.event_id WHERE p.event_id=? AND p.account_id=? AND p.category=? AND e.kind=?", event, v.AccountID, v.Category, v.Kind).Scan(&original); err != nil {
+		return err
+	}
+	v.allowRemoved = original > 0
 	pid, err := a.writeEvent(tx, u, v, event, false)
 	if err != nil {
 		return err
@@ -584,7 +607,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 	if params.Get("trash") == "true" {
 		deleted = "IS NOT NULL"
 	}
-	rows, err := q.Query(`SELECT e.id,e.kind,e.date,e.time,e.timezone,e.currency,e.scale,e.version,u.name,u.username,e.deleted_at IS NOT NULL,p.id,p.account_id,p.amount,p.title,p.category,p.note FROM events e JOIN postings p ON p.event_id=e.id JOIN users u ON u.id=e.creator_id WHERE p.account_id IN (`+placeholders(len(ids))+`) AND e.date>=? AND e.date<=? AND e.deleted_at `+deleted+` ORDER BY e.date DESC,e.time DESC,e.created_at DESC,e.id,p.amount,p.id LIMIT 40002`, args...)
+	rows, err := q.Query(`SELECT e.id,e.kind,e.date,e.time,e.timezone,e.currency,e.scale,e.version,u.name,u.username,e.deleted_at IS NOT NULL,p.id,p.account_id,p.amount,p.title,p.category,p.note,p.category_label FROM events e JOIN postings p ON p.event_id=e.id JOIN users u ON u.id=e.creator_id WHERE p.account_id IN (`+placeholders(len(ids))+`) AND e.date>=? AND e.date<=? AND e.deleted_at `+deleted+` ORDER BY e.date DESC,e.time DESC,e.created_at DESC,e.id,p.amount,p.id LIMIT 40002`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +619,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 		var item Transaction
 		var leg Leg
 		var amount int64
-		if err = rows.Scan(&item.eventID, &item.Kind, &item.Date, &item.Time, &item.Timezone, &item.Currency, &item.Scale, &item.Version, &item.Creator, &item.CreatorUsername, &item.Deleted, &leg.ID, &leg.AccountID, &amount, &leg.Title, &leg.Category, &leg.Note); err != nil {
+		if err = rows.Scan(&item.eventID, &item.Kind, &item.Date, &item.Time, &item.Timezone, &item.Currency, &item.Scale, &item.Version, &item.Creator, &item.CreatorUsername, &item.Deleted, &leg.ID, &leg.AccountID, &amount, &leg.Title, &leg.Category, &leg.Note, &leg.CategoryName); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -715,7 +738,9 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 		}
 		for j := range out[i].Legs {
 			leg := &out[i].Legs[j]
-			leg.CategoryName = categoryLabels[leg.AccountID+"|"+kind+"|"+leg.Category]
+			if label := categoryLabels[leg.AccountID+"|"+kind+"|"+leg.Category]; label != "" {
+				leg.CategoryName = label
+			}
 			if leg.CategoryName == "" {
 				leg.CategoryName = baseCategoryName(leg.Category)
 			}

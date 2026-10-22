@@ -7,6 +7,7 @@ export type User = {
   timezone: string;
   totp_enabled: boolean;
   csrf: string;
+  default_currency?: string;
   show_sidebar_message?: boolean;
   sharing_pending?: boolean;
 };

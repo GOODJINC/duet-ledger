@@ -3,7 +3,13 @@ import { afterEach, beforeEach, it, expect, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsView, Application } from "./main";
-import { EntryDialog, DetailDialog, type DialogProps } from "./dialogs";
+import {
+  EntryDialog,
+  DetailDialog,
+  MonthDialog,
+  LedgerDialog,
+  type DialogProps,
+} from "./dialogs";
 import { CategoriesDialog, AdminDialog } from "./preferences";
 import { api, post, type User, type Account, type Transaction } from "./api";
 vi.mock("./api", async (original) => ({
@@ -209,7 +215,129 @@ it("사용자 메뉴에서 계정 설정·설정·관리·로그아웃을 제공
   await userEvent.click(screen.getByRole("button", { name: "사용자 메뉴" }));
   expect(screen.getByRole("button", { name: "계정 설정" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "로그아웃" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "관리" })).toBeTruthy();
+});
+
+it("다른 연도와 월로 바로 이동한다", async () => {
+  const select = vi.fn();
+  const close = vi.fn();
+  render(<MonthDialog date="2026-10-31" select={select} close={close} />);
+  const actor = userEvent.setup();
+  await actor.clear(screen.getByLabelText("연도"));
+  await actor.type(screen.getByLabelText("연도"), "2025");
+  await actor.click(screen.getByRole("button", { name: "8월" }));
+  expect(select).toHaveBeenCalledWith(2025, 8);
+  expect(close).toHaveBeenCalled();
+});
+it("가계부 선택은 이동만 제공하고 관리 화면에서 순서를 저장한다", async () => {
+  const p = {
+    ...props(),
+    ledgers: [ledger, { ...ledger, id: "l2", name: "개인" }],
+  };
+  const actor = userEvent.setup();
+  const v = render(<LedgerDialog {...p} selected="" select={vi.fn()} />);
+  expect(screen.queryByRole("button", { name: "개인 위로" })).toBeNull();
+  v.unmount();
+  render(<LedgerDialog {...p} selected="" select={vi.fn()} manage />);
+  expect(screen.queryByRole("button", { name: "선택 화면" })).toBeNull();
+  await actor.click(screen.getByRole("button", { name: "개인 위로" }));
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      "/ledgers/order",
+      { ids: ["l2", "l"] },
+      "PUT",
+    ),
+  );
+});
+it("일반 설정에서 기본 통화를 저장한다", async () => {
+  const p = settings();
+  render(<SettingsView {...p} section="settings" />);
+  const actor = userEvent.setup();
+  await actor.selectOptions(screen.getByLabelText("기본 통화"), "JPY");
+  await actor.click(screen.getByRole("button", { name: "설정 저장" }));
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      "/me",
+      expect.objectContaining({ default_currency: "JPY" }),
+      "PATCH",
+    ),
+  );
+});
+it("분류 삭제는 복구 버튼 없이 삭제 API를 호출한다", async () => {
+  vi.stubGlobal(
+    "confirm",
+    vi.fn(() => true),
+  );
+  render(<CategoriesDialog {...props()} />);
+  const actor = userEvent.setup();
+  await actor.click(await screen.findByRole("button", { name: "삭제" }));
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      "/ledgers/l/categories/food?kind=expense",
+      {},
+      "DELETE",
+    ),
+  );
+  expect(screen.queryByRole("button", { name: "다시 사용" })).toBeNull();
+});
+it("기본 통화로 조회하고 날짜·보기 도구가 검색 위에 표시된다", async () => {
+  const preferred = { ...user, default_currency: "USD" };
+  vi.mocked(api).mockImplementation(async (path) => {
+    if (path === "/accounts")
+      return [
+        account,
+        { ...account, id: "usd", currency: "USD", scale: 2 },
+      ] as any;
+    if (path === "/ledgers") return [ledger] as any;
+    if (path === "/me") return preferred as any;
+    return {
+      items: [],
+      count: 0,
+      page: 1,
+      page_size: 50,
+      totals: [],
+      categories: [],
+      daily: [],
+    } as any;
+  });
+  const actor = userEvent.setup();
+  render(
+    <Application
+      user={preferred}
+      setUser={vi.fn()}
+      invite=""
+      clearInvite={vi.fn()}
+      joined={false}
+    />,
+  );
+  await waitFor(() =>
+    expect(api).toHaveBeenCalledWith(expect.stringContaining("currency=USD")),
+  );
+  expect(document.querySelector(".sidebar nav")?.textContent).not.toContain(
+    "설정",
+  );
+  expect(screen.queryByLabelText("통화 선택")).toBeNull();
+  await actor.click(screen.getAllByRole("button", { name: "가계부" })[0]);
+  const period = screen.getByRole("group", { name: "조회 기간" });
+  const search = screen.getByPlaceholderText(
+    "내용·분류·메모·작성자 이름·아이디로 검색",
+  );
   expect(
-    screen.getByRole("button", { name: "관리" }),
+    period.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
+  expect(period.closest(".period-toolbar")).toBeTruthy();
+  expect(
+    period
+      .closest(".period-toolbar")
+      ?.querySelector('[aria-label="년·월 선택"]'),
+  ).toBeTruthy();
+  await actor.click(screen.getByRole("button", { name: "년·월 선택" }));
+  await actor.clear(screen.getByLabelText("연도"));
+  await actor.type(screen.getByLabelText("연도"), "2025");
+  await actor.click(screen.getByRole("button", { name: "8월" }));
+  await waitFor(() =>
+    expect(api).toHaveBeenCalledWith(
+      expect.stringContaining("from=2025-08-01"),
+    ),
+  );
 });

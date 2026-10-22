@@ -17,9 +17,7 @@ export function CategoriesDialog(p: DialogProps) {
   async function load() {
     if (ledger)
       setList(
-        await api<Category[]>(
-          `/categories?ledger=${ledger}&kind=${kind}&include_hidden=true`,
-        ),
+        await api<Category[]>(`/categories?ledger=${ledger}&kind=${kind}`),
       );
   }
   useEffect(() => {
@@ -29,9 +27,7 @@ export function CategoriesDialog(p: DialogProps) {
       return;
     }
     setError("");
-    api<Category[]>(
-      `/categories?ledger=${ledger}&kind=${kind}&include_hidden=true`,
-    )
+    api<Category[]>(`/categories?ledger=${ledger}&kind=${kind}`)
       .then((v) => {
         if (active) setList(v);
       })
@@ -61,6 +57,29 @@ export function CategoriesDialog(p: DialogProps) {
       setBusy(false);
     }
   }
+  async function remove(c: Category) {
+    if (
+      !confirm(
+        `'${c.name}' 분류를 완전히 삭제할까요? 복구할 수 없으며, 과거 거래의 분류명과 금액은 유지됩니다.`,
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      await post(
+        `/ledgers/${ledger}/categories/${encodeURIComponent(c.code)}?kind=${kind}`,
+        {},
+        "DELETE",
+      );
+      await load();
+      p.notify("분류를 삭제했어요.");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function move(index: number, delta: number) {
     const next = [...list];
     [next[index], next[index + delta]] = [next[index + delta], next[index]];
@@ -83,7 +102,7 @@ export function CategoriesDialog(p: DialogProps) {
   return (
     <Modal
       title="가계부 분류 관리"
-      subtitle="책임자가 수입·지출 분류를 관리합니다. 삭제해도 기존 기록은 남아요."
+      subtitle="삭제한 분류는 복구할 수 없어요. 과거 거래의 분류명과 금액은 유지됩니다."
       onClose={p.close}
     >
       <label className="form-label" htmlFor="category-ledger">
@@ -121,6 +140,7 @@ export function CategoriesDialog(p: DialogProps) {
           category={c}
           disabled={busy}
           save={save}
+          remove={() => remove(c)}
           up={() => move(index, -1)}
           down={() => move(index, 1)}
           first={index === 0}
@@ -159,6 +179,7 @@ function CategoryRow({
   category: c,
   disabled,
   save,
+  remove,
   up,
   down,
   first,
@@ -167,6 +188,7 @@ function CategoryRow({
   category: Category;
   disabled: boolean;
   save: (c: Category) => void;
+  remove: () => void;
   up: () => void;
   down: () => void;
   first: boolean;
@@ -207,12 +229,8 @@ function CategoryRow({
       >
         수정
       </button>
-      <button
-        className="text-link"
-        disabled={disabled}
-        onClick={() => save({ ...c, hidden: !c.hidden })}
-      >
-        {c.hidden ? "다시 사용" : "삭제"}
+      <button className="text-link" disabled={disabled} onClick={remove}>
+        삭제
       </button>
     </div>
   );

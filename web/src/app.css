@@ -1384,4 +1384,97 @@ body[data-theme="dark"] .primary-button {
 body[data-theme="dark"] .primary-button:hover {
   background: var(--green-dark);
 }
-.entry-trash { margin-top:16px; }
+.entry-trash {
+  margin-top: 16px;
+}
+/* Period controls precede search; month navigation and views share one row. */
+.live-app .view-toolbar {
+  flex-direction: column;
+  align-items: stretch;
+}
+.view-toolbar .scope-tabs {
+  align-self: flex-start;
+}
+.period-toolbar {
+  width: 100%;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.period-toolbar .ledger-view-controls {
+  margin: 0 0 0 auto;
+}
+.month-nav button.month-label {
+  width: auto;
+  height: 36px;
+  padding: 0 9px;
+  display: flex;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.year-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0 20px;
+}
+.year-picker .field-input {
+  width: 115px;
+  text-align: center;
+}
+.year-picker .icon-button {
+  flex-shrink: 0;
+}
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.month-grid .secondary-button {
+  justify-content: center;
+}
+.month-grid [aria-pressed="true"] {
+  background: var(--mint);
+  border-color: var(--green);
+  color: var(--green);
+}
+.ledger-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.currency-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.currency-context > div {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.currency-context [aria-pressed="true"] {
+  background: var(--mint);
+  border-color: var(--green);
+  color: var(--green);
+}
+@media (max-width: 600px) {
+  .period-toolbar {
+    gap: 12px;
+  }
+  .period-toolbar .ledger-view-controls {
+    margin-left: 0;
+  }
+  .ledger-row-actions {
+    flex-wrap: wrap;
+  }
+}

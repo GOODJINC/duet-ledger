@@ -674,7 +674,7 @@ export function LedgerDialog(
       title={manage ? "가계부 관리" : "가계부 선택"}
       subtitle={
         manage
-          ? "이름·시간대 수정과 복구 가능한 삭제"
+          ? "표시 순서 조정 · 책임자는 가계부 수정과 삭제도 가능해요."
           : "이동할 가계부를 선택하세요."
       }
       onClose={p.close}
@@ -696,7 +696,7 @@ export function LedgerDialog(
               </div>
               {!p.selected && <Icon name="check" />}
             </button>
-            {p.ledgers.map((l, index) => (
+            {p.ledgers.map((l) => (
               <div className="ledger-sort-row" key={l.id}>
                 <button
                   className="profile-choice"
@@ -715,33 +715,6 @@ export function LedgerDialog(
                   </div>
                   {p.selected === l.id && <Icon name="check" />}
                 </button>
-                <div className="order-buttons">
-                  {[-1, 1].map((delta) => (
-                    <button
-                      key={delta}
-                      className="icon-button"
-                      disabled={
-                        task.busy ||
-                        index + delta < 0 ||
-                        index + delta >= p.ledgers.length
-                      }
-                      aria-label={`${l.name} ${delta < 0 ? "위로" : "아래로"}`}
-                      onClick={() =>
-                        task.run(async () => {
-                          const ids = p.ledgers.map((l) => l.id);
-                          [ids[index], ids[index + delta]] = [
-                            ids[index + delta],
-                            ids[index],
-                          ];
-                          await post("/ledgers/order", { ids }, "PUT");
-                          await p.refresh();
-                        })
-                      }
-                    >
-                      {delta < 0 ? "↑" : "↓"}
-                    </button>
-                  ))}
-                </div>
               </div>
             ))}
           </div>
@@ -769,11 +742,8 @@ export function LedgerDialog(
             >
               가계부 휴지통
             </button>
-            <button className="text-link" onClick={() => setManage(false)}>
-              선택 화면
-            </button>
           </div>
-          {owned.map((l) => (
+          {p.ledgers.map((l, index) => (
             <div className="setting-row" key={l.id}>
               <div>
                 <strong>{l.name}</strong>
@@ -781,9 +751,40 @@ export function LedgerDialog(
                   {l.kind === "personal" ? "개인" : "공유"} · {l.timezone}
                 </p>
               </div>
-              <button className="secondary-button" onClick={() => edit(l)}>
-                수정·삭제
-              </button>
+              <div className="ledger-row-actions">
+                <div className="order-buttons">
+                  {[-1, 1].map((delta) => (
+                    <button
+                      key={delta}
+                      className="icon-button"
+                      disabled={
+                        task.busy ||
+                        index + delta < 0 ||
+                        index + delta >= p.ledgers.length
+                      }
+                      aria-label={`${l.name} ${delta < 0 ? "위로" : "아래로"}`}
+                      onClick={() =>
+                        task.run(async () => {
+                          const ids = p.ledgers.map((l) => l.id);
+                          [ids[index], ids[index + delta]] = [
+                            ids[index + delta],
+                            ids[index],
+                          ];
+                          await post("/ledgers/order", { ids }, "PUT");
+                          await p.refresh();
+                        })
+                      }
+                    >
+                      {delta < 0 ? "↑" : "↓"}
+                    </button>
+                  ))}
+                </div>
+                {l.role === "owner" && (
+                  <button className="secondary-button" onClick={() => edit(l)}>
+                    수정·삭제
+                  </button>
+                )}
+              </div>
             </div>
           ))}
           {(creating || editing) && (
@@ -941,7 +942,9 @@ export function AccountDialog(
       : p.ledgers.find((l) => l.role === "owner")?.id) || "",
   );
   const [kind, setKind] = useState(ac?.kind || "bank");
-  const [currency, setCurrency] = useState(ac?.currency || "KRW");
+  const [currency, setCurrency] = useState(
+    ac?.currency || p.user.default_currency || "KRW",
+  );
   const [opening, setOpening] = useState("0");
   const [archived, setArchived] = useState(ac?.archived || false);
   const task = useTask();
@@ -1311,6 +1314,76 @@ export function DetailDialog(
           계좌의 편집 권한이 필요합니다.
         </div>
       )}
+    </Modal>
+  );
+}
+
+export function MonthDialog({
+  date,
+  select,
+  close,
+}: {
+  date: string;
+  select: (year: number, month: number) => void;
+  close: () => void;
+}) {
+  const [year, setYear] = useState(date.slice(0, 4));
+  const valid =
+    /^\d{4}$/.test(year) && Number(year) >= 1900 && Number(year) <= 2100;
+  return (
+    <Modal
+      title="년·월 선택"
+      subtitle="연도를 입력하고 원하는 월을 선택하세요."
+      onClose={close}
+    >
+      <div className="year-picker">
+        <button
+          className="icon-button"
+          aria-label="이전 연도"
+          disabled={!valid || Number(year) <= 1900}
+          onClick={() => setYear(String(Number(year) - 1))}
+        >
+          <Icon name="left" />
+        </button>
+        <label htmlFor="picker-year">연도</label>
+        <input
+          id="picker-year"
+          className="field-input"
+          type="number"
+          min={1900}
+          max={2100}
+          step={1}
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+        />
+        <button
+          className="icon-button"
+          aria-label="다음 연도"
+          disabled={!valid || Number(year) >= 2100}
+          onClick={() => setYear(String(Number(year) + 1))}
+        >
+          <Icon name="right" />
+        </button>
+      </div>
+      <div className="month-grid">
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+          <button
+            key={month}
+            className="secondary-button"
+            disabled={!valid}
+            aria-pressed={
+              Number(year) === Number(date.slice(0, 4)) &&
+              month === Number(date.slice(5, 7))
+            }
+            onClick={() => {
+              select(Number(year), month);
+              close();
+            }}
+          >
+            {month}월
+          </button>
+        ))}
+      </div>
     </Modal>
   );
 }

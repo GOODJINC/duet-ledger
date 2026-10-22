@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.3"
+const Version = "0.1.0-alpha.4"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -45,16 +45,17 @@ type queryer interface {
 	QueryRow(string, ...any) *sql.Row
 }
 type User struct {
-	ID             string `json:"id"`
-	Username       string `json:"username"`
-	Name           string `json:"name"`
-	Admin          bool   `json:"admin"`
-	Locale         string `json:"locale"`
-	Timezone       string `json:"timezone"`
-	TOTP           bool   `json:"totp_enabled"`
-	CSRF           string `json:"csrf,omitempty"`
-	ShowSidebar    bool   `json:"show_sidebar_message"`
-	SharingPending bool   `json:"sharing_pending,omitempty"`
+	ID              string `json:"id"`
+	Username        string `json:"username"`
+	Name            string `json:"name"`
+	Admin           bool   `json:"admin"`
+	Locale          string `json:"locale"`
+	Timezone        string `json:"timezone"`
+	TOTP            bool   `json:"totp_enabled"`
+	CSRF            string `json:"csrf,omitempty"`
+	DefaultCurrency string `json:"default_currency"`
+	ShowSidebar     bool   `json:"show_sidebar_message"`
+	SharingPending  bool   `json:"sharing_pending,omitempty"`
 }
 type apiError struct {
 	Status        int
@@ -234,6 +235,7 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/ledgers/{id}/restore", a.restoreLedger, true)
 	add("GET /api/categories", a.listCategories, true)
 	add("POST /api/ledgers/{id}/categories", a.saveCategory, true)
+	add("DELETE /api/ledgers/{id}/categories/{code}", a.deleteCategory, true)
 	add("GET /api/admin/settings", a.adminSettings, true)
 	add("PATCH /api/admin/settings", a.updateAdminSettings, true)
 	add("GET /api/admin/invitations", a.listAccountInvitations, true)

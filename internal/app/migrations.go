@@ -8,11 +8,50 @@ func (a *App) migrate() error {
 	if err := a.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 3 {
+	if version > 4 {
 		return fmt.Errorf("unsupported database version: %d", version)
 	}
-	if version == 3 {
+	if version == 4 {
 		return nil
+	}
+	if version == 3 {
+		tx, err := a.DB.Begin()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if _, err = tx.Exec(`ALTER TABLE users ADD COLUMN default_currency TEXT NOT NULL DEFAULT 'KRW';
+ ALTER TABLE postings ADD COLUMN category_label TEXT NOT NULL DEFAULT '';
+ CREATE TABLE removed_categories(ledger_id TEXT NOT NULL REFERENCES ledgers(id),kind TEXT NOT NULL,code TEXT NOT NULL,PRIMARY KEY(ledger_id,kind,code));`); err != nil {
+			return err
+		}
+		rows, err := tx.Query("SELECT ledger_id,kind,code FROM categories WHERE hidden=1")
+		if err != nil {
+			return err
+		}
+		var old [][3]string
+		for rows.Next() {
+			var v [3]string
+			if err = rows.Scan(&v[0], &v[1], &v[2]); err != nil {
+				rows.Close()
+				return err
+			}
+			old = append(old, v)
+		}
+		if err = rows.Err(); err != nil {
+			rows.Close()
+			return err
+		}
+		rows.Close()
+		for _, v := range old {
+			if err = a.removeCategory(tx, v[0], v[1], v[2]); err != nil {
+				return err
+			}
+		}
+		if _, err = tx.Exec("INSERT INTO schema_version VALUES(4)"); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if version == 2 {
 		tx, err := a.DB.Begin()
@@ -27,7 +66,10 @@ CREATE TABLE category_order(ledger_id TEXT NOT NULL REFERENCES ledgers(id),kind 
 INSERT INTO schema_version VALUES(3);`); err != nil {
 			return err
 		}
-		return tx.Commit()
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return a.migrate()
 	}
 	tx, err := a.DB.Begin()
 	if err != nil {

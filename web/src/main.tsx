@@ -16,6 +16,7 @@ import {
   formatMoney,
   today,
   dateRange,
+  currencyScales,
   categories,
   categoryName,
   kindNames,
@@ -39,6 +40,7 @@ import {
 import {
   EntryDialog,
   LedgerDialog,
+  MonthDialog,
   AccountDialog,
   DetailDialog,
   type DialogProps,
@@ -112,13 +114,6 @@ const navigation: {
     short: "계좌",
     en: "Accounts",
     icon: "wallet",
-  },
-  {
-    id: "settings",
-    label: "설정",
-    short: "설정",
-    en: "Settings",
-    icon: "settings",
   },
 ];
 const emptyReport: Report = {
@@ -522,7 +517,7 @@ export function Application({
   const [report, setReport] = useState<Report>(emptyReport);
   const [scope, setScope] = useState("all");
   const [ledger, setLedger] = useState("");
-  const [currency, setCurrency] = useState("KRW");
+  const [currency, setCurrency] = useState(user.default_currency || "KRW");
   const [date, setDate] = useState(today(user.timezone));
   const [period, setPeriod] = useState("month");
   const [search, setSearch] = useState("");
@@ -533,6 +528,7 @@ export function Application({
   const [view, setView] = useState("list");
   const [day, setDay] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
+  const [monthPicker, setMonthPicker] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
@@ -676,15 +672,10 @@ export function Application({
     };
   }, []);
   useEffect(() => {
-    const contextual = accounts.filter(
-      (a) =>
-        (!ledger || a.ledger_id === ledger) &&
-        (!!ledger || scope === "all" || a.shared === (scope === "shared")),
-    );
-    const currencies = [...new Set(contextual.map((a) => a.currency))];
-    if (currencies.length && !currencies.includes(currency))
-      setCurrency(currencies[0]);
-  }, [accounts, ledger, scope]);
+    setCurrency(user.default_currency || "KRW");
+    setAccountFilter("");
+    setPageNumber(1);
+  }, [user.default_currency]);
   function navigate(p: Page) {
     if (p === "administration" && !user.admin) return;
     setUserMenu(false);
@@ -700,7 +691,7 @@ export function Application({
       (!ledger || a.ledger_id === ledger),
   );
   const moneyAccounts = visibleAccounts.filter((a) => a.currency === currency);
-  const scale = accounts.find((a) => a.currency === currency)?.scale || 0;
+  const scale = currencyScales[currency] || 0;
   const selectedLedger = ledgers.find((l) => l.id === ledger);
   const totals = report.totals.find((t) => t.currency === currency);
   const balance = moneyAccounts.reduce((s, a) => s + BigInt(a.balance), 0n);
@@ -732,6 +723,7 @@ export function Application({
   function moveMonth(delta: number) {
     const [y, m, d] = date.split("-").map(Number);
     const next = new Date(y, m - 1 + delta, 1);
+    if (next.getFullYear() < 1900 || next.getFullYear() > 2100) return;
     const day = Math.min(
       d,
       new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate(),
@@ -1080,9 +1072,13 @@ export function Application({
                     ? "계정 설정"
                     : page === "administration"
                       ? "관리"
-                      : navigation.find((n) => n.id === page)?.[
-                          en ? "en" : "label"
-                        ]}
+                      : page === "settings"
+                        ? en
+                          ? "Settings"
+                          : "설정"
+                        : navigation.find((n) => n.id === page)?.[
+                            en ? "en" : "label"
+                          ]}
                 </strong>
               </span>
             </div>
@@ -1218,25 +1214,7 @@ export function Application({
                     ))}
                   </div>
                 )}
-                <div className="date-currency-toolbar">
-                  <select
-                    className="currency-select"
-                    value={currency}
-                    aria-label="통화 선택"
-                    onChange={(e) => {
-                      setCurrency(e.target.value);
-                      setPageNumber(1);
-                    }}
-                  >
-                    {[
-                      ...new Set([
-                        currency,
-                        ...visibleAccounts.map((a) => a.currency),
-                      ]),
-                    ].map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
+                <div className="date-currency-toolbar period-toolbar">
                   {page !== "accounts" && (
                     <div className="month-nav">
                       <button
@@ -1245,19 +1223,108 @@ export function Application({
                       >
                         <Icon name="left" />
                       </button>
-                      <span className="month-label">
+                      <button
+                        className="month-label"
+                        onClick={() => setMonthPicker(true)}
+                        aria-label="년·월 선택"
+                      >
                         <Icon name="calendar" />
                         {Number(date.slice(0, 4))}년 {Number(date.slice(5, 7))}
                         월
-                      </span>
+                      </button>
                       <button onClick={() => moveMonth(1)} aria-label="다음 달">
                         <Icon name="right" />
                       </button>
                     </div>
                   )}
+                  {page === "ledger" && (
+                    <>
+                      <div className="ledger-view-controls">
+                        <div className="filter-buttons">
+                          <div
+                            className="segment-control"
+                            role="group"
+                            aria-label="조회 기간"
+                          >
+                            {[
+                              ["day", "일"],
+                              ["week", "주"],
+                              ["month", "월"],
+                              ["year", "연"],
+                            ].map(([v, l]) => (
+                              <button
+                                key={v}
+                                aria-pressed={period === v}
+                                onClick={() => {
+                                  setPeriod(v);
+                                  setPageNumber(1);
+                                  setDay("");
+                                  if (v !== "month") setView("list");
+                                }}
+                              >
+                                {l}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="segment-control">
+                            <button
+                              aria-label="목록 보기"
+                              aria-pressed={view === "list"}
+                              onClick={() => setView("list")}
+                            >
+                              <Icon name="list" />
+                            </button>
+                            <button
+                              aria-label="달력 보기"
+                              aria-pressed={view === "calendar"}
+                              onClick={() => {
+                                setView("calendar");
+                                setPeriod("month");
+                                setPageNumber(1);
+                              }}
+                            >
+                              <Icon name="calendar" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
+            {!isSettings &&
+              [...new Set(visibleAccounts.map((a) => a.currency))].some(
+                (c) => c !== (user.default_currency || "KRW"),
+              ) && (
+                <div className="currency-context">
+                  <span>
+                    {currency} 기준으로 합계를 표시해요. 다른 통화는 별도로 볼
+                    수 있어요.
+                  </span>
+                  <div>
+                    {[
+                      ...new Set([
+                        user.default_currency || "KRW",
+                        ...visibleAccounts.map((a) => a.currency),
+                      ]),
+                    ].map((code) => (
+                      <button
+                        key={code}
+                        className="secondary-button"
+                        aria-pressed={currency === code}
+                        onClick={() => {
+                          setCurrency(code);
+                          setAccountFilter("");
+                          setPageNumber(1);
+                        }}
+                      >
+                        {code}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             {page === "home" && (
               <>
                 {!accounts.length && (
@@ -1384,55 +1451,6 @@ export function Application({
                         }
                       }}
                     />
-                  </div>
-                </div>
-                <div className="ledger-view-controls">
-                  <div className="filter-buttons">
-                    <div
-                      className="segment-control"
-                      role="group"
-                      aria-label="조회 기간"
-                    >
-                      {[
-                        ["day", "일"],
-                        ["week", "주"],
-                        ["month", "월"],
-                        ["year", "연"],
-                      ].map(([v, l]) => (
-                        <button
-                          key={v}
-                          aria-pressed={period === v}
-                          onClick={() => {
-                            setPeriod(v);
-                            setPageNumber(1);
-                            setDay("");
-                            if (v !== "month") setView("list");
-                          }}
-                        >
-                          {l}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="segment-control">
-                      <button
-                        aria-label="목록 보기"
-                        aria-pressed={view === "list"}
-                        onClick={() => setView("list")}
-                      >
-                        <Icon name="list" />
-                      </button>
-                      <button
-                        aria-label="달력 보기"
-                        aria-pressed={view === "calendar"}
-                        onClick={() => {
-                          setView("calendar");
-                          setPeriod("month");
-                          setPageNumber(1);
-                        }}
-                      >
-                        <Icon name="calendar" />
-                      </button>
-                    </div>
                   </div>
                 </div>
                 <div className="scope-explanation ledger-summary">
@@ -1664,7 +1682,7 @@ export function Application({
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.3
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.4
             </span>
           </footer>
         </div>
@@ -1694,6 +1712,23 @@ export function Application({
       >
         <Icon name="plus" />
       </button>
+      {monthPicker && (
+        <MonthDialog
+          date={date}
+          close={() => setMonthPicker(false)}
+          select={(year, month) => {
+            const day = Math.min(
+              Number(date.slice(8, 10)),
+              new Date(year, month, 0).getDate(),
+            );
+            setDate(
+              `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+            );
+            setPageNumber(1);
+            setDay("");
+          }}
+        />
+      )}
       {modal?.kind === "entry" && (
         <EntryDialog
           {...dialogProps}
@@ -2201,6 +2236,9 @@ export function SettingsView({
   const [name, setName] = useState(user.name);
   const [locale, setLocale] = useState(user.locale);
   const [timezone, setTimezone] = useState(user.timezone);
+  const [defaultCurrency, setDefaultCurrency] = useState(
+    user.default_currency || "KRW",
+  );
   const [showSidebar, setShowSidebar] = useState(
     user.show_sidebar_message !== false,
   );
@@ -2210,6 +2248,7 @@ export function SettingsView({
     setName(user.name);
     setLocale(user.locale);
     setTimezone(user.timezone);
+    setDefaultCurrency(user.default_currency || "KRW");
     setShowSidebar(user.show_sidebar_message !== false);
     setError("");
   }, [
@@ -2217,6 +2256,7 @@ export function SettingsView({
     user.name,
     user.locale,
     user.timezone,
+    user.default_currency,
     user.show_sidebar_message,
   ]);
   async function save(e: FormEvent) {
@@ -2226,7 +2266,13 @@ export function SettingsView({
     try {
       await post(
         "/me",
-        { name, locale, timezone, show_sidebar_message: showSidebar },
+        {
+          name,
+          locale,
+          timezone,
+          default_currency: defaultCurrency,
+          show_sidebar_message: showSidebar,
+        },
         "PATCH",
       );
       await refresh();
@@ -2403,6 +2449,38 @@ export function SettingsView({
                     </select>
                   </div>
                 </div>
+                <label className="form-label" htmlFor="default-currency">
+                  기본 통화
+                </label>
+                <select
+                  id="default-currency"
+                  className="field-select"
+                  value={defaultCurrency}
+                  onChange={(e) => setDefaultCurrency(e.target.value)}
+                >
+                  {Object.keys(currencyScales).map((code) => (
+                    <option key={code} value={code}>
+                      {
+                        {
+                          KRW: "대한민국 원",
+                          USD: "미국 달러",
+                          JPY: "일본 엔",
+                          EUR: "유로",
+                          GBP: "영국 파운드",
+                          CNY: "중국 위안",
+                          TWD: "대만 달러",
+                          VND: "베트남 동",
+                          KWD: "쿠웨이트 디나르",
+                        }[code]
+                      }{" "}
+                      ({code})
+                    </option>
+                  ))}
+                </select>
+                <p className="entry-hint">
+                  조회와 새 계좌의 기본값이에요. 기존 계좌의 통화·금액은 바뀌지
+                  않으며 환율 변환은 하지 않아요.
+                </p>
                 <label className="setting-row">
                   <span>왼쪽 소개 문구 표시</span>
                   <input
@@ -2424,16 +2502,13 @@ export function SettingsView({
           <section className="panel">
             <div className="setting-group">
               <h2>가계부와 공유</h2>
-              {row(
-                "가계부 관리",
-                "만들기·소개 문구·수정·삭제. 목록 순서는 가계부 선택 화면에서 바꿔요.",
-                () => open("ledger-manage"),
+              {row("가계부 관리", "표시 순서·만들기·소개 문구·수정·삭제", () =>
+                open("ledger-manage"),
               )}
               {row(
                 "가계부 분류 관리",
                 "수입·지출 분류 추가·수정·순서 변경",
                 () => open("categories"),
-                "분류 관리",
               )}
               {row("공유 관리", "초대·승인·역할 변경·공유 해제", () =>
                 open("sharing"),

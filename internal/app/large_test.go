@@ -23,7 +23,7 @@ func TestLargeDatasetPagination(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer events.Close()
-	postings, err := tx.Prepare("INSERT INTO postings VALUES(?,?,?,-100,'예시 지출','food','')")
+	postings, err := tx.Prepare("INSERT INTO postings(id,event_id,account_id,amount,title,category,note) VALUES(?,?,?,-100,'예시 지출','food','')")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -84,7 +84,7 @@ export function LifecycleDialog(p: DialogProps) {
         {p.user.totp_enabled && (
           <>
             <label className="form-label" htmlFor="owner-code">
-              새 인증 코드 또는 복구 코드
+              인증 코드 또는 복구 코드
             </label>
             <input
               id="owner-code"
@@ -838,7 +838,7 @@ export function SecurityDialog(p: DialogProps) {
           {p.user.totp_enabled && (
             <>
               <label className="form-label" htmlFor="password-otp">
-                새 인증 코드 또는 복구 코드
+                인증 코드 또는 복구 코드
               </label>
               <input
                 id="password-otp"
@@ -879,7 +879,7 @@ export function SecurityDialog(p: DialogProps) {
               {p.user.totp_enabled && (
                 <>
                   <label className="form-label" htmlFor="totp-disable-code">
-                    새 인증 코드 또는 복구 코드
+                    인증 코드 또는 복구 코드
                   </label>
                   <input
                     id="totp-disable-code"

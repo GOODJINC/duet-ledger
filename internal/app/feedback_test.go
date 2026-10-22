@@ -94,8 +94,7 @@ func TestScopedEntryClockAndCategorySearch(t *testing.T) {
 	if c.report("&search="+url.QueryEscape("자녀 교육비")).Count != 1 {
 		t.Fatal("renamed category search failed")
 	}
-	custom.Hidden = true
-	c.send("POST", "/ledgers/"+family+"/categories", custom, 200, nil)
+	c.send("DELETE", "/ledgers/"+family+"/categories/"+custom.Code+"?kind=expense", map[string]any{}, 200, nil)
 	var categories []Category
 	c.send("GET", "/categories?account="+shared+"&kind=expense", nil, 200, &categories)
 	for _, v := range categories {

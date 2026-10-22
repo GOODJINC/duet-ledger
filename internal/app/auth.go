@@ -148,7 +148,7 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, u *User) error {
 func (a *App) user(id string) (*User, error) {
 	u := &User{}
 	var secret string
-	err := a.DB.QueryRow("SELECT id,username,name,admin,locale,timezone,totp,show_sidebar_message FROM users WHERE id=?", id).Scan(&u.ID, &u.Username, &u.Name, &u.Admin, &u.Locale, &u.Timezone, &secret, &u.ShowSidebar)
+	err := a.DB.QueryRow("SELECT id,username,name,admin,locale,timezone,totp,show_sidebar_message,default_currency FROM users WHERE id=?", id).Scan(&u.ID, &u.Username, &u.Name, &u.Admin, &u.Locale, &u.Timezone, &secret, &u.ShowSidebar, &u.DefaultCurrency)
 	u.TOTP = secret != ""
 	return u, err
 }
@@ -220,10 +220,11 @@ func (a *App) logoutAll(w http.ResponseWriter, r *http.Request, u *User) error {
 }
 func (a *App) updateMe(w http.ResponseWriter, r *http.Request, u *User) error {
 	var v struct {
-		Name        string `json:"name"`
-		Locale      string `json:"locale"`
-		Timezone    string `json:"timezone"`
-		ShowSidebar *bool  `json:"show_sidebar_message"`
+		Name            string  `json:"name"`
+		Locale          string  `json:"locale"`
+		Timezone        string  `json:"timezone"`
+		ShowSidebar     *bool   `json:"show_sidebar_message"`
+		DefaultCurrency *string `json:"default_currency"`
 	}
 	if err := decode(r, &v); err != nil {
 		return err
@@ -238,11 +239,18 @@ func (a *App) updateMe(w http.ResponseWriter, r *http.Request, u *User) error {
 	if _, err := time.LoadLocation(v.Timezone); err != nil {
 		return bad("올바른 시간대를 선택해 주세요.")
 	}
+	currency := u.DefaultCurrency
+	if v.DefaultCurrency != nil {
+		currency = *v.DefaultCurrency
+		if _, ok := currencyScales[currency]; !ok {
+			return bad("지원하는 기본 통화를 선택해 주세요.")
+		}
+	}
 	showSidebar := u.ShowSidebar
 	if v.ShowSidebar != nil {
 		showSidebar = *v.ShowSidebar
 	}
-	if _, err := a.DB.Exec("UPDATE users SET name=?,locale=?,timezone=?,show_sidebar_message=? WHERE id=?", v.Name, v.Locale, v.Timezone, showSidebar, u.ID); err != nil {
+	if _, err := a.DB.Exec("UPDATE users SET name=?,locale=?,timezone=?,show_sidebar_message=?,default_currency=? WHERE id=?", v.Name, v.Locale, v.Timezone, showSidebar, currency, u.ID); err != nil {
 		return err
 	}
 	updated, err := a.user(u.ID)
@@ -267,7 +275,7 @@ func (a *App) reauth(u *User, password, code string) error {
 			return err
 		}
 		if !ok {
-			return &apiError{401, "totp_invalid", "새 인증 코드 또는 복구 코드를 입력해 주세요."}
+			return &apiError{401, "totp_invalid", "인증 코드 또는 복구 코드를 입력해 주세요."}
 		}
 	}
 	return nil

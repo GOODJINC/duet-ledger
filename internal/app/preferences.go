@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"net/http"
 	"sort"
 	"strings"
@@ -107,7 +108,30 @@ func (a *App) categoryList(q queryer, ledger, kind string) ([]Category, error) {
 		}
 		return pi < pj
 	})
-	return out, nil
+	ordered.Close()
+	removed, err := q.Query("SELECT code FROM removed_categories WHERE ledger_id=? AND kind=?", ledger, kind)
+	if err != nil {
+		return nil, err
+	}
+	defer removed.Close()
+	deleted := map[string]bool{}
+	for removed.Next() {
+		var code string
+		if err = removed.Scan(&code); err != nil {
+			return nil, err
+		}
+		deleted[code] = true
+	}
+	if err = removed.Err(); err != nil {
+		return nil, err
+	}
+	filtered := []Category{}
+	for _, c := range out {
+		if !deleted[c.Code] {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered, nil
 }
 func (a *App) listCategories(w http.ResponseWriter, r *http.Request, u *User) error {
 	kind := r.URL.Query().Get("kind")
@@ -180,8 +204,18 @@ func (a *App) saveCategory(w http.ResponseWriter, r *http.Request, u *User) erro
 	if (c.Kind != "income" && c.Kind != "expense") || !validName(c.Name, 60) || len(c.Code) > 80 {
 		return bad("분류 이름과 종류를 확인해 주세요.")
 	}
+	if c.Hidden {
+		return bad("분류 삭제 기능을 사용해 주세요.")
+	}
 	if c.Code == "" {
 		c.Code = "c_" + newID()
+	}
+	var removed int
+	if err = a.DB.QueryRow("SELECT COUNT(*) FROM removed_categories WHERE ledger_id=? AND kind=? AND code=?", ledger, c.Kind, c.Code).Scan(&removed); err != nil {
+		return err
+	}
+	if removed > 0 {
+		return bad("삭제한 분류는 복구할 수 없어요. 새 분류로 추가해 주세요.")
 	}
 	var n int
 	if err = a.DB.QueryRow("SELECT COUNT(*) FROM categories WHERE ledger_id=?", ledger).Scan(&n); err != nil {
@@ -291,6 +325,64 @@ func (a *App) cancelAccountInvitation(w http.ResponseWriter, r *http.Request, u 
 		return forbidden()
 	}
 	if _, err := a.DB.Exec("UPDATE account_invitations SET cancelled=1 WHERE id=? AND claimant_id IS NULL", r.PathValue("id")); err != nil {
+		return err
+	}
+	writeJSON(w, 200, map[string]bool{"ok": true})
+	return nil
+}
+
+// Preserve historical display labels on postings, then erase the editable category.
+func (a *App) removeCategory(tx *sql.Tx, ledger, kind, code string) error {
+	list, err := a.categoryList(tx, ledger, kind)
+	if err != nil {
+		return err
+	}
+	name := ""
+	for _, c := range list {
+		if c.Code == code {
+			name = c.Name
+			break
+		}
+	}
+	if name == "" {
+		return missing()
+	}
+	if _, err = tx.Exec("UPDATE postings SET category_label=? WHERE category=? AND account_id IN(SELECT id FROM accounts WHERE ledger_id=?) AND event_id IN(SELECT id FROM events WHERE (CASE WHEN kind='income' THEN 'income' ELSE 'expense' END)=? AND kind!='transfer')", name, code, ledger, kind); err != nil {
+		return err
+	}
+	if _, err = tx.Exec("DELETE FROM categories WHERE ledger_id=? AND kind=? AND code=?", ledger, kind, code); err != nil {
+		return err
+	}
+	if _, err = tx.Exec("DELETE FROM category_order WHERE ledger_id=? AND kind=? AND code=?", ledger, kind, code); err != nil {
+		return err
+	}
+	_, err = tx.Exec("INSERT INTO removed_categories(ledger_id,kind,code) VALUES(?,?,?)", ledger, kind, code)
+	return err
+}
+func (a *App) deleteCategory(w http.ResponseWriter, r *http.Request, u *User) error {
+	ledger, kind, code := r.PathValue("id"), r.URL.Query().Get("kind"), r.PathValue("code")
+	role, err := a.ledgerRole(a.DB, u, ledger)
+	if err != nil {
+		return err
+	}
+	if role != "owner" {
+		return forbidden()
+	}
+	if kind != "expense" && kind != "income" {
+		return bad("분류 종류를 확인해 주세요.")
+	}
+	tx, err := a.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = a.removeCategory(tx, ledger, kind, code); err != nil {
+		return err
+	}
+	if err = audit(tx, u, "category_deleted", "ledger", ledger); err != nil {
+		return err
+	}
+	if err = tx.Commit(); err != nil {
 		return err
 	}
 	writeJSON(w, 200, map[string]bool{"ok": true})
