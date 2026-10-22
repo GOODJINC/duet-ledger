@@ -1,0 +1,10 @@
+.git
+.env
+data
+bin
+web/node_modules
+internal/webassets/dist
+design-preview
+docs
+*.sqlite*
+*.test
