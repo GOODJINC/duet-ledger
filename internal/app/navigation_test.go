@@ -1,8 +1,10 @@
 package app
 
 import (
+	"io"
 	"net/http/httptest"
 	"testing"
+	"testing/fstest"
 )
 
 func TestDefaultCurrencyPersistsAndDoesNotConvertAccounts(t *testing.T) {
@@ -132,5 +134,29 @@ func TestVersionThreeHiddenCategoriesUpgradeWithoutLosingHistory(t *testing.T) {
 	}
 	if client.report("").Items[0].Legs[0].CategoryName != "이전 식비" || client.balance(account) != "900" || client.user.DefaultCurrency != "KRW" {
 		t.Fatal("upgrade changed history, balance or default")
+	}
+}
+
+func TestBundledManualIndexSurvivesDirectoryRedirect(t *testing.T) {
+	a, err := New(Config{DataDir: t.TempDir(), Assets: fstest.MapFS{
+		"index.html":           {Data: []byte("application shell")},
+		"manual/en/index.html": {Data: []byte("English manual")},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	server := httptest.NewServer(a.Routes())
+	defer server.Close()
+	for _, path := range []string{"/manual/en/index.html", "/manual/en/"} {
+		response, err := server.Client().Get(server.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := io.ReadAll(response.Body)
+		response.Body.Close()
+		if err != nil || response.StatusCode != 200 || string(data) != "English manual" {
+			t.Fatalf("%s: %d %q %v", path, response.StatusCode, data, err)
+		}
 	}
 }

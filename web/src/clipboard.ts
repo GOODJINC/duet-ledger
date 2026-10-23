@@ -1,3 +1,4 @@
+import { msg } from "./i18n";
 // HTTP access over a private network may not expose navigator.clipboard.
 export async function copyText(text: string) {
   try {
@@ -32,6 +33,8 @@ export async function copyText(text: string) {
   }
   if (!copied)
     throw new Error(
-      "브라우저가 복사를 막았어요. 링크 입력칸을 선택한 뒤 Ctrl+C 또는 길게 눌러 복사해 주세요.",
+      msg(
+        "브라우저가 복사를 막았어요. 링크 입력칸을 선택한 뒤 Ctrl+C 또는 길게 눌러 복사해 주세요.",
+      ),
     );
 }

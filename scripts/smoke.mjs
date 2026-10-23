@@ -1,38 +1,421 @@
 // Tests the packaged executable using disposable data only. Never uses ./data.
-import assert from 'node:assert/strict';
-import {mkdtemp,rm,writeFile,readFile} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
-import path from 'node:path';
-import net from 'node:net';
-import {spawn,spawnSync} from 'node:child_process';
-import {randomBytes} from 'node:crypto';
-import {setTimeout as delay} from 'node:timers/promises';
+import assert from "node:assert/strict";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import net from "node:net";
+import { spawn, spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { setTimeout as delay } from "node:timers/promises";
 
-const binary=path.resolve(process.argv[2]||'bin/duet-ledger');
-const root=await mkdtemp(path.join(tmpdir(),'duet-ledger-artifact-'));
-const processes=[];
-async function freePort(){const server=net.createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const port=server.address().port;await new Promise(resolve=>server.close(resolve));return port;}
-async function start(data){const port=await freePort();const url=`http://127.0.0.1:${port}`;const child=spawn(binary,['serve','--data-dir',data,'--listen',`127.0.0.1:${port}`],{stdio:['ignore','ignore','pipe'],env:{...process.env,DUET_LEDGER_PUBLIC_URL:'',DUET_LEDGER_SECURE_COOKIE:'false'}});let errors='';child.stderr.on('data',chunk=>{errors=(errors+chunk).slice(-4000);});processes.push(child);for(let i=0;i<60;i++){try{const r=await fetch(url+'/healthz');if(r.ok)return {url,child};}catch{}if(child.exitCode!==null)throw new Error('packaged server exited early: '+errors);await delay(50);}throw new Error('server not ready');}
-async function stop(child){if(child.exitCode!==null)return;child.kill('SIGTERM');await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{child.kill('SIGKILL');reject(new Error('shutdown timeout'));},5000);child.once('exit',()=>{clearTimeout(timeout);resolve();});});}
-function client(url){let cookie='',csrf='';return {get cookie(){return cookie;},set cookie(v){cookie=v;},async request(method,route,body,status=200){const r=await fetch(url+'/api'+route,{method,headers:{'Content-Type':'application/json',Origin:url,'X-CSRF-Token':csrf,Cookie:cookie},body:body===undefined?undefined:JSON.stringify(body)});assert.equal(r.status,status,`${method} ${route}`);const set=r.headers.get('set-cookie');if(set)cookie=set.split(';')[0];const data=await r.json();if(data.csrf)csrf=data.csrf;return data;}};}
-try{
- const data=path.join(root,'original');let app=await start(data);let c=client(app.url);assert.equal((await c.request('GET','/status')).initialized,false);
- const html=await (await fetch(app.url)).text();assert.ok(html.includes('듀엣 가계부'));const script=html.match(/src="([^"]+\.js)"/)[1];const asset=await fetch(app.url+script);assert.equal(asset.status,200);assert.ok(asset.headers.get('content-security-policy').includes("default-src 'self'"));
- for(const route of ['/home','/ledger','/stats','/accounts','/settings','/account','/admin']){const response=await fetch(app.url+route);assert.equal(response.status,200,route);assert.ok((await response.text()).includes('id="root"'));}
- const helperResponse=await fetch(app.url+'/duet_api.py');assert.equal(helperResponse.status,200);assert.equal(await helperResponse.text(),await readFile('scripts/duet_api.py','utf8'));assert.equal((await fetch(app.url+'/api-help.html')).status,200);assert.equal((await fetch(app.url+'/api-guide.md')).status,200);assert.equal((await fetch(app.url+'/mcp-help.html')).status,200);assert.equal(await (await fetch(app.url+'/mcp-guide.md')).text(),await readFile('MCP.md','utf8'));
- const manifest=await (await fetch(app.url+'/manifest.webmanifest')).json();assert.equal(manifest.start_url,'/home');for(const size of [192,512]){const image=await fetch(app.url+`/icon-${size}.png`);assert.equal(image.status,200);assert.ok(image.headers.get('content-type').startsWith('image/png'));const png=Buffer.from(await image.arrayBuffer());assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);}
- const password=randomBytes(24).toString('base64url');await c.request('POST','/setup',{username:'smoke',name:'검증 사용자',password},201);
- const ledgers=await c.request('GET','/ledgers');const account=await c.request('POST','/accounts',{ledger_id:ledgers[0].id,name:'검증 통장',kind:'bank',currency:'KRW',scale:0,opening:'100000'},201);await c.request('POST','/transactions',{account_id:account.id,kind:'expense',date:'2026-10-22',amount:'12000',title:'검증 지출',category:'food',note:''},201);
- await c.request('PUT','/me/exchange-rates',{from:'USD',to:'KRW',rate:'1400'});await c.request('POST','/transactions',{account_id:account.id,kind:'expense',date:'2026-10-23',amount:'28000',title:'외화 구독',category:'food',note:'',original_currency:'USD',original_amount:'2000',exchange_rate:'1400'},201);
- const profile=await c.request('GET','/me');const design=new FormData();design.append('file',new Blob(['.panel{border-radius:23px}'],{type:'text/css'}),'shared.css');const designResponse=await fetch(app.url+'/api/admin/appearance/css',{method:'PUT',headers:{Origin:app.url,Cookie:c.cookie,'X-CSRF-Token':profile.csrf},body:design});assert.equal(designResponse.status,200);assert.equal((await c.request('GET','/appearance')).css.name,'shared.css');
- await c.request('PATCH','/admin/api-settings',{enabled:true});const issued=await c.request('POST','/me/app-passwords',{name:'CLI smoke',account_ids:[account.id],permissions:['read','create'],lifetime:'90d',password},201);const tokenFile=path.join(root,'app-password');await writeFile(tokenFile,issued.app_password,{mode:0o600});const expenseFile=path.join(root,'api-expense.json');await writeFile(expenseFile,JSON.stringify({account_id:account.id,kind:'expense',date:'2026-10-23',time:'12:30',amount:'137',title:'API 검증',category:'food',note:''}));
- const runHelper=(...args)=>{const result=spawnSync('python3',[path.resolve('scripts/duet_api.py'),...args],{encoding:'utf8',env:{...process.env,DUET_LEDGER_URL:app.url,DUET_LEDGER_APP_PASSWORD_FILE:tokenFile}});assert.equal(result.status,0,result.stderr);return JSON.parse(result.stdout);};async function callMCP(method,params){const response=await fetch(app.url+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+issued.app_password,'Content-Type':'application/json',Accept:'application/json, text/event-stream','MCP-Protocol-Version':'2025-11-25'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});assert.equal(response.status,200);const result=await response.json();assert.ok(!result.error);return result.result;}
- const initialized=await callMCP('initialize',{protocolVersion:'2025-11-25',capabilities:{},clientInfo:{name:'artifact-test',version:'1'}});assert.equal(initialized.serverInfo.name,'duet-ledger');const mcpAccounts=await callMCP('tools/call',{name:'list_accounts',arguments:{}});assert.equal(mcpAccounts.structuredContent.items[0].id,account.id);const mcpTools=await callMCP('tools/list',{});assert.ok(mcpTools.tools.some(t=>t.name==='create_transaction'));assert.ok(!mcpTools.tools.some(t=>t.name==='delete_transaction'));
- assert.equal(runHelper('accounts').length,1);const createdAPI=runHelper('add','--json',expenseFile,'--request-id','smoke-api-unique');assert.equal(runHelper('add','--json',expenseFile,'--request-id','smoke-api-unique').id,createdAPI.id);assert.equal(runHelper('get',createdAPI.id).legs[0].amount,'-137');
- assert.equal((await c.request('GET','/accounts'))[0].balance,'59863');const backup=await c.request('POST','/backups',{},201);const oldCookie=c.cookie;await stop(app.child);
- app=await start(data);c=client(app.url);c.cookie=oldCookie;await c.request('POST','/setup',{username:'lateuser',name:'늦은 가입',password},409);assert.equal(runHelper('accounts')[0].id,account.id);assert.equal((await callMCP('tools/call',{name:'get_context',arguments:{}})).isError,undefined);assert.equal((await c.request('GET','/accounts'))[0].balance,'59863');await stop(app.child);
- const target=path.join(root,'restored');const restored=spawnSync(binary,['restore','--archive',path.join(data,'backups',backup.name),'--key-file',path.join(data,'master.key'),'--data-dir',target],{encoding:'utf8'});assert.equal(restored.status,0,restored.stderr);
- const restoreApp=await start(target);assert.equal((await fetch(restoreApp.url+'/api/v1/accounts',{headers:{Authorization:'Bearer '+issued.app_password}})).status,401);const restoredClient=client(restoreApp.url);restoredClient.cookie=oldCookie;await restoredClient.request('GET','/me',undefined,401);await restoredClient.request('POST','/login',{username:'smoke',password});assert.equal((await restoredClient.request('GET','/appearance')).css.name,'shared.css');const restoredCSS=await fetch(restoreApp.url+'/api/appearance/css',{headers:{Cookie:restoredClient.cookie}});assert.equal(await restoredCSS.text(),'.panel{border-radius:23px}');assert.equal((await restoredClient.request('GET','/accounts'))[0].balance,'59863');const restoredReport=await restoredClient.request('GET','/transactions?from=1900-01-01&to=2100-12-31&display_currency=KRW');assert.equal(restoredReport.totals[0].expense,'40137');assert.ok(restoredReport.items.some(t=>t.original_amount==='2000'&&t.exchange_rate==='1400'));await stop(restoreApp.child);
- const newPassword=randomBytes(24).toString('base64url');const reset=spawnSync(binary,['reset-password','--data-dir',target,'--username','smoke'],{input:newPassword,encoding:'utf8'});assert.equal(reset.status,0,reset.stderr);const resetApp=await start(target);const resetClient=client(resetApp.url);await resetClient.request('POST','/login',{username:'smoke',password:newPassword});assert.equal((await resetClient.request('GET','/accounts'))[0].balance,'59863');await stop(resetApp.child);
- console.log('PASS packaged executable: deep links, PWA assets, setup, login, native/foreign transactions, shared CSS, external API + Python helper + remote MCP, idempotency, restart, backup, CLI restore, session/token revocation, password recovery');
-}finally{for(const child of processes){if(child.exitCode===null)child.kill('SIGKILL');}await rm(root,{recursive:true,force:true});}
+const binary = path.resolve(process.argv[2] || "bin/duet-ledger");
+const root = await mkdtemp(path.join(tmpdir(), "duet-ledger-artifact-"));
+const processes = [];
+async function freePort() {
+  const server = net.createServer();
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+  await new Promise((resolve) => server.close(resolve));
+  return port;
+}
+async function start(data) {
+  const port = await freePort();
+  const url = `http://127.0.0.1:${port}`;
+  const child = spawn(
+    binary,
+    ["serve", "--data-dir", data, "--listen", `127.0.0.1:${port}`],
+    {
+      stdio: ["ignore", "ignore", "pipe"],
+      env: {
+        ...process.env,
+        DUET_LEDGER_PUBLIC_URL: "",
+        DUET_LEDGER_SECURE_COOKIE: "false",
+      },
+    },
+  );
+  let errors = "";
+  child.stderr.on("data", (chunk) => {
+    errors = (errors + chunk).slice(-4000);
+  });
+  processes.push(child);
+  for (let i = 0; i < 60; i++) {
+    try {
+      const r = await fetch(url + "/healthz");
+      if (r.ok) return { url, child };
+    } catch {}
+    if (child.exitCode !== null)
+      throw new Error("packaged server exited early: " + errors);
+    await delay(50);
+  }
+  throw new Error("server not ready");
+}
+async function stop(child) {
+  if (child.exitCode !== null) return;
+  child.kill("SIGTERM");
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      child.kill("SIGKILL");
+      reject(new Error("shutdown timeout"));
+    }, 5000);
+    child.once("exit", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
+}
+function client(url) {
+  let cookie = "",
+    csrf = "";
+  return {
+    get cookie() {
+      return cookie;
+    },
+    set cookie(v) {
+      cookie = v;
+    },
+    async request(method, route, body, status = 200) {
+      const r = await fetch(url + "/api" + route, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Origin: url,
+          "X-CSRF-Token": csrf,
+          Cookie: cookie,
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      assert.equal(r.status, status, `${method} ${route}`);
+      const set = r.headers.get("set-cookie");
+      if (set) cookie = set.split(";")[0];
+      const data = await r.json();
+      if (data.csrf) csrf = data.csrf;
+      return data;
+    },
+  };
+}
+try {
+  const data = path.join(root, "original");
+  let app = await start(data);
+  let c = client(app.url);
+  assert.equal((await c.request("GET", "/status")).initialized, false);
+  const html = await (await fetch(app.url)).text();
+  assert.ok(html.includes("듀엣 가계부"));
+  const script = html.match(/src="([^"]+\.js)"/)[1];
+  const asset = await fetch(app.url + script);
+  assert.equal(asset.status, 200);
+  assert.ok(
+    asset.headers.get("content-security-policy").includes("default-src 'self'"),
+  );
+  for (const route of [
+    "/home",
+    "/ledger",
+    "/stats",
+    "/accounts",
+    "/settings",
+    "/account",
+    "/admin",
+  ]) {
+    const response = await fetch(app.url + route);
+    assert.equal(response.status, 200, route);
+    assert.ok((await response.text()).includes('id="root"'));
+  }
+  for (const language of ["ko", "en"]) {
+    for (const page of [
+      "index",
+      "installation",
+      "usage",
+      "operations",
+      "api",
+      "mcp",
+      "troubleshooting",
+    ]) {
+      const result = await fetch(app.url + `/manual/${language}/${page}.html`);
+      assert.equal(result.status, 200);
+      assert.ok((await result.text()).includes(`<html lang="${language}">`));
+      assert.equal(
+        await (await fetch(app.url + `/manual/${language}/${page}.md`)).text(),
+        await readFile(`manual/${language}/${page}.md`, "utf8"),
+      );
+    }
+  }
+  for (const removed of [
+    "/duet_api.py",
+    "/api-help.html",
+    "/mcp-help.html",
+    "/api-guide.md",
+    "/mcp-guide.md",
+  ])
+    assert.equal((await fetch(app.url + removed)).status, 404);
+
+  const manifest = await (
+    await fetch(app.url + "/manifest.webmanifest")
+  ).json();
+  assert.equal(manifest.start_url, "/home");
+  for (const size of [192, 512]) {
+    const image = await fetch(app.url + `/icon-${size}.png`);
+    assert.equal(image.status, 200);
+    assert.ok(image.headers.get("content-type").startsWith("image/png"));
+    const png = Buffer.from(await image.arrayBuffer());
+    assert.equal(png.readUInt32BE(16), size);
+    assert.equal(png.readUInt32BE(20), size);
+  }
+  const password = randomBytes(24).toString("base64url");
+  await c.request(
+    "POST",
+    "/setup",
+    { username: "smoke", name: "검증 사용자", password },
+    201,
+  );
+  const ledgers = await c.request("GET", "/ledgers");
+  const account = await c.request(
+    "POST",
+    "/accounts",
+    {
+      ledger_id: ledgers[0].id,
+      name: "검증 통장",
+      kind: "bank",
+      currency: "KRW",
+      scale: 0,
+      opening: "100000",
+    },
+    201,
+  );
+  await c.request(
+    "POST",
+    "/transactions",
+    {
+      account_id: account.id,
+      kind: "expense",
+      date: "2026-10-22",
+      amount: "12000",
+      title: "검증 지출",
+      category: "food",
+      note: "",
+    },
+    201,
+  );
+  await c.request("PUT", "/me/exchange-rates", {
+    from: "USD",
+    to: "KRW",
+    rate: "1400",
+  });
+  await c.request(
+    "POST",
+    "/transactions",
+    {
+      account_id: account.id,
+      kind: "expense",
+      date: "2026-10-23",
+      amount: "28000",
+      title: "외화 구독",
+      category: "food",
+      note: "",
+      original_currency: "USD",
+      original_amount: "2000",
+      exchange_rate: "1400",
+    },
+    201,
+  );
+  const profile = await c.request("GET", "/me");
+  const design = new FormData();
+  design.append(
+    "file",
+    new Blob([".panel{border-radius:23px}"], { type: "text/css" }),
+    "shared.css",
+  );
+  const designResponse = await fetch(app.url + "/api/admin/appearance/css", {
+    method: "PUT",
+    headers: {
+      Origin: app.url,
+      Cookie: c.cookie,
+      "X-CSRF-Token": profile.csrf,
+    },
+    body: design,
+  });
+  assert.equal(designResponse.status, 200);
+  assert.equal((await c.request("GET", "/appearance")).css.name, "shared.css");
+  await c.request("PATCH", "/admin/api-settings", { enabled: true });
+  const issued = await c.request(
+    "POST",
+    "/me/app-passwords",
+    {
+      name: "CLI smoke",
+      account_ids: [account.id],
+      permissions: ["read", "create"],
+      lifetime: "90d",
+      password,
+    },
+    201,
+  );
+  const expense = {
+    account_id: account.id,
+    kind: "expense",
+    date: "2026-10-23",
+    time: "12:30",
+    amount: "137",
+    title: "API 검증",
+    category: "food",
+    note: "",
+  };
+  async function external(method, route, body, status = 200, requestId) {
+    const response = await fetch(app.url + "/api/v1" + route, {
+      method,
+      headers: {
+        Authorization: "Bearer " + issued.app_password,
+        "Content-Type": "application/json",
+        ...(requestId ? { "Idempotency-Key": requestId } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    assert.equal(response.status, status);
+    return response.json();
+  }
+  async function callMCP(method, params) {
+    const response = await fetch(app.url + "/mcp", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + issued.app_password,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        "MCP-Protocol-Version": "2025-11-25",
+      },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.ok(!result.error);
+    return result.result;
+  }
+  const initialized = await callMCP("initialize", {
+    protocolVersion: "2025-11-25",
+    capabilities: {},
+    clientInfo: { name: "artifact-test", version: "1" },
+  });
+  assert.equal(initialized.serverInfo.name, "duet-ledger");
+  const mcpAccounts = await callMCP("tools/call", {
+    name: "list_accounts",
+    arguments: {},
+  });
+  assert.equal(mcpAccounts.structuredContent.items[0].id, account.id);
+  const mcpTools = await callMCP("tools/list", {});
+  assert.ok(mcpTools.tools.some((t) => t.name === "create_transaction"));
+  assert.ok(!mcpTools.tools.some((t) => t.name === "delete_transaction"));
+  assert.equal((await external("GET", "/accounts")).length, 1);
+  const createdAPI = await external(
+    "POST",
+    "/transactions",
+    expense,
+    201,
+    "smoke-api-unique",
+  );
+  assert.equal(
+    (await external("POST", "/transactions", expense, 200, "smoke-api-unique"))
+      .id,
+    createdAPI.id,
+  );
+  assert.equal(
+    (await external("GET", "/transactions/" + createdAPI.id)).legs[0].amount,
+    "-137",
+  );
+  assert.equal((await c.request("GET", "/accounts"))[0].balance, "59863");
+  const backup = await c.request("POST", "/backups", {}, 201);
+  const oldCookie = c.cookie;
+  await stop(app.child);
+  app = await start(data);
+  c = client(app.url);
+  c.cookie = oldCookie;
+  await c.request(
+    "POST",
+    "/setup",
+    { username: "lateuser", name: "늦은 가입", password },
+    409,
+  );
+  assert.equal((await external("GET", "/accounts"))[0].id, account.id);
+  assert.equal(
+    (await callMCP("tools/call", { name: "get_context", arguments: {} }))
+      .isError,
+    undefined,
+  );
+  assert.equal((await c.request("GET", "/accounts"))[0].balance, "59863");
+  await stop(app.child);
+  const target = path.join(root, "restored");
+  const restored = spawnSync(
+    binary,
+    [
+      "restore",
+      "--archive",
+      path.join(data, "backups", backup.name),
+      "--key-file",
+      path.join(data, "master.key"),
+      "--data-dir",
+      target,
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(restored.status, 0, restored.stderr);
+  const restoreApp = await start(target);
+  assert.equal(
+    (
+      await fetch(restoreApp.url + "/api/v1/accounts", {
+        headers: { Authorization: "Bearer " + issued.app_password },
+      })
+    ).status,
+    401,
+  );
+  const restoredClient = client(restoreApp.url);
+  restoredClient.cookie = oldCookie;
+  await restoredClient.request("GET", "/me", undefined, 401);
+  await restoredClient.request("POST", "/login", {
+    username: "smoke",
+    password,
+  });
+  assert.equal(
+    (await restoredClient.request("GET", "/appearance")).css.name,
+    "shared.css",
+  );
+  const restoredCSS = await fetch(restoreApp.url + "/api/appearance/css", {
+    headers: { Cookie: restoredClient.cookie },
+  });
+  assert.equal(await restoredCSS.text(), ".panel{border-radius:23px}");
+  assert.equal(
+    (await restoredClient.request("GET", "/accounts"))[0].balance,
+    "59863",
+  );
+  const restoredReport = await restoredClient.request(
+    "GET",
+    "/transactions?from=1900-01-01&to=2100-12-31&display_currency=KRW",
+  );
+  assert.equal(restoredReport.totals[0].expense, "40137");
+  assert.ok(
+    restoredReport.items.some(
+      (t) => t.original_amount === "2000" && t.exchange_rate === "1400",
+    ),
+  );
+  await stop(restoreApp.child);
+  const newPassword = randomBytes(24).toString("base64url");
+  const reset = spawnSync(
+    binary,
+    ["reset-password", "--data-dir", target, "--username", "smoke"],
+    { input: newPassword, encoding: "utf8" },
+  );
+  assert.equal(reset.status, 0, reset.stderr);
+  const resetApp = await start(target);
+  const resetClient = client(resetApp.url);
+  await resetClient.request("POST", "/login", {
+    username: "smoke",
+    password: newPassword,
+  });
+  assert.equal(
+    (await resetClient.request("GET", "/accounts"))[0].balance,
+    "59863",
+  );
+  await stop(resetApp.child);
+  console.log(
+    "PASS packaged executable: deep links, PWA assets, setup, login, native/foreign transactions, shared CSS, bilingual manuals, external API + remote MCP, idempotency, restart, backup, CLI restore, session/token revocation, password recovery",
+  );
+} finally {
+  for (const child of processes) {
+    if (child.exitCode === null) child.kill("SIGKILL");
+  }
+  await rm(root, { recursive: true, force: true });
+}

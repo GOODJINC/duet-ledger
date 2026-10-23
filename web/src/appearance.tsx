@@ -1,3 +1,4 @@
+import { msg } from "./i18n";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { Help, Icon } from "./ui";
@@ -29,7 +30,7 @@ export function validateCSS(text: string) {
     )
   )
     throw new Error(
-      "CSS는 외부 주소·글꼴 선언·이스케이프 문자를 포함할 수 없어요.",
+      msg("CSS는 외부 주소·글꼴 선언·이스케이프 문자를 포함할 수 없어요."),
     );
   return text;
 }
@@ -132,29 +133,33 @@ export function AppearanceSettings({ userId }: { userId: string }) {
       setValue(next);
       setScaleDraft(String(next.scale));
       window.dispatchEvent(new Event("duet-appearance"));
-      setMessage("이 브라우저에 적용했어요.");
+      setMessage(msg("이 브라우저에 적용했어요."));
     } catch {
-      setMessage("브라우저 저장 공간이 부족해요. 파일 크기를 줄여 주세요.");
+      setMessage(
+        msg("브라우저 저장 공간이 부족해요. 파일 크기를 줄여 주세요."),
+      );
     }
   }
   return (
     <section className="panel">
       <div className="setting-group">
         <h2>
-          디자인 직접 설정{" "}
+          {msg("디자인 직접 설정")}{" "}
           <Help>
-            글씨 크기와 색상은 현재 브라우저에 저장해요. 공통 CSS·글꼴은
-            관리자가 관리 화면에서 설정합니다.
+            {msg(
+              "글씨 크기와 색상은 현재 브라우저에 저장해요. 공통 CSS·글꼴은 관리자가 관리 화면에서 설정합니다.",
+            )}
           </Help>
         </h2>
         <div className="setting-row">
           <label htmlFor="custom-size">
-            글씨 크기<small className="scale-range">90~150% · 1% 단위</small>
+            {msg("글씨 크기")}
+            <small className="scale-range">{msg("90~150% · 1% 단위")}</small>
           </label>
           <div>
             <input
               id="custom-size"
-              aria-label="글씨 크기"
+              aria-label={msg("글씨 크기")}
               type="number"
               min="90"
               max="150"
@@ -180,7 +185,7 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           </div>
         </div>
         <div className="setting-row">
-          <label htmlFor="custom-bg">배경색</label>
+          <label htmlFor="custom-bg">{msg("배경색")}</label>
           <input
             id="custom-bg"
             type="color"
@@ -189,7 +194,7 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="custom-primary">메인 색상</label>
+          <label htmlFor="custom-primary">{msg("메인 색상")}</label>
           <input
             id="custom-primary"
             type="color"
@@ -201,7 +206,7 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           className="secondary-button"
           onClick={() => save({ ...defaults })}
         >
-          개인 디자인 초기화
+          {msg("개인 디자인 초기화")}
         </button>
         <p role="status" className="entry-hint">
           {message}
@@ -246,7 +251,7 @@ export function ServerAppearanceSettings() {
       } else await api("/admin/appearance/" + kind, { method: "DELETE" });
       setValue(await api<ServerAppearance>("/appearance"));
       window.dispatchEvent(new Event("duet-server-appearance"));
-      setMessage("모든 사용자에게 적용했어요.");
+      setMessage(msg("모든 사용자에게 적용했어요."));
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
@@ -257,34 +262,36 @@ export function ServerAppearanceSettings() {
     <section className="panel">
       <div className="setting-group">
         <h2>
-          공통 CSS·글꼴{" "}
+          {msg("공통 CSS·글꼴")}{" "}
           <Help>
-            관리자만 변경할 수 있으며 로그인한 모든 사용자에게 적용해요. 서버
-            백업에도 포함됩니다. 앱의 파일 용량 제한은 없지만 서버 저장 공간과
-            프록시 제한은 적용될 수 있어요. 화면이 가려지면
-            /admin?safe-theme=1로 접속한 뒤 파일을 해제하세요. CSS의 외부 자료
-            로딩은 허용하지 않아요.
+            {msg(
+              "관리자만 변경할 수 있으며 로그인한 모든 사용자에게 적용해요. 서버 백업에도 포함됩니다. 앱의 파일 용량 제한은 없지만 서버 저장 공간과 프록시 제한은 적용될 수 있어요. 화면이 가려지면 /admin?safe-theme=1로 접속한 뒤 파일을 해제하세요. CSS의 외부 자료 로딩은 허용하지 않아요.",
+            )}
           </Help>
         </h2>
         <p className="panel-subtitle">
-          관리자가 설정한 디자인을 모든 사용자에게 적용해요.
+          {msg("관리자가 설정한 디자인을 모든 사용자에게 적용해요.")}
         </p>
         {(["css", "font"] as const).map((kind) => (
           <div className="setting-row" key={kind}>
             <div className="appearance-file-title">
-              {kind === "css" ? "CSS 파일" : "사용자 글꼴"}
+              {kind === "css" ? msg("CSS 파일") : msg("사용자 글꼴")}
               <Help>
                 {kind === "css"
-                  ? "CSS 형식 · 용량 제한 없음"
-                  : "WOFF2 형식 · 용량 제한 없음 · 사용 권한이 있는 글꼴을 올려 주세요."}
+                  ? msg("CSS 형식 · 용량 제한 없음")
+                  : msg(
+                      "WOFF2 형식 · 용량 제한 없음 · 사용 권한이 있는 글꼴을 올려 주세요.",
+                    )}
               </Help>
             </div>
             <label className="design-file-box" htmlFor={"server-" + kind}>
               <Icon name="plus" size={18} />
-              <span>{value[kind]?.name || "파일 첨부"}</span>
+              <span>{value[kind]?.name || msg("파일 첨부")}</span>
               <input
                 id={"server-" + kind}
-                aria-label={kind === "css" ? "공통 CSS 파일" : "공통 글꼴 파일"}
+                aria-label={
+                  kind === "css" ? msg("공통 CSS 파일") : msg("공통 글꼴 파일")
+                }
                 type="file"
                 className="visually-hidden"
                 accept={kind === "css" ? ".css,text/css" : ".woff2,font/woff2"}
@@ -303,15 +310,15 @@ export function ServerAppearanceSettings() {
                 onClick={() => {
                   if (
                     confirm(
-                      "모든 사용자의 공통 " +
-                        (kind === "css" ? "CSS" : "글꼴") +
-                        " 적용을 해제할까요?",
+                      msg("모든 사용자의 공통 ") +
+                        (kind === "css" ? "CSS" : msg("글꼴")) +
+                        msg(" 적용을 해제할까요?"),
                     )
                   )
                     void update(kind);
                 }}
               >
-                해제
+                {msg("해제")}
               </button>
             )}
           </div>

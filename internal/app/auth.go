@@ -46,8 +46,8 @@ func (a *App) status(w http.ResponseWriter, r *http.Request, u *User) error {
 	writeJSON(w, 200, map[string]any{"initialized": n > 0, "version": Version, "registration_open": a.registrationOpen()})
 	return nil
 }
-func createPersonal(q queryer, id string) error {
-	_, err := q.Exec("INSERT INTO ledgers(id,name,kind,owner_id,created_at) VALUES(?,?,'personal',?,?)", newID(), "내 가계부", id, now())
+func createPersonal(q queryer, id, locale string) error {
+	_, err := q.Exec("INSERT INTO ledgers(id,name,kind,owner_id,created_at) VALUES(?,?,'personal',?,?)", newID(), localizeMessage(locale, "내 가계부"), id, now())
 	return err
 }
 func (a *App) setup(w http.ResponseWriter, r *http.Request, u *User) error {
@@ -74,10 +74,10 @@ func (a *App) setup(w http.ResponseWriter, r *http.Request, u *User) error {
 	}
 	defer tx.Rollback()
 	id := newID()
-	if _, err = tx.Exec("INSERT INTO users(id,username,name,password,admin,created_at) VALUES(?,?,?,?,1,?)", id, c.Username, c.Name, passwordHash(c.Password), now()); err != nil {
+	if _, err = tx.Exec("INSERT INTO users(id,username,name,password,locale,admin,created_at) VALUES(?,?,?,?,?,1,?)", id, c.Username, c.Name, passwordHash(c.Password), requestLocale(r, nil), now()); err != nil {
 		return err
 	}
-	if err = createPersonal(tx, id); err != nil {
+	if err = createPersonal(tx, id, requestLocale(r, nil)); err != nil {
 		return err
 	}
 	if err = tx.Commit(); err != nil {

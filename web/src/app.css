@@ -26,13 +26,6 @@
   height: 13px;
   color: var(--muted);
 }
-.alpha-tag {
-  font-size: calc(10px * var(--text-scale, 1.12));
-  padding: 4px 7px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  color: var(--muted);
-}
 .heading-actions {
   display: flex;
   gap: 8px;
@@ -771,9 +764,6 @@ body[data-theme="dark"] .book-two {
   }
   .setting-group h2 {
     font-size: calc(14px * var(--text-scale, 1.12));
-  }
-  .alpha-tag {
-    font-size: calc(8px * var(--text-scale, 1.12));
   }
   .live-app .header-right .profile-button > span:not(.avatar) {
     display: none;
@@ -2493,3 +2483,9 @@ body {
   color: var(--green);
   text-underline-offset: 3px;
 }
+
+.auth-language { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 0.9rem; color: var(--muted); }
+.auth-language select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--paper); color: var(--ink); font: inherit; }
+.user-dropdown > a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: inherit; text-decoration: none; border-radius: 8px; }
+.user-dropdown > a:hover { background: var(--bg); }
+.help-wrap .help-tip.help-floating { width: max-content; max-width: min(290px, calc(100vw - 24px)); }

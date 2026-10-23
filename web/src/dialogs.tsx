@@ -1,3 +1,5 @@
+import { useTask } from "./use-task";
+import { msg, monthName, intlLocale } from "./i18n";
 import {
   exchangeFactor,
   factorDecimal,
@@ -9,13 +11,11 @@ import {
   api,
   post,
   download,
-  setCSRF,
   formatMoney,
   toDecimal,
   toMinor,
   today,
-  categories,
-  categoryName,
+  displayCategory,
   kindNames,
   currencyScales,
   type Category,
@@ -23,8 +23,6 @@ import {
   type Ledger,
   type Account,
   type Transaction,
-  type Sharing,
-  type Receipt,
 } from "./api";
 import { Modal, Icon, Privacy, ErrorText, Busy } from "./ui";
 export type DialogProps = {
@@ -38,23 +36,7 @@ export type DialogProps = {
   categoryVersion?: number;
   manageCategories?: (ledgerId?: string) => void;
 };
-function useTask() {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  async function run(action: () => Promise<void>) {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      await action();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "처리하지 못했어요.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  return { busy, error, run, setError };
-}
+
 export function EntryDialog(
   p: DialogProps & { transaction?: Transaction; accountId?: string },
 ) {
@@ -62,13 +44,15 @@ export function EntryDialog(
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 5 * 1024 * 1024)
-      task.setError("사진은 5MB까지 첨부할 수 있어요.");
+      task.setError(msg("사진은 5MB까지 첨부할 수 있어요."));
     else if (
       !["image/jpeg", "image/png"].includes(f.type) &&
       !(f.type === "" && /\.(jpe?g|png)$/i.test(f.name))
     )
       task.setError(
-        "JPG 또는 PNG 사진을 선택해 주세요. HEIC·다른 형식은 먼저 변환해 주세요.",
+        msg(
+          "JPG 또는 PNG 사진을 선택해 주세요. HEIC·다른 형식은 먼저 변환해 주세요.",
+        ),
       );
     else {
       task.setError("");
@@ -252,9 +236,9 @@ export function EntryDialog(
     e.preventDefault();
     await task.run(async () => {
       if (!account || !editable.some((a) => a.id === accountId))
-        throw new Error("선택한 가계부의 계좌를 선택해 주세요.");
+        throw new Error(msg("선택한 가계부의 계좌를 선택해 주세요."));
       if (kind !== "transfer" && !category)
-        throw new Error("분류를 먼저 설정해 주세요.");
+        throw new Error(msg("분류를 먼저 설정해 주세요."));
       let id = savedId;
       let photoId = savedPhotoId;
       if (!id) {
@@ -308,23 +292,23 @@ export function EntryDialog(
         );
         await p.refresh();
       }
-      p.notify(tx ? "기록을 수정했어요." : "기록을 저장했어요.");
+      p.notify(tx ? msg("기록을 수정했어요.") : msg("기록을 저장했어요."));
       p.close();
     });
   }
   return (
     <Modal
-      title={tx ? "기록을 다듬어요." : "오늘의 기록을 남겨요."}
-      subtitle="저장 전 계좌와 공개 대상을 확인해 주세요."
+      title={tx ? msg("기록을 다듬어요.") : msg("오늘의 기록을 남겨요.")}
+      subtitle={msg("저장 전 계좌와 공개 대상을 확인해 주세요.")}
       onClose={p.close}
     >
       <form onSubmit={submit} className="entry-form">
         <fieldset disabled={task.busy || !!savedId} className="plain-fieldset">
           <div className="entry-types">
             {[
-              ["expense", "지출"],
-              ["income", "수입"],
-              ["transfer", "이체"],
+              ["expense", msg("지출")],
+              ["income", msg("수입")],
+              ["transfer", msg("이체")],
             ].map(([id, label]) => (
               <button
                 type="button"
@@ -335,14 +319,14 @@ export function EntryDialog(
                   setCategory(id === "income" ? "salary" : "food");
                 }}
               >
-                {label}
+                {msg(label)}
               </button>
             ))}
           </div>
           <div className="entry-amount-wrap">
             <select
               id="entry-currency"
-              aria-label="입력 통화"
+              aria-label={msg("입력 통화")}
               value={kind === "transfer" ? account?.currency : inputCurrency}
               disabled={kind === "transfer"}
               onChange={(e) => setInputCurrency(e.target.value)}
@@ -361,9 +345,9 @@ export function EntryDialog(
                 <option key={code}>{code}</option>
               ))}
             </select>
-            <span className="visually-hidden">금액</span>
+            <span className="visually-hidden">{msg("금액")}</span>
             <input
-              aria-label="금액"
+              aria-label={msg("금액")}
               aria-describedby="entry-currency"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -382,8 +366,8 @@ export function EntryDialog(
                   type="button"
                   onClick={() => setAmount(String(n))}
                 >
-                  {n.toLocaleString()}
-                  {inputCurrency === "KRW" ? "원" : " " + inputCurrency}
+                  {n.toLocaleString(intlLocale())}
+                  {inputCurrency === "KRW" ? msg("원") : " " + inputCurrency}
                 </button>
               ),
             )}
@@ -391,7 +375,7 @@ export function EntryDialog(
           {foreign && (
             <div className="entry-fx">
               <label className="form-label" htmlFor="entry-rate">
-                적용 환율
+                {msg("적용 환율")}
               </label>
               <div>
                 <div className="fx-rate-line">
@@ -402,23 +386,23 @@ export function EntryDialog(
                     inputMode="decimal"
                     value={rate}
                     onChange={(e) => setRate(e.target.value)}
-                    placeholder="환율 입력"
+                    placeholder={msg("환율 입력")}
                     required
                   />
                   <span>{account?.currency}</span>
                 </div>
                 <p className="entry-hint">
-                  계좌 반영:{" "}
+                  {msg("계좌 반영:")}{" "}
                   {converted
                     ? formatMoney(converted, account!.scale, account!.currency)
-                    : "환율을 설정해 주세요."}{" "}
-                  · 저장한 환율은 이 기록에 보존돼요.
+                    : msg("환율을 설정해 주세요.")}{" "}
+                  {msg("· 저장한 환율은 이 기록에 보존돼요.")}
                 </p>
               </div>
             </div>
           )}
           <label className="form-label" htmlFor="entry-title">
-            내용
+            {msg("내용")}
           </label>
           <input
             id="entry-title"
@@ -429,18 +413,18 @@ export function EntryDialog(
             maxLength={100}
             placeholder={
               kind === "income"
-                ? "예: 10월 월급"
+                ? msg("예: 10월 월급")
                 : kind === "transfer"
-                  ? "예: 생활비 통장으로 이체"
+                  ? msg("예: 생활비 통장으로 이체")
                   : kind === "refund"
-                    ? "예: 반품 환불"
+                    ? msg("예: 반품 환불")
                     : kind === "adjustment"
-                      ? "예: 실제 통장 잔액 맞추기"
-                      : "예: 점심 식사"
+                      ? msg("예: 실제 통장 잔액 맞추기")
+                      : msg("예: 점심 식사")
             }
           />
           <label className="form-label" htmlFor="entry-account">
-            {kind === "transfer" ? "보내는 계좌" : "계좌"}
+            {kind === "transfer" ? msg("보내는 계좌") : msg("계좌")}
           </label>
           <select
             id="entry-account"
@@ -450,16 +434,16 @@ export function EntryDialog(
             required
           >
             <option value="" disabled>
-              계좌 선택
+              {msg("계좌 선택")}
             </option>
             {editable.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} · {a.shared ? "공유" : "개인"} · {a.currency}
+                {a.name} · {a.shared ? msg("공유") : msg("개인")} · {a.currency}
               </option>
             ))}
           </select>
           <label className="form-label" htmlFor="entry-date">
-            날짜
+            {msg("날짜")}
           </label>
           <div className="entry-date-fields">
             <div>
@@ -476,7 +460,7 @@ export function EntryDialog(
             </div>
             <div>
               <label className="visually-hidden" htmlFor="entry-time">
-                시간
+                {msg("시간")}
               </label>
               <input
                 id="entry-time"
@@ -490,7 +474,7 @@ export function EntryDialog(
                 pattern={
                   mobileTime ? undefined : "([01][0-9]|2[0-3]):[0-5][0-9]"
                 }
-                title="24시간 형식으로 입력하세요. 예: 14:30"
+                title={msg("24시간 형식으로 입력하세요. 예: 14:30")}
                 onChange={(e) => setClock(e.target.value)}
                 onBlur={() => {
                   const v = clock.trim();
@@ -505,7 +489,7 @@ export function EntryDialog(
           {kind === "transfer" ? (
             <>
               <label className="form-label" htmlFor="entry-target">
-                받는 계좌 · 같은 통화
+                {msg("받는 계좌 · 같은 통화")}
               </label>
               <select
                 id="entry-target"
@@ -515,26 +499,31 @@ export function EntryDialog(
                 required
               >
                 <option value="" disabled>
-                  받는 계좌 선택
+                  {msg("받는 계좌 선택")}
                 </option>
                 {targets.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.name} · {a.shared ? "공유" : "개인"}
+                    {a.name} · {a.shared ? msg("공유") : msg("개인")}
                   </option>
                 ))}
               </select>
               <p className="entry-hint">
-                이체는 수입·지출에 포함되지 않아요. 두 계좌의 잔액이 함께
-                바뀝니다.
+                {msg(
+                  "이체는 수입·지출에 포함되지 않아요. 두 계좌의 잔액이 함께 바뀝니다.",
+                )}
                 {p.selectedLedger &&
-                  " 다른 가계부의 계좌로 이체하려면 모든 가계부 모아 보기로 전환해 주세요."}
+                  msg(
+                    " 다른 가계부의 계좌로 이체하려면 모든 가계부 모아 보기로 전환해 주세요.",
+                  )}
               </p>
             </>
           ) : (
             <>
               <div className="entry-category-heading">
                 <span className="form-label">
-                  {categoryKind === "income" ? "수입 분류" : "지출 분류"}
+                  {categoryKind === "income"
+                    ? msg("수입 분류")
+                    : msg("지출 분류")}
                 </span>
               </div>
               <div className="category-picker">
@@ -546,7 +535,7 @@ export function EntryDialog(
                     aria-pressed={category === c.code}
                     onClick={() => setCategory(c.code)}
                   >
-                    {c.name}
+                    {displayCategory(c.code, c.name)}
                   </button>
                 ))}
                 {tx &&
@@ -557,8 +546,8 @@ export function EntryDialog(
                       className="category-choice"
                       aria-pressed
                     >
-                      {first?.category_name || categoryName(category)} · 기존
-                      분류
+                      {displayCategory(category, first?.category_name)}{" "}
+                      {msg("· 기존 분류")}
                     </button>
                   )}
               </div>
@@ -567,7 +556,8 @@ export function EntryDialog(
             </>
           )}
           <label className="form-label" htmlFor="entry-note">
-            {kind === "transfer" ? "보내는 계좌에 남길 메모" : "메모"} (선택)
+            {kind === "transfer" ? msg("보내는 계좌에 남길 메모") : msg("메모")}{" "}
+            {msg("(선택)")}
           </label>
           <textarea
             id="entry-note"
@@ -580,7 +570,7 @@ export function EntryDialog(
           {kind === "transfer" && (
             <>
               <label className="form-label" htmlFor="target-note">
-                받는 계좌에 남길 메모 (선택)
+                {msg("받는 계좌에 남길 메모 (선택)")}
               </label>
               <textarea
                 id="target-note"
@@ -594,8 +584,8 @@ export function EntryDialog(
           )}
           {tx && !["income", "expense", "transfer"].includes(tx.kind) && (
             <p className="entry-hint">
-              이전 버전의 {kindNames[tx.kind]} 기록입니다. 기존 계산 방식으로
-              유지됩니다.
+              {msg("이전 버전의")} {msg(kindNames[tx.kind])}{" "}
+              {msg("기록입니다. 기존 계산 방식으로 유지됩니다.")}
             </p>
           )}
         </fieldset>
@@ -616,7 +606,10 @@ export function EntryDialog(
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <img src={`/api/receipts/${ref.id}`} alt="첨부 영수증" />
+                    <img
+                      src={`/api/receipts/${ref.id}`}
+                      alt={msg("첨부 영수증")}
+                    />
                   </a>
                   <button
                     type="button"
@@ -629,13 +622,17 @@ export function EntryDialog(
                         );
                       else if (
                         confirm(
-                          "사진 첨부를 해제할까요? 수정 저장 시 반영됩니다.",
+                          msg(
+                            "사진 첨부를 해제할까요? 수정 저장 시 반영됩니다.",
+                          ),
                         )
                       )
                         setRemovedPhotos((old) => [...old, ref.id]);
                     }}
                   >
-                    {removedPhotos.includes(ref.id) ? "해제 취소" : "첨부 해제"}
+                    {removedPhotos.includes(ref.id)
+                      ? msg("해제 취소")
+                      : msg("첨부 해제")}
                   </button>
                 </div>
               )),
@@ -647,7 +644,7 @@ export function EntryDialog(
             {kind === "transfer" && tx && (
               <>
                 <label className="form-label" htmlFor="photo-target">
-                  사진을 첨부할 거래
+                  {msg("사진을 첨부할 거래")}
                 </label>
                 <select
                   id="photo-target"
@@ -659,7 +656,8 @@ export function EntryDialog(
                     .filter((a): a is Account => !!a)
                     .map((ac) => (
                       <option key={ac.id} value={ac.id}>
-                        {ac.name}의 거래
+                        {ac.name}
+                        {msg("의 거래")}
                       </option>
                     ))}
                 </select>
@@ -668,9 +666,11 @@ export function EntryDialog(
             <div className="receipt-actions">
               <label className="receipt-button">
                 <Icon name="camera" />
-                <span>{file ? file.name : "사진 선택 · JPG/PNG 5MB 이하"}</span>
+                <span>
+                  {file ? file.name : msg("사진 선택 · JPG/PNG 5MB 이하")}
+                </span>
                 <input
-                  aria-label="영수증 사진 선택"
+                  aria-label={msg("영수증 사진 선택")}
                   type="file"
                   accept="image/*"
                   className="visually-hidden"
@@ -683,8 +683,9 @@ export function EntryDialog(
         )}
         {savedId && task.error && (
           <div className="inline-warning">
-            거래는 이미 저장됐어요. 사진 변경만 다시 시도하거나 창을 닫아도
-            됩니다.
+            {msg(
+              "거래는 이미 저장됐어요. 사진 변경만 다시 시도하거나 창을 닫아도 됩니다.",
+            )}
           </div>
         )}
         <ErrorText error={task.error} />
@@ -695,17 +696,21 @@ export function EntryDialog(
               <div>
                 <strong>
                   {kind === "transfer"
-                    ? "각 계좌를 볼 수 있는 사람에게 따로 표시돼요."
+                    ? msg("각 계좌를 볼 수 있는 사람에게 따로 표시돼요.")
                     : account.shared
-                      ? "공유된 계좌에 기록하고 있어요."
-                      : "나에게만 보이는 기록이에요."}
+                      ? msg("공유된 계좌에 기록하고 있어요.")
+                      : msg("나에게만 보이는 기록이에요.")}
                 </strong>
                 <p>
                   {kind === "transfer"
-                    ? "각 계좌의 메모·영수증은 해당 계좌의 공개 범위를 따릅니다."
+                    ? msg(
+                        "각 계좌의 메모·영수증은 해당 계좌의 공개 범위를 따릅니다.",
+                      )
                     : account.shared
-                      ? "거래 내용과 첨부 사진도 공유 대상에게 보입니다."
-                      : "이 계좌의 이름·잔액·내역은 다른 사람에게 공개되지 않아요."}
+                      ? msg("거래 내용과 첨부 사진도 공유 대상에게 보입니다.")
+                      : msg(
+                          "이 계좌의 이름·잔액·내역은 다른 사람에게 공개되지 않아요.",
+                        )}
                 </p>
               </div>
             </div>
@@ -716,10 +721,10 @@ export function EntryDialog(
           >
             <Busy busy={task.busy}>
               {savedId
-                ? "사진 변경 다시 시도"
+                ? msg("사진 변경 다시 시도")
                 : tx
-                  ? "수정 저장하기"
-                  : "기록 저장하기"}
+                  ? msg("수정 저장하기")
+                  : msg("기록 저장하기")}
             </Busy>
           </button>
         </div>
@@ -732,7 +737,9 @@ export function EntryDialog(
               task.run(async () => {
                 if (
                   !confirm(
-                    "이 기록을 휴지통으로 옮길까요? 설정에서 복구할 수 있어요.",
+                    msg(
+                      "이 기록을 휴지통으로 옮길까요? 설정에서 복구할 수 있어요.",
+                    ),
                   )
                 )
                   return;
@@ -740,13 +747,13 @@ export function EntryDialog(
                   version: tx.version,
                 });
                 await p.refresh();
-                p.notify("기록을 휴지통으로 옮겼어요.");
+                p.notify(msg("기록을 휴지통으로 옮겼어요."));
                 p.close();
               })
             }
           >
             <Icon name="trash" />
-            기록 삭제
+            {msg("기록 삭제")}
           </button>
         )}
       </form>
@@ -783,11 +790,11 @@ export function LedgerDialog(
   }
   return (
     <Modal
-      title={manage ? "가계부 관리" : "가계부 선택"}
+      title={manage ? msg("가계부 관리") : msg("가계부 선택")}
       subtitle={
         manage
-          ? "표시 순서 조정 · 책임자는 가계부 수정과 삭제도 가능해요."
-          : "이동할 가계부를 선택하세요."
+          ? msg("표시 순서 조정 · 책임자는 가계부 수정과 삭제도 가능해요.")
+          : msg("이동할 가계부를 선택하세요.")
       }
       onClose={p.close}
     >
@@ -803,8 +810,8 @@ export function LedgerDialog(
             >
               <Icon name="wallet" />
               <div>
-                <strong>모든 가계부 모아 보기</strong>
-                <p>내가 볼 수 있는 계좌를 한곳에</p>
+                <strong>{msg("모든 가계부 모아 보기")}</strong>
+                <p>{msg("내가 볼 수 있는 계좌를 한곳에")}</p>
               </div>
               {!p.selected && <Icon name="check" />}
             </button>
@@ -822,7 +829,9 @@ export function LedgerDialog(
                   <div>
                     <strong>{l.name}</strong>
                     <p>
-                      {l.kind === "personal" ? "개인 가계부" : "공유 가계부"}
+                      {l.kind === "personal"
+                        ? msg("개인 가계부")
+                        : msg("공유 가계부")}
                     </p>
                   </div>
                   {p.selected === l.id && <Icon name="check" />}
@@ -831,7 +840,7 @@ export function LedgerDialog(
             ))}
           </div>
           <button className="text-link" onClick={() => setManage(true)}>
-            가계부 관리
+            {msg("가계부 관리")}
           </button>
         </>
       ) : (
@@ -846,13 +855,13 @@ export function LedgerDialog(
                 setTagline("");
               }}
             >
-              새 가계부 만들기
+              {msg("새 가계부 만들기")}
             </button>
             <button
               className="secondary-button"
               onClick={() => task.run(loadTrash)}
             >
-              가계부 휴지통
+              {msg("가계부 휴지통")}
             </button>
           </div>
           {p.ledgers.map((l, index) => (
@@ -860,7 +869,8 @@ export function LedgerDialog(
               <div>
                 <strong>{l.name}</strong>
                 <p>
-                  {l.kind === "personal" ? "개인" : "공유"} · {l.timezone}
+                  {l.kind === "personal" ? msg("개인") : msg("공유")} ·{" "}
+                  {l.timezone}
                 </p>
               </div>
               <div className="ledger-row-actions">
@@ -874,7 +884,7 @@ export function LedgerDialog(
                         index + delta < 0 ||
                         index + delta >= p.ledgers.length
                       }
-                      aria-label={`${l.name} ${delta < 0 ? "위로" : "아래로"}`}
+                      aria-label={`${l.name} ${delta < 0 ? msg("위로") : msg("아래로")}`}
                       onClick={() =>
                         task.run(async () => {
                           const ids = p.ledgers.map((l) => l.id);
@@ -893,7 +903,7 @@ export function LedgerDialog(
                 </div>
                 {l.role === "owner" && (
                   <button className="secondary-button" onClick={() => edit(l)}>
-                    수정·삭제
+                    {msg("수정·삭제")}
                   </button>
                 )}
               </div>
@@ -918,14 +928,16 @@ export function LedgerDialog(
                   setCreating(false);
                   setEditId("");
                   p.notify(
-                    editing ? "가계부를 수정했어요." : "가계부를 만들었어요.",
+                    editing
+                      ? msg("가계부를 수정했어요.")
+                      : msg("가계부를 만들었어요."),
                   );
                 });
               }}
             >
-              <h3>{editing ? "가계부 수정" : "새 가계부 만들기"}</h3>
+              <h3>{editing ? msg("가계부 수정") : msg("새 가계부 만들기")}</h3>
               <label className="form-label" htmlFor="ledger-name">
-                가계부 이름
+                {msg("가계부 이름")}
               </label>
               <input
                 id="ledger-name"
@@ -936,7 +948,7 @@ export function LedgerDialog(
                 onChange={(e) => setName(e.target.value)}
               />
               <label className="form-label" htmlFor="ledger-tagline">
-                홈 소개 문구 (선택)
+                {msg("홈 소개 문구 (선택)")}
               </label>
               <input
                 id="ledger-tagline"
@@ -944,12 +956,14 @@ export function LedgerDialog(
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
                 maxLength={120}
-                placeholder="나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게."
+                placeholder={msg(
+                  "나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게.",
+                )}
               />
               {!editing && (
                 <>
                   <label className="form-label" htmlFor="ledger-kind">
-                    사용 방식
+                    {msg("사용 방식")}
                   </label>
                   <select
                     id="ledger-kind"
@@ -957,13 +971,15 @@ export function LedgerDialog(
                     value={kind}
                     onChange={(e) => setKind(e.target.value)}
                   >
-                    <option value="personal">개인</option>
-                    <option value="shared">공유 · 초대한 사람과 함께</option>
+                    <option value="personal">{msg("개인")}</option>
+                    <option value="shared">
+                      {msg("공유 · 초대한 사람과 함께")}
+                    </option>
                   </select>
                 </>
               )}
               <label className="form-label" htmlFor="ledger-timezone">
-                시간대
+                {msg("시간대")}
               </label>
               <input
                 id="ledger-timezone"
@@ -976,7 +992,7 @@ export function LedgerDialog(
                 className="primary-button entry-submit"
                 disabled={task.busy}
               >
-                {editing ? "수정 저장" : "가계부 만들기"}
+                {editing ? msg("수정 저장") : msg("가계부 만들기")}
               </button>
               {editing && (
                 <button
@@ -986,7 +1002,10 @@ export function LedgerDialog(
                   onClick={() =>
                     task.run(async () => {
                       const answer = prompt(
-                        `가계부와 모든 계좌·내역을 휴지통으로 옮기고 공유 접근을 중단합니다. 복구할 수 있어요. 계속하려면 가계부 이름 '${editing.name}'을 입력해 주세요.`,
+                        msg(
+                          "가계부와 모든 계좌·내역을 휴지통으로 옮기고 공유 접근을 중단합니다. 복구할 수 있어요. 계속하려면 가계부 이름 '{0}'을 입력해 주세요.",
+                          [editing.name],
+                        ),
                       );
                       if (answer === null) return;
                       await post(
@@ -998,11 +1017,11 @@ export function LedgerDialog(
                       setEditId("");
                       await p.refresh();
                       await loadTrash();
-                      p.notify("가계부를 휴지통으로 옮겼어요.");
+                      p.notify(msg("가계부를 휴지통으로 옮겼어요."));
                     })
                   }
                 >
-                  가계부 삭제
+                  {msg("가계부 삭제")}
                 </button>
               )}
             </form>
@@ -1016,18 +1035,20 @@ export function LedgerDialog(
                   task.run(async () => {
                     if (
                       !confirm(
-                        "계좌·내역과 기존 공유 접근 권한도 다시 활성화됩니다. 복구할까요?",
+                        msg(
+                          "계좌·내역과 기존 공유 접근 권한도 다시 활성화됩니다. 복구할까요?",
+                        ),
                       )
                     )
                       return;
                     await post(`/ledgers/${l.id}/restore`);
                     await p.refresh();
                     await loadTrash();
-                    p.notify("가계부를 복구했어요.");
+                    p.notify(msg("가계부를 복구했어요."));
                   })
                 }
               >
-                복구
+                {msg("복구")}
               </button>
             </div>
           ))}
@@ -1062,11 +1083,11 @@ export function AccountDialog(
   const task = useTask();
   return (
     <Modal
-      title={ac ? ac.name : "첫 계좌부터, 가볍게."}
+      title={ac ? ac.name : msg("첫 계좌부터, 가볍게.")}
       subtitle={
         ac
-          ? "계좌 설정과 공개 범위를 확인하세요."
-          : "은행 연결 없이 직접 관리하는 통장·현금·카드를 등록해요."
+          ? msg("계좌 설정과 공개 범위를 확인하세요.")
+          : msg("은행 연결 없이 직접 관리하는 통장·현금·카드를 등록해요.")
       }
       onClose={p.close}
     >
@@ -1078,29 +1099,29 @@ export function AccountDialog(
             </span>
             <div>
               <p className="panel-subtitle">
-                기록 기준 잔액
+                {msg("기록 기준 잔액")}
                 {ac.kind === "card" || ac.kind === "loan"
-                  ? " · 부채는 음수"
+                  ? msg(" · 부채는 음수")
                   : ""}
               </p>
               <strong>{formatMoney(ac.balance, ac.scale, ac.currency)}</strong>
             </div>
           </div>
           <div className="detail-line">
-            <span>가계부</span>
+            <span>{msg("가계부")}</span>
             <strong>{ac.ledger_name}</strong>
           </div>
           <div className="detail-line">
-            <span>공개 범위</span>
+            <span>{msg("공개 범위")}</span>
             <Privacy shared={ac.shared} />
           </div>
           <div className="detail-line">
-            <span>관리 책임자</span>
+            <span>{msg("관리 책임자")}</span>
             <strong>{ac.owner_name}</strong>
           </div>
           <div className="detail-line">
-            <span>상태</span>
-            <strong>{ac.archived ? "보관 중" : "사용 중"}</strong>
+            <span>{msg("상태")}</span>
+            <strong>{ac.archived ? msg("보관 중") : msg("사용 중")}</strong>
           </div>
           <div className="account-detail-actions">
             <button
@@ -1110,11 +1131,11 @@ export function AccountDialog(
                 p.close();
               }}
             >
-              내역 보기
+              {msg("내역 보기")}
             </button>
             {ac.role !== "viewer" && !ac.archived && (
               <button className="primary-button" onClick={() => p.entry(ac.id)}>
-                기록 추가
+                {msg("기록 추가")}
               </button>
             )}
           </div>
@@ -1124,7 +1145,7 @@ export function AccountDialog(
               style={{ marginTop: 20 }}
               onClick={() => setEditing(true)}
             >
-              계좌 설정 <Icon name="arrow" />
+              {msg("계좌 설정")} <Icon name="arrow" />
             </button>
           )}
         </>
@@ -1149,13 +1170,15 @@ export function AccountDialog(
                   opening: toMinor(opening, currencyScales[currency]),
                 });
               await p.refresh();
-              p.notify(ac ? "계좌 설정을 바꿨어요." : "계좌를 만들었어요.");
+              p.notify(
+                ac ? msg("계좌 설정을 바꿨어요.") : msg("계좌를 만들었어요."),
+              );
               p.close();
             });
           }}
         >
           <label className="form-label" htmlFor="account-name">
-            계좌 이름
+            {msg("계좌 이름")}
           </label>
           <input
             id="account-name"
@@ -1168,7 +1191,7 @@ export function AccountDialog(
           {!ac && (
             <>
               <label className="form-label" htmlFor="account-ledger">
-                등록할 가계부
+                {msg("등록할 가계부")}
               </label>
               <select
                 id="account-ledger"
@@ -1185,14 +1208,15 @@ export function AccountDialog(
                   )
                   .map((l) => (
                     <option key={l.id} value={l.id}>
-                      {l.name} · {l.kind === "shared" ? "공유" : "개인"}
+                      {l.name} ·{" "}
+                      {l.kind === "shared" ? msg("공유") : msg("개인")}
                     </option>
                   ))}
               </select>
               <div className="form-two-cols">
                 <div>
                   <label className="form-label" htmlFor="account-kind">
-                    계좌 종류
+                    {msg("계좌 종류")}
                   </label>
                   <select
                     id="account-kind"
@@ -1200,15 +1224,15 @@ export function AccountDialog(
                     value={kind}
                     onChange={(e) => setKind(e.target.value as Account["kind"])}
                   >
-                    <option value="bank">예금·체크카드</option>
-                    <option value="cash">현금</option>
-                    <option value="card">신용카드</option>
-                    <option value="loan">대출</option>
+                    <option value="bank">{msg("예금·체크카드")}</option>
+                    <option value="cash">{msg("현금")}</option>
+                    <option value="card">{msg("신용카드")}</option>
+                    <option value="loan">{msg("대출")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="form-label" htmlFor="account-currency">
-                    통화
+                    {msg("통화")}
                   </label>
                   <select
                     id="account-currency"
@@ -1231,7 +1255,7 @@ export function AccountDialog(
                 </div>
               </div>
               <label className="form-label" htmlFor="account-opening">
-                시작 잔액
+                {msg("시작 잔액")}
               </label>
               <input
                 id="account-opening"
@@ -1242,8 +1266,9 @@ export function AccountDialog(
                 required
               />
               <p className="entry-hint">
-                신용카드 미결제액·대출 잔액은 음수로 입력해요. 시작 잔액은
-                수입으로 잡지 않아요.
+                {msg(
+                  "신용카드 미결제액·대출 잔액은 음수로 입력해요. 시작 잔액은 수입으로 잡지 않아요.",
+                )}
               </p>
               <div className="privacy-notice">
                 <Icon
@@ -1256,10 +1281,14 @@ export function AccountDialog(
                 <div>
                   <strong>
                     {p.ledgers.find((l) => l.id === ledger)?.kind === "shared"
-                      ? "이 가계부의 모든 멤버에게 공개됩니다."
-                      : "처음에는 나만 볼 수 있어요."}
+                      ? msg("이 가계부의 모든 멤버에게 공개됩니다.")
+                      : msg("처음에는 나만 볼 수 있어요.")}
                   </strong>
-                  <p>개인 가계부의 특정 계좌만 나중에 공유할 수도 있어요.</p>
+                  <p>
+                    {msg(
+                      "개인 가계부의 특정 계좌만 나중에 공유할 수도 있어요.",
+                    )}
+                  </p>
                 </div>
               </div>
             </>
@@ -1271,7 +1300,7 @@ export function AccountDialog(
                 checked={archived}
                 onChange={(e) => setArchived(e.target.checked)}
               />
-              계좌 보관 (기존 기록은 유지)
+              {msg("계좌 보관 (기존 기록은 유지)")}
             </label>
           )}
           {ac && (
@@ -1282,7 +1311,10 @@ export function AccountDialog(
               onClick={() =>
                 task.run(async () => {
                   const answer = prompt(
-                    `계좌와 내역을 숨기고 공유 접근을 중단합니다. 이체 상대 계좌의 기록은 남습니다. 설정에서 복구할 수 있어요. 삭제하려면 계좌 이름 '${ac.name}'을 입력해 주세요.`,
+                    msg(
+                      "계좌와 내역을 숨기고 공유 접근을 중단합니다. 이체 상대 계좌의 기록은 남습니다. 설정에서 복구할 수 있어요. 삭제하려면 계좌 이름 '{0}'을 입력해 주세요.",
+                      [ac.name],
+                    ),
                   );
                   if (answer === null) return;
                   await post(
@@ -1291,17 +1323,19 @@ export function AccountDialog(
                     "DELETE",
                   );
                   await p.refresh();
-                  p.notify("계좌를 휴지통으로 옮겼어요.");
+                  p.notify(msg("계좌를 휴지통으로 옮겼어요."));
                   p.close();
                 })
               }
             >
-              계좌 삭제
+              {msg("계좌 삭제")}
             </button>
           )}
           <ErrorText error={task.error} />
           <button className="primary-button entry-submit" disabled={task.busy}>
-            <Busy busy={task.busy}>{ac ? "설정 저장" : "계좌 만들기"}</Busy>
+            <Busy busy={task.busy}>
+              {ac ? msg("설정 저장") : msg("계좌 만들기")}
+            </Busy>
           </button>
         </form>
       )}
@@ -1320,27 +1354,30 @@ export function DetailDialog(
       });
       await p.refresh();
       p.notify(
-        t.deleted ? "기록을 복구했어요." : "기록을 휴지통으로 옮겼어요.",
+        t.deleted
+          ? msg("기록을 복구했어요.")
+          : msg("기록을 휴지통으로 옮겼어요."),
       );
       p.close();
     });
   }
   return (
     <Modal
-      title="기록 자세히 보기"
-      subtitle={`${t.date}${t.time ? " " + t.time : ""} · ${kindNames[t.kind] || t.kind} · ${t.creator}`}
+      title={msg("기록 자세히 보기")}
+      subtitle={`${t.date}${t.time ? " " + t.time : ""} · ${msg(kindNames[t.kind] || t.kind)} · ${t.creator}`}
       onClose={p.close}
     >
       {t.original_currency && (
         <div className="modal-note">
-          결제 원금액{" "}
+          {msg("결제 원금액")}{" "}
           {formatMoney(
             t.original_amount || "0",
             currencyScales[t.original_currency],
             t.original_currency,
           )}{" "}
-          · 적용 환율 1 {t.original_currency} = {t.exchange_rate} {t.currency}
-          <p>아래 금액은 계좌에 실제 반영된 기록 금액이에요.</p>
+          {msg("· 적용 환율 1")} {t.original_currency} = {t.exchange_rate}{" "}
+          {t.currency}
+          <p>{msg("아래 금액은 계좌에 실제 반영된 기록 금액이에요.")}</p>
         </div>
       )}
       {t.legs.map((l) => {
@@ -1368,20 +1405,20 @@ export function DetailDialog(
               </div>
             </div>
             <div className="detail-line">
-              <span>계좌</span>
-              <strong>{ac?.name || "계좌"}</strong>
+              <span>{msg("계좌")}</span>
+              <strong>{ac?.name || msg("계좌")}</strong>
             </div>
             <div className="detail-line">
-              <span>분류</span>
-              <strong>{l.category_name || categoryName(l.category)}</strong>
+              <span>{msg("분류")}</span>
+              <strong>{displayCategory(l.category, l.category_name)}</strong>
             </div>
             <div className="detail-line">
-              <span>공개 범위</span>
+              <span>{msg("공개 범위")}</span>
               <Privacy shared={ac?.shared || false} />
             </div>
             {l.note && (
               <div className="detail-line">
-                <span>메모</span>
+                <span>{msg("메모")}</span>
                 <strong className="wrap-text">{l.note}</strong>
               </div>
             )}
@@ -1394,7 +1431,10 @@ export function DetailDialog(
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <img src={`/api/receipts/${ref.id}`} alt="첨부 영수증" />
+                      <img
+                        src={`/api/receipts/${ref.id}`}
+                        alt={msg("첨부 영수증")}
+                      />
                     </a>
                     <button
                       className="text-link"
@@ -1406,7 +1446,7 @@ export function DetailDialog(
                       }
                     >
                       <Icon name="download" />
-                      사진 다운로드
+                      {msg("사진 다운로드")}
                     </button>
                   </div>
                 ))}
@@ -1417,8 +1457,9 @@ export function DetailDialog(
       })}
       {t.kind === "transfer" && t.legs.length === 1 && (
         <div className="modal-note">
-          상대 계좌는 비공개이거나 현재 조회 범위 밖에 있어요. 이체는 수입·지출
-          통계에서 제외합니다.
+          {msg(
+            "상대 계좌는 비공개이거나 현재 조회 범위 밖에 있어요. 이체는 수입·지출 통계에서 제외합니다.",
+          )}
         </div>
       )}
       <ErrorText error={task.error} />
@@ -1426,7 +1467,7 @@ export function DetailDialog(
         <div className="account-detail-actions">
           {!t.deleted && !(t.kind === "transfer" && t.legs.length !== 2) && (
             <button className="secondary-button" onClick={p.edit}>
-              수정하기
+              {msg("수정하기")}
             </button>
           )}
           {t.deleted && (
@@ -1436,14 +1477,15 @@ export function DetailDialog(
               onClick={toggle}
             >
               <Icon name="restore" />
-              복구하기
+              {msg("복구하기")}
             </button>
           )}
         </div>
       ) : (
         <div className="modal-note">
-          이 기록 전체를 수정할 권한이 없어요. 이체의 금액 수정·삭제에는 양쪽
-          계좌의 편집 권한이 필요합니다.
+          {msg(
+            "이 기록 전체를 수정할 권한이 없어요. 이체의 금액 수정·삭제에는 양쪽 계좌의 편집 권한이 필요합니다.",
+          )}
         </div>
       )}
     </Modal>
@@ -1466,21 +1508,21 @@ export function MonthDialog({
     /^\d{4}$/.test(year) && Number(year) >= 1900 && Number(year) <= 2100;
   return (
     <Modal
-      title="년·월 선택"
-      subtitle="연도를 입력하고 원하는 월을 선택하세요."
+      title={msg("년·월 선택")}
+      subtitle={msg("연도를 입력하고 원하는 월을 선택하세요.")}
       onClose={close}
     >
       <div className="month-toolbar">
         <div className="year-picker">
           <button
             className="icon-button"
-            aria-label="이전 연도"
+            aria-label={msg("이전 연도")}
             disabled={!valid || Number(year) <= 1900}
             onClick={() => setYear(String(Number(year) - 1))}
           >
             <Icon name="left" />
           </button>
-          <label htmlFor="picker-year">연도</label>
+          <label htmlFor="picker-year">{msg("연도")}</label>
           <input
             id="picker-year"
             className="field-input"
@@ -1493,7 +1535,7 @@ export function MonthDialog({
           />
           <button
             className="icon-button"
-            aria-label="다음 연도"
+            aria-label={msg("다음 연도")}
             disabled={!valid || Number(year) >= 2100}
             onClick={() => setYear(String(Number(year) + 1))}
           >
@@ -1508,7 +1550,7 @@ export function MonthDialog({
             close();
           }}
         >
-          이번 달
+          {msg("이번 달")}
         </button>
       </div>
       <div className="month-grid">
@@ -1526,7 +1568,7 @@ export function MonthDialog({
               close();
             }}
           >
-            {month}월
+            {monthName(month)}
           </button>
         ))}
       </div>

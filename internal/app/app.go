@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.11"
+const Version = "0.1.0-alpha.12"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -172,7 +172,7 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 		}
 		if r.Method != "GET" && r.Method != "HEAD" {
 			if !a.sameOrigin(r) {
-				writeJSON(w, 403, map[string]string{"error": "origin", "message": "허용되지 않은 접속 주소예요."})
+				writeJSON(w, 403, map[string]string{"error": "origin", "message": localizeMessage(requestLocale(r, nil), "허용되지 않은 접속 주소예요.")})
 				return
 			}
 		}
@@ -184,7 +184,7 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 		var err error
 		if auth {
 			if r.Header.Get("Authorization") != "" {
-				writeJSON(w, 403, map[string]string{"error": "wrong_auth_route", "message": "앱 비밀번호는 /api/v1 경로에서만 사용해 주세요."})
+				writeJSON(w, 403, map[string]string{"error": "wrong_auth_route", "message": localizeMessage(requestLocale(r, nil), "앱 비밀번호는 /api/v1 경로에서만 사용해 주세요.")})
 				return
 			}
 			u, err = a.authenticate(r)
@@ -198,10 +198,10 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 		if err != nil {
 			var e *apiError
 			if errors.As(err, &e) {
-				writeJSON(w, e.Status, map[string]string{"error": e.Code, "message": e.Message})
+				writeJSON(w, e.Status, map[string]string{"error": e.Code, "message": localizeMessage(requestLocale(r, u), e.Message)})
 			} else {
 				log.Printf("api failure: %T: %v", err, err)
-				writeJSON(w, 500, map[string]string{"error": "internal", "message": "처리하지 못했어요. 서버 상태를 확인해 주세요."})
+				writeJSON(w, 500, map[string]string{"error": "internal", "message": localizeMessage(requestLocale(r, nil), "처리하지 못했어요. 서버 상태를 확인해 주세요.")})
 			}
 		}
 	}
@@ -304,7 +304,7 @@ func (a *App) Routes() http.Handler {
 		_, _ = w.Write([]byte("ok\n"))
 	})
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 404, map[string]string{"error": "not_found", "message": "지원하지 않는 요청이에요."})
+		writeJSON(w, 404, map[string]string{"error": "not_found", "message": localizeMessage(requestLocale(r, nil), "지원하지 않는 요청이에요.")})
 	})
 	if a.Config.Assets != nil {
 		m.Handle("/", a.assets())
@@ -328,7 +328,7 @@ func (a *App) assets() http.Handler {
 			return
 		}
 		w.Header().Set("Cache-Control", "no-cache")
-		name := strings.TrimPrefix(r.URL.Path, "/")
+		name := strings.Trim(r.URL.Path, "/")
 		if name == "" {
 			name = "index.html"
 		}

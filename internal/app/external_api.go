@@ -113,17 +113,7 @@ func (a *App) externalAPI(permission string, h handler) http.HandlerFunc {
 			}
 		}
 		if err != nil {
-			var e *apiError
-			if !errors.As(err, &e) {
-				e = &apiError{500, "internal", "처리하지 못했어요. 서버 상태를 확인해 주세요."}
-			}
-			if e.Status == 401 {
-				w.Header().Set("WWW-Authenticate", `Bearer realm="duet-ledger", error="invalid_token"`)
-			}
-			if e.Status == 429 && w.Header().Get("Retry-After") == "" {
-				w.Header().Set("Retry-After", "60")
-			}
-			writeJSON(w, e.Status, map[string]string{"error": e.Code, "message": e.Message})
+			writeRequestError(w, r, u, err, true)
 		}
 	}
 }

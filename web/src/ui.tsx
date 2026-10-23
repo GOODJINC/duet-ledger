@@ -1,3 +1,4 @@
+import { msg } from "./i18n";
 import {
   useEffect,
   useId,
@@ -130,9 +131,11 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         <i />
       </span>
       <span>
-        듀엣 가계부
+        {msg("듀엣 가계부")}
         {!compact && (
-          <span className="brand-subtitle">우리의 일상을 기록하다</span>
+          <span className="brand-subtitle">
+            {msg("우리의 일상을 기록하다")}
+          </span>
         )}
       </span>
     </span>
@@ -142,7 +145,7 @@ export function Privacy({ shared }: { shared: boolean }) {
   return (
     <span className={"privacy-badge " + (shared ? "shared" : "")}>
       <Icon name={shared ? "people" : "lock"} />
-      {shared ? "함께 보기" : "나만 보기"}
+      {shared ? msg("함께 보기") : msg("나만 보기")}
     </span>
   );
 }
@@ -184,7 +187,11 @@ export function Modal({
           <h2 id={headingId}>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
         </div>
-        <button className="icon-button" onClick={onClose} aria-label="닫기">
+        <button
+          className="icon-button"
+          onClick={onClose}
+          aria-label={msg("닫기")}
+        >
           <Icon name="close" />
         </button>
       </div>
@@ -213,7 +220,7 @@ export function Empty({
 export function ErrorText({ error }: { error: string }) {
   return error ? (
     <p className="error-message" role="alert">
-      {error}
+      {msg(error)}
     </p>
   ) : null;
 }
@@ -229,7 +236,7 @@ export function Busy({
       {busy ? (
         <>
           <Icon name="loader" className="spin" />
-          처리 중…
+          {msg("처리 중…")}
         </>
       ) : (
         children
@@ -255,7 +262,7 @@ export const PasswordInput = forwardRef<
       <button
         type="button"
         className="password-toggle"
-        aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"}
+        aria-label={visible ? msg("비밀번호 숨기기") : msg("비밀번호 보기")}
         aria-pressed={visible}
         onClick={() => setVisible(!visible)}
       >
@@ -298,12 +305,12 @@ export function Help({ children }: { children: ReactNode }) {
     const bottom = dialog?.height
       ? Math.min(window.innerHeight - 12, dialog.bottom - 12)
       : window.innerHeight - 12;
-    const width = Math.max(80, Math.min(290, right - left));
-    el.style.width = width + "px";
+    el.style.width = "max-content";
+    el.style.maxWidth = Math.max(0, Math.min(290, right - left)) + "px";
     el.style.maxHeight = Math.max(80, bottom - top) + "px";
     if (typeof el.showPopover === "function") el.showPopover();
     else el.setAttribute("data-open", "true");
-    const height = el.getBoundingClientRect().height;
+    const { width, height } = el.getBoundingClientRect();
     el.style.left = Math.max(left, Math.min(rect.left, right - width)) + "px";
     el.style.top =
       Math.max(
@@ -330,7 +337,7 @@ export function Help({ children }: { children: ReactNode }) {
         ref={anchor}
         type="button"
         className="help-button"
-        aria-label="도움말"
+        aria-label={msg("도움말")}
         aria-describedby={id}
         onPointerEnter={show}
         onPointerLeave={hide}

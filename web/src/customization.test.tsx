@@ -16,7 +16,7 @@ import {
   LedgerDialog,
   type DialogProps,
 } from "./dialogs";
-import { CategoriesDialog, AdminDialog, ExchangeSettings } from "./preferences";
+import { CategoriesDialog, ExchangeSettings } from "./preferences";
 import {
   api,
   post,

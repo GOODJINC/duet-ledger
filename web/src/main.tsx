@@ -1,3 +1,12 @@
+import {
+  msg,
+  getLocale,
+  useLocale,
+  setLocale as setLanguage,
+  monthTitle,
+  weekdays,
+  manualURL,
+} from "./i18n";
 import { exchangeFactor, convertMinor } from "./exchange";
 import React, {
   useCallback,
@@ -19,7 +28,7 @@ import {
   dateRange,
   currencyScales,
   categories,
-  categoryName,
+  displayCategory,
   kindNames,
   type User,
   type Ledger,
@@ -124,29 +133,25 @@ const navigation: {
   id: Page;
   label: string;
   short: string;
-  en: string;
   icon: IconName;
 }[] = [
-  { id: "home", label: "홈", short: "홈", en: "Home", icon: "home" },
+  { id: "home", label: "홈", short: "홈", icon: "home" },
   {
     id: "ledger",
     label: "가계부",
     short: "가계부",
-    en: "Ledger",
     icon: "book",
   },
   {
     id: "stats",
     label: "통계·분석",
     short: "통계",
-    en: "Insights",
     icon: "chart",
   },
   {
     id: "accounts",
     label: "계좌·자산",
     short: "계좌",
-    en: "Accounts",
     icon: "wallet",
   },
 ];
@@ -165,6 +170,8 @@ const initialInvite = location.hash.startsWith("#invite=")
 if (initialInvite) history.replaceState(null, "", location.pathname);
 
 function Root() {
+  useLocale();
+  useEffect(() => setLanguage(getLocale()), []);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(true);
   const [registrationOpen, setRegistrationOpen] = useState(false);
@@ -185,13 +192,14 @@ function Root() {
         try {
           const u = await api<User>("/me");
           setCSRF(u.csrf);
+          setLanguage(u.locale);
           setUser(u);
         } catch (e) {
           if (!(e instanceof APIError && e.status === 401)) throw e;
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "연결하지 못했어요.");
+      setError(e instanceof Error ? e.message : msg("연결하지 못했어요."));
     } finally {
       setLoading(false);
     }
@@ -220,7 +228,7 @@ function Root() {
       <div className="boot-screen">
         <Brand />
         <Icon name="loader" className="spin" />
-        <p>나의 기록을 준비하고 있어요.</p>
+        <p>{msg("나의 기록을 준비하고 있어요.")}</p>
       </div>
     );
   if (error)
@@ -229,7 +237,7 @@ function Root() {
         <Brand />
         <ErrorText error={error} />
         <button className="primary-button" onClick={boot}>
-          다시 연결
+          {msg("다시 연결")}
         </button>
       </div>
     );
@@ -241,6 +249,7 @@ function Root() {
         invite={invite}
         onLogin={(u, isJoin) => {
           setCSRF(u.csrf);
+          setLanguage(u.locale);
           setUser(u);
           setInitialized(true);
           if (isJoin) {
@@ -271,6 +280,7 @@ export function Auth({
   invite: string;
   onLogin: (u: User, joined: boolean) => void;
 }) {
+  const language = useLocale();
   const [join, setJoin] = useState(false);
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
@@ -293,7 +303,7 @@ export function Auth({
       (!initialized || join) &&
       enteredPassword !== String(form.get("confirm-password") || "")
     ) {
-      setError("두 비밀번호가 같지 않아요.");
+      setError(msg("두 비밀번호가 같지 않아요."));
       return;
     }
     setBusy(true);
@@ -322,13 +332,15 @@ export function Auth({
         setSetupClosed(true);
         setJoin(false);
         setError(
-          "이미 관리자 계정이 만들어졌어요. 기존 계정으로 로그인해 주세요.",
+          msg(
+            "이미 관리자 계정이 만들어졌어요. 기존 계정으로 로그인해 주세요.",
+          ),
         );
         return;
       }
       if (e instanceof APIError && e.code === "totp_required")
         setNeedCode(true);
-      setError(e instanceof Error ? e.message : "로그인하지 못했어요.");
+      setError(e instanceof Error ? e.message : msg("로그인하지 못했어요."));
     } finally {
       setBusy(false);
     }
@@ -340,14 +352,14 @@ export function Auth({
         <div>
           <p className="eyebrow">PERSONAL, TOGETHER.</p>
           <h1>
-            내 기록은 나답게.
+            {msg("내 기록은 나답게.")}
             <br />
-            우리의 기록은 함께.
+            {msg("우리의 기록은 함께.")}
           </h1>
           <p>
-            혼자 쓰는 가계부부터 함께 쓰는 생활비까지.
+            {msg("혼자 쓰는 가계부부터 함께 쓰는 생활비까지.")}
             <br />
-            일상의 모든 기록을 한곳에 모아보세요.
+            {msg("일상의 모든 기록을 한곳에 모아보세요.")}
           </p>
           <div className="auth-illustration" aria-hidden="true">
             <div className="illustration-book book-one">
@@ -367,34 +379,45 @@ export function Auth({
             </span>
           </div>
         </div>
-        <small>나의 서버에, 나의 기록.</small>
+        <small>{msg("나의 서버에, 나의 기록.")}</small>
       </aside>
       <main className="auth-main">
         <div className="auth-mobile-brand">
           <Brand />
         </div>
         <section className="auth-card">
+          <label className="auth-language">
+            {msg("언어")}
+            <select
+              aria-label={msg("언어")}
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+            </select>
+          </label>
           <p className="eyebrow">
             <Icon name="leaf" />
             DUET LEDGER
           </p>
           <h2>
             {!initialized
-              ? "나만의 기록을 시작해요."
+              ? msg("나만의 기록을 시작해요.")
               : join
                 ? invite
-                  ? "초대를 받아 함께 시작해요."
-                  : "새 계정으로 시작해요."
-                : "다시 만나 반가워요."}
+                  ? msg("초대를 받아 함께 시작해요.")
+                  : msg("새 계정으로 시작해요.")
+                : msg("다시 만나 반가워요.")}
           </h2>
           <p className="auth-subtitle">
             {!initialized
-              ? "첫 관리자 계정과 개인 가계부를 만들어요."
+              ? msg("첫 관리자 계정과 개인 가계부를 만들어요.")
               : join
                 ? invite
-                  ? "계정을 만들고 초대를 수락해요."
-                  : "개인 가계부와 함께 새 계정을 만들어요."
-                : "오늘의 작은 기록을 이어가볼까요?"}
+                  ? msg("계정을 만들고 초대를 수락해요.")
+                  : msg("개인 가계부와 함께 새 계정을 만들어요.")
+                : msg("오늘의 작은 기록을 이어가볼까요?")}
           </p>
           {(invite || registrationOpen) && initialized && (
             <div className="entry-types">
@@ -405,7 +428,7 @@ export function Auth({
                 }}
                 aria-pressed={!join}
               >
-                기존 계정으로 로그인
+                {msg("기존 계정으로 로그인")}
               </button>
               <button
                 onClick={() => {
@@ -414,22 +437,22 @@ export function Auth({
                 }}
                 aria-pressed={join}
               >
-                회원가입
+                {msg("회원가입")}
               </button>
             </div>
           )}
           <form onSubmit={submit}>
             {!initialized && (
               <p className="setup-hint">
-                처음 만든 계정이 관리자가 됩니다.
+                {msg("처음 만든 계정이 관리자가 됩니다.")}
                 <br />
-                외부에 공개하기 전에 계정을 만들어 주세요.
+                {msg("외부에 공개하기 전에 계정을 만들어 주세요.")}
               </p>
             )}
             {(!initialized || join) && (
               <>
                 <label className="form-label" htmlFor="auth-name">
-                  표시할 이름
+                  {msg("표시할 이름")}
                 </label>
                 <input
                   id="auth-name"
@@ -444,7 +467,7 @@ export function Auth({
               </>
             )}
             <label className="form-label" htmlFor="auth-username">
-              아이디
+              {msg("아이디")}
             </label>
             <input
               id="auth-username"
@@ -456,10 +479,11 @@ export function Auth({
               required
               minLength={3}
               maxLength={32}
-              placeholder="영문 소문자·숫자 3~32자"
+              placeholder={msg("영문 소문자·숫자 3~32자")}
             />
             <label className="form-label" htmlFor="auth-password">
-              비밀번호{!initialized || join ? " · 8자 이상" : ""}
+              {msg("비밀번호")}
+              {!initialized || join ? msg(" · 8자 이상") : ""}
             </label>
             <PasswordInput
               id="auth-password"
@@ -477,7 +501,7 @@ export function Auth({
             {(!initialized || join) && (
               <>
                 <label className="form-label" htmlFor="confirm-password">
-                  비밀번호 다시 입력
+                  {msg("비밀번호 다시 입력")}
                 </label>
                 <PasswordInput
                   id="confirm-password"
@@ -493,7 +517,7 @@ export function Auth({
             {needCode && (
               <>
                 <label className="form-label" htmlFor="auth-code">
-                  인증 앱 코드 또는 복구 코드
+                  {msg("인증 앱 코드 또는 복구 코드")}
                 </label>
                 <input
                   id="auth-code"
@@ -510,12 +534,12 @@ export function Auth({
             <button className="primary-button entry-submit" disabled={busy}>
               <Busy busy={busy}>
                 {!initialized
-                  ? "내 가계부 시작하기"
+                  ? msg("내 가계부 시작하기")
                   : join
                     ? invite
-                      ? "계정 생성·초대 수락"
-                      : "가입하고 시작하기"
-                    : "로그인"}
+                      ? msg("계정 생성·초대 수락")
+                      : msg("가입하고 시작하기")
+                    : msg("로그인")}
                 <Icon name="arrow" />
               </Busy>
             </button>
@@ -523,8 +547,10 @@ export function Auth({
           <div className="auth-footnote">
             <Icon name="shield" />
             {invite
-              ? "계정 초대는 가입을 허용하고, 공유 초대는 책임자 승인 후 내역이 보여요."
-              : "공유 설정 없이 개인용으로만 사용해도 좋아요."}
+              ? msg(
+                  "계정 초대는 가입을 허용하고, 공유 초대는 책임자 승인 후 내역이 보여요.",
+                )
+              : msg("공유 설정 없이 개인용으로만 사용해도 좋아요.")}
           </div>
         </section>
       </main>
@@ -545,6 +571,8 @@ export function Application({
   clearInvite: () => void;
   joined: boolean;
 }) {
+  useLocale();
+  useEffect(() => setLanguage(user.locale), [user.locale]);
   const [page, setPage] = useState<Page>(() => {
     const p = pathPage();
     return p === "administration" && !user.admin ? "settings" : p;
@@ -662,9 +690,7 @@ export function Application({
         navigate("ledger");
         requestAnimationFrame(() =>
           document
-            .querySelector<HTMLInputElement>(
-              ".search-box input, input[placeholder*='작성자']",
-            )
+            .querySelector<HTMLInputElement>("[data-transaction-search]")
             ?.focus(),
         );
       } else if (e.key.toLowerCase() === "q") {
@@ -675,7 +701,6 @@ export function Application({
     document.addEventListener("keydown", shortcut);
     return () => document.removeEventListener("keydown", shortcut);
   });
-  const en = user.locale === "en";
   useEffect(() => {
     document.body.dataset.accent = accent;
     localStorage.setItem(`duet-ledger-accent-${user.id}`, accent);
@@ -749,7 +774,7 @@ export function Application({
       setError("");
     } catch (e) {
       if (version === requestVersion.current)
-        setError(e instanceof Error ? e.message : "불러오지 못했어요.");
+        setError(e instanceof Error ? e.message : msg("불러오지 못했어요."));
       throw e;
     } finally {
       if (version === requestVersion.current) setLoading(false);
@@ -850,7 +875,7 @@ export function Application({
   function openEntry(account?: string) {
     if (!visibleAccounts.some((a) => !a.archived && a.role !== "viewer")) {
       if (ledger && selectedLedger?.role !== "owner") {
-        setToast("이 가계부의 책임자에게 계좌 생성을 요청해 주세요.");
+        setToast(msg("이 가계부의 책임자에게 계좌 생성을 요청해 주세요."));
         return;
       }
       setModal({ kind: "account" });
@@ -901,57 +926,42 @@ export function Application({
     ).catch((e) => setToast(e.message));
   }
   const headingTitles: Record<Page, [string, string]> = {
-    home: en
-      ? [
-          "Your day, at a glance.",
-          "Personal records and shared expenses, together.",
-        ]
-      : [
-          "돈의 흐름을 한눈에.",
-          selectedLedger?.tagline ||
-            "나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게.",
-        ],
-    ledger: en
-      ? ["One day at a time.", "Find, review and record your transactions."]
-      : ["하루하루, 차곡차곡.", "작은 기록이 모여 우리 일상의 흐름이 돼요."],
-    stats: en
-      ? [
-          "Patterns in your everyday.",
-          "A closer look at what you earn and spend.",
-        ]
-      : [
-          "기록 속에서 찾는 패턴.",
-          "어디에 쓰고, 얼마나 모았는지. 숫자를 조금 더 가까이.",
-        ],
-    accounts: en
-      ? [
-          "Your money, your space.",
-          "Keep accounts private or share only what you choose.",
-        ]
-      : [
-          "나의 자산, 우리의 생활.",
-          "계좌는 한 번만 등록하고, 필요한 계좌만 함께 볼 수 있어요.",
-        ],
-    "account-settings": [
-      "나의 계정, 안전하게.",
-      "프로필과 로그인 보안을 관리해요.",
+    home: [
+      msg("돈의 흐름을 한눈에."),
+      selectedLedger?.tagline ||
+        msg("나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게."),
     ],
-    administration: ["서버 관리.", "가입 정책과 전체 서버 백업을 관리해요."],
-    settings: en
-      ? ["Make yourself at home.", "Manage your space, sharing and security."]
-      : [
-          "내게 편한 방식으로.",
-          "화면과 공유 범위를 살펴보고, 나의 기록을 안전하게.",
-        ],
+    ledger: [
+      msg("하루하루, 차곡차곡."),
+      msg("작은 기록이 모여 우리 일상의 흐름이 돼요."),
+    ],
+    stats: [
+      msg("기록 속에서 찾는 패턴."),
+      msg("어디에 쓰고, 얼마나 모았는지. 숫자를 조금 더 가까이."),
+    ],
+    accounts: [
+      msg("나의 자산, 우리의 생활."),
+      msg("계좌는 한 번만 등록하고, 필요한 계좌만 함께 볼 수 있어요."),
+    ],
+    "account-settings": [
+      msg("나의 계정, 안전하게."),
+      msg("프로필과 로그인 보안을 관리해요."),
+    ],
+    administration: [
+      msg("서버 관리."),
+      msg("가입 정책과 전체 서버 백업을 관리해요."),
+    ],
+    settings: [
+      msg("내게 편한 방식으로."),
+      msg("화면과 공유 범위를 살펴보고, 나의 기록을 안전하게."),
+    ],
   };
   function summary() {
     return (
       <section className="summary-grid">
         <article className="summary-card total">
           <div className="card-topline">
-            <span>
-              {en ? "Selected accounts · net balance" : "기록 기준 순자산"}
-            </span>
+            <span>{msg("기록 기준 순자산")}</span>
             <span className="summary-icon">
               <Icon name="wallet" />
             </span>
@@ -962,13 +972,14 @@ export function Application({
           </div>
           <p className="card-footnote">
             <Icon name="check" />
-            {moneyAccounts.length}개 계좌 · 카드·대출 부채 포함
+            {moneyAccounts.length}
+            {msg("개 계좌 · 카드·대출 부채 포함")}
           </p>
           <div className="summary-decoration" />
         </article>
         <article className="summary-card income">
           <div className="card-topline">
-            <span>{en ? "Income" : "이번 달 수입"}</span>
+            <span>{msg("이번 달 수입")}</span>
             <span className="summary-icon">
               <Icon name="in" />
             </span>
@@ -977,11 +988,11 @@ export function Application({
             <span className="won">{currency === "KRW" ? "₩" : currency}</span>
             {formatMoney(totals?.income || "0", scale, currency, false)}
           </div>
-          <p className="card-footnote">선택한 조회 범위의 수입</p>
+          <p className="card-footnote">{msg("선택한 조회 범위의 수입")}</p>
         </article>
         <article className="summary-card expense">
           <div className="card-topline">
-            <span>{en ? "Expenses" : "이번 달 지출"}</span>
+            <span>{msg("이번 달 지출")}</span>
             <span className="summary-icon">
               <Icon name="up" />
             </span>
@@ -990,7 +1001,9 @@ export function Application({
             <span className="won">{currency === "KRW" ? "₩" : currency}</span>
             {formatMoney(totals?.expense || "0", scale, currency, false)}
           </div>
-          <p className="card-footnote">이체·잔액 조정 제외, 환불 차감</p>
+          <p className="card-footnote">
+            {msg("이체·잔액 조정 제외, 환불 차감")}
+          </p>
         </article>
       </section>
     );
@@ -1009,17 +1022,18 @@ export function Application({
       <section className="panel transaction-panel">
         <div className="panel-heading">
           <h2>
-            최근 내역 <span className="subtle-count">{report.count}</span>
+            {msg("최근 내역")}{" "}
+            <span className="subtle-count">{report.count}</span>
           </h2>
           <button className="text-link" onClick={() => navigate("ledger")}>
-            전체 보기 <Icon name="arrow" />
+            {msg("전체 보기")} <Icon name="arrow" />
           </button>
         </div>
         <TableHeader />
         {rows(report.items.slice(0, 5))}
         <div className="transaction-panel-footer">
           <button onClick={() => navigate("ledger")}>
-            이번 달 기록 모두 보기
+            {msg("이번 달 기록 모두 보기")}
           </button>
         </div>
       </section>
@@ -1030,10 +1044,11 @@ export function Application({
       <section className="panel panel-pad">
         <div className="panel-heading">
           <h2>
-            내 계좌 <span className="subtle-count">{moneyAccounts.length}</span>
+            {msg("내 계좌")}{" "}
+            <span className="subtle-count">{moneyAccounts.length}</span>
           </h2>
           <button className="text-link" onClick={() => navigate("accounts")}>
-            전체 <Icon name="arrow" />
+            {msg("전체")} <Icon name="arrow" />
           </button>
         </div>
         {moneyAccounts.slice(0, 4).map((a) => (
@@ -1048,32 +1063,32 @@ export function Application({
             <span>
               <span className="account-mini-title">{a.name}</span>
               <small>
-                {a.shared ? "함께 보기" : "나만 보기"}
-                {a.archived ? " · 보관" : ""}
+                {a.shared ? msg("함께 보기") : msg("나만 보기")}
+                {a.archived ? msg(" · 보관") : ""}
               </small>
             </span>
             <span className="account-mini-amount">
               {formatMoney(a.balance, a.scale, a.currency, false)}
-              <small>{a.currency === "KRW" ? "원" : a.currency}</small>
+              <small>{a.currency === "KRW" ? msg("원") : a.currency}</small>
             </span>
           </button>
         ))}
         {!moneyAccounts.length && (
           <Empty
-            title="아직 계좌가 없어요."
-            description="통장·현금·카드를 등록해보세요."
+            title={msg("아직 계좌가 없어요.")}
+            description={msg("통장·현금·카드를 등록해보세요.")}
           >
             <button
               className="secondary-button"
               onClick={() => setModal({ kind: "account" })}
             >
-              계좌 만들기
+              {msg("계좌 만들기")}
             </button>
           </Empty>
         )}
         <p className="account-list-note">
           <Icon name="shield" />
-          공유한 계좌만 함께 볼 수 있어요
+          {msg("공유한 계좌만 함께 볼 수 있어요")}
         </p>
       </section>
     );
@@ -1084,17 +1099,17 @@ export function Application({
         <div className="leaf-decoration">
           <Icon name="leaf" />
         </div>
-        <h3>함께 쓰고, 따로 지켜요.</h3>
+        <h3>{msg("함께 쓰고, 따로 지켜요.")}</h3>
         <p>
-          생활비는 함께 보고,
+          {msg("생활비는 함께 보고,")}
           <br />
-          개인 기록은 나만 볼 수 있도록.
+          {msg("개인 기록은 나만 볼 수 있도록.")}
         </p>
         <button
           className="text-link"
           onClick={() => setModal({ kind: "sharing" })}
         >
-          공유 관리 <Icon name="arrow" />
+          {msg("공유 관리")} <Icon name="arrow" />
         </button>
       </section>
     );
@@ -1109,7 +1124,7 @@ export function Application({
               e.preventDefault();
               navigate("home");
             }}
-            aria-label="듀엣 가계부 홈"
+            aria-label={msg("듀엣 가계부 홈")}
           >
             <Brand />
           </a>
@@ -1121,8 +1136,8 @@ export function Application({
               <Icon name="book" />
             </span>
             <span>
-              <small>나의 공간</small>
-              <strong>{selectedLedger?.name || "모든 가계부"}</strong>
+              <small>{msg("나의 공간")}</small>
+              <strong>{selectedLedger?.name || msg("모든 가계부")}</strong>
             </span>
             <Icon name="down" />
           </button>
@@ -1141,7 +1156,7 @@ export function Application({
                 onClick={() => navigate(n.id)}
               >
                 <Icon name={n.icon} />
-                {en ? n.en : n.label}
+                {msg(n.label)}
               </button>
             ))}
           </nav>
@@ -1150,29 +1165,32 @@ export function Application({
               <div className="together-icon">
                 <Icon name="people" />
               </div>
-              <strong>혼자서도, 함께여도.</strong>
+              <strong>{msg("혼자서도, 함께여도.")}</strong>
               <p>
-                내 기록은 나답게,
+                {msg("내 기록은 나답게,")}
                 <br />
-                우리의 기록은 함께.
+                {msg("우리의 기록은 함께.")}
               </p>
               <button
                 className="text-link"
                 onClick={() => setModal({ kind: "sharing" })}
               >
-                공유 공간 살펴보기 <Icon name="arrow" />
+                {msg("공유 공간 살펴보기")} <Icon name="arrow" />
               </button>
               <div className="avatar-stack">
                 <span className="avatar mint">{user.name.slice(0, 1)}</span>
-                <small>{user.name}의 공간</small>
+                <small>
+                  {user.name}
+                  {msg("의 공간")}
+                </small>
               </div>
             </div>
           )}
           <div className="sidebar-bottom">
             <span className="local-dot" />
             {selectedLedger?.kind === "shared"
-              ? "우리의 기록, 우리의 공간"
-              : "나의 기록, 나의 공간"}{" "}
+              ? msg("우리의 기록, 우리의 공간")
+              : msg("나의 기록, 나의 공간")}{" "}
             <Icon name="leaf" />
           </div>
         </aside>
@@ -1183,20 +1201,18 @@ export function Application({
                 <Brand compact />
               </span>
               <span className="desktop-breadcrumb">
-                {selectedLedger?.name || "나의 공간"}
+                {selectedLedger?.name || msg("나의 공간")}
                 <span>/</span>
                 <strong>
                   {page === "account-settings"
-                    ? "계정 설정"
+                    ? msg("계정 설정")
                     : page === "administration"
-                      ? "관리"
+                      ? msg("관리")
                       : page === "settings"
-                        ? en
-                          ? "Settings"
-                          : "설정"
-                        : navigation.find((n) => n.id === page)?.[
-                            en ? "en" : "label"
-                          ]}
+                        ? msg("설정")
+                        : msg(
+                            navigation.find((n) => n.id === page)?.label || "",
+                          )}
                 </strong>
               </span>
             </div>
@@ -1205,17 +1221,17 @@ export function Application({
               <button
                 className="mobile-ledger-picker secondary-button"
                 onClick={() => setModal({ kind: "ledgers" })}
-                aria-label="가계부 선택"
+                aria-label={msg("가계부 선택")}
               >
                 <Icon name="book" />
-                <span>{selectedLedger?.name || "모아 보기"}</span>
+                <span>{selectedLedger?.name || msg("모아 보기")}</span>
                 <Icon name="down" />
               </button>
               <div className="user-menu-wrap" ref={userMenuRef}>
                 <button
                   className="profile-button"
                   onClick={() => setUserMenu(!userMenu)}
-                  aria-label="사용자 메뉴"
+                  aria-label={msg("사용자 메뉴")}
                   aria-expanded={userMenu}
                   aria-controls="user-dropdown"
                 >
@@ -1227,18 +1243,26 @@ export function Application({
                   <div className="user-dropdown" id="user-dropdown">
                     <button onClick={() => navigate("account-settings")}>
                       <Icon name="user" />
-                      계정 설정
+                      {msg("계정 설정")}
                     </button>
                     <button onClick={() => navigate("settings")}>
                       <Icon name="settings" />
-                      설정
+                      {msg("설정")}
                     </button>
                     {user.admin && (
                       <button onClick={() => navigate("administration")}>
                         <Icon name="shield" />
-                        관리
+                        {msg("관리")}
                       </button>
                     )}
+                    <a
+                      href={manualURL()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Icon name="info" />
+                      {msg("도움말 및 지원")}
+                    </a>
                     <button
                       onClick={() =>
                         post("/logout")
@@ -1251,7 +1275,7 @@ export function Application({
                       }
                     >
                       <Icon name="logout" />
-                      로그아웃
+                      {msg("로그아웃")}
                     </button>
                   </div>
                 )}
@@ -1261,22 +1285,25 @@ export function Application({
           <main id="main-content">
             {!online && (
               <div className="inline-warning" role="status">
-                인터넷 연결을 확인해 주세요. 오프라인에서는 기록을 저장할 수
-                없어요.
+                {msg(
+                  "인터넷 연결을 확인해 주세요. 오프라인에서는 기록을 저장할 수 없어요.",
+                )}
               </div>
             )}
             {error && (
               <div className="error-banner" role="alert">
-                {error}
+                {msg(error)}
                 <button onClick={() => refresh().catch(() => {})}>
-                  다시 불러오기
+                  {msg("다시 불러오기")}
                 </button>
               </div>
             )}
             {joined && (
               <div className="scope-explanation">
                 <Icon name="people" />
-                초대를 수락했어요. 책임자가 승인하면 공유 기록이 나타나요.
+                {msg(
+                  "초대를 수락했어요. 책임자가 승인하면 공유 기록이 나타나요.",
+                )}
               </div>
             )}
             <div className="page-heading">
@@ -1284,7 +1311,7 @@ export function Application({
                 <p className="eyebrow">
                   <Icon name="leaf" />
                   {page === "home"
-                    ? `${user.name}님의 일상 기록`
+                    ? msg("{0}님의 일상 기록", [user.name])
                     : "DUET LEDGER"}
                 </p>
                 <h1>{headingTitles[page][0]}</h1>
@@ -1297,7 +1324,7 @@ export function Application({
                     onClick={() => setModal({ kind: "account" })}
                   >
                     <Icon name="plus" />
-                    계좌 만들기
+                    {msg("계좌 만들기")}
                   </button>
                 ) : isSettings ? null : (
                   <button
@@ -1305,7 +1332,7 @@ export function Application({
                     onClick={() => openEntry()}
                   >
                     <Icon name="plus" />
-                    {en ? "Add record" : "빠른 입력"}
+                    {msg("빠른 입력")}
                   </button>
                 )}
               </div>
@@ -1316,12 +1343,12 @@ export function Application({
                   <div
                     className="scope-tabs"
                     role="group"
-                    aria-label="조회 범위"
+                    aria-label={msg("조회 범위")}
                   >
                     {[
-                      ["all", "모아 보기", "wallet"],
-                      ["private", "개인", "lock"],
-                      ["shared", "공유", "people"],
+                      ["all", msg("모아 보기"), "wallet"],
+                      ["private", msg("개인"), "lock"],
+                      ["shared", msg("공유"), "people"],
                     ].map(([id, label, icon]) => (
                       <button
                         key={id}
@@ -1329,13 +1356,7 @@ export function Application({
                         onClick={() => scopeChange(id)}
                       >
                         <Icon name={icon as IconName} />
-                        {en
-                          ? {
-                              all: "All",
-                              private: "Private",
-                              shared: "Shared",
-                            }[id]
-                          : label}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -1345,20 +1366,22 @@ export function Application({
                     <div className="month-nav">
                       <button
                         onClick={() => moveMonth(-1)}
-                        aria-label="이전 달"
+                        aria-label={msg("이전 달")}
                       >
                         <Icon name="left" />
                       </button>
                       <button
                         className="month-label"
                         onClick={() => setMonthPicker(true)}
-                        aria-label="년·월 선택"
+                        aria-label={msg("년·월 선택")}
                       >
                         <Icon name="calendar" />
-                        {Number(date.slice(0, 4))}년 {Number(date.slice(5, 7))}
-                        월
+                        {monthTitle(date)}
                       </button>
-                      <button onClick={() => moveMonth(1)} aria-label="다음 달">
+                      <button
+                        onClick={() => moveMonth(1)}
+                        aria-label={msg("다음 달")}
+                      >
                         <Icon name="right" />
                       </button>
                     </div>
@@ -1370,13 +1393,13 @@ export function Application({
                           <div
                             className="segment-control"
                             role="group"
-                            aria-label="조회 기간"
+                            aria-label={msg("조회 기간")}
                           >
                             {[
-                              ["day", "일"],
-                              ["week", "주"],
-                              ["month", "월"],
-                              ["year", "연"],
+                              ["day", msg("일")],
+                              ["week", msg("주")],
+                              ["month", msg("월")],
+                              ["year", msg("연")],
                             ].map(([v, l]) => (
                               <button
                                 key={v}
@@ -1394,14 +1417,14 @@ export function Application({
                           </div>
                           <div className="segment-control">
                             <button
-                              aria-label="목록 보기"
+                              aria-label={msg("목록 보기")}
                               aria-pressed={view === "list"}
                               onClick={() => setView("list")}
                             >
                               <Icon name="list" />
                             </button>
                             <button
-                              aria-label="달력 보기"
+                              aria-label={msg("달력 보기")}
                               aria-pressed={view === "calendar"}
                               onClick={() => {
                                 setView("calendar");
@@ -1424,10 +1447,11 @@ export function Application({
                 {!accounts.length && (
                   <div className="welcome-card">
                     <div>
-                      <strong>나만의 첫 계좌를 만들어보세요.</strong>
+                      <strong>{msg("나만의 첫 계좌를 만들어보세요.")}</strong>
                       <p>
-                        공유 설정 없이 혼자 시작해도 좋아요. 필요할 때만 함께 쓸
-                        수 있어요.
+                        {msg(
+                          "공유 설정 없이 혼자 시작해도 좋아요. 필요할 때만 함께 쓸 수 있어요.",
+                        )}
                       </p>
                     </div>
                     <button
@@ -1435,7 +1459,7 @@ export function Application({
                       onClick={() => setModal({ kind: "account" })}
                     >
                       <Icon name="plus" />
-                      계좌 등록
+                      {msg("계좌 등록")}
                     </button>
                   </div>
                 )}
@@ -1467,7 +1491,9 @@ export function Application({
               <>
                 {trash && (
                   <div className="inline-warning trash-mode">
-                    <span>기록 휴지통 · 삭제한 기록을 보고 있어요.</span>
+                    <span>
+                      {msg("기록 휴지통 · 삭제한 기록을 보고 있어요.")}
+                    </span>
                     <button
                       className="secondary-button"
                       onClick={() => {
@@ -1475,26 +1501,29 @@ export function Application({
                         setPageNumber(1);
                       }}
                     >
-                      일반 내역으로 돌아가기
+                      {msg("일반 내역으로 돌아가기")}
                     </button>
                   </div>
                 )}
                 <div className="search-filter-bar">
                   <label className="search-field">
                     <Icon name="search" />
-                    <span className="visually-hidden">내역 검색</span>
+                    <span className="visually-hidden">{msg("내역 검색")}</span>
                     <input
                       value={search}
                       onChange={(e) => {
                         setSearch(e.target.value);
                         setPageNumber(1);
                       }}
-                      placeholder="내용·분류·메모·작성자 이름·아이디로 검색"
+                      data-transaction-search
+                      placeholder={msg(
+                        "내용·분류·메모·작성자 이름·아이디로 검색",
+                      )}
                     />
                   </label>
                   <div className="advanced-filters">
                     <select
-                      aria-label="계좌 필터"
+                      aria-label={msg("계좌 필터")}
                       className="compact-select"
                       value={accountFilter}
                       onChange={(e) => {
@@ -1502,7 +1531,7 @@ export function Application({
                         setPageNumber(1);
                       }}
                     >
-                      <option value="">모든 계좌</option>
+                      <option value="">{msg("모든 계좌")}</option>
                       {visibleAccounts.map((a) => (
                         <option key={a.id} value={a.id}>
                           {a.name}
@@ -1510,7 +1539,7 @@ export function Application({
                       ))}
                     </select>
                     <select
-                      aria-label="거래 종류 필터"
+                      aria-label={msg("거래 종류 필터")}
                       className="compact-select"
                       value={typeFilter}
                       onChange={(e) => {
@@ -1518,7 +1547,7 @@ export function Application({
                         setPageNumber(1);
                       }}
                     >
-                      <option value="">모든 거래</option>
+                      <option value="">{msg("모든 거래")}</option>
                       {Object.entries(kindNames)
                         .filter(
                           ([id]) =>
@@ -1527,12 +1556,12 @@ export function Application({
                         )
                         .map(([id, name]) => (
                           <option key={id} value={id}>
-                            {name}
+                            {msg(name)}
                           </option>
                         ))}
                     </select>
                     <input
-                      aria-label="기준 날짜"
+                      aria-label={msg("기준 날짜")}
                       type="date"
                       value={date}
                       className="compact-date"
@@ -1547,10 +1576,14 @@ export function Application({
                 </div>
                 <div className="scope-explanation ledger-summary">
                   <Icon name="info" />
-                  {from} ~ {to} · {report.count}건 ·{" "}
+                  {from} ~ {to} · {report.count}
+                  {msg("건 ·")}{" "}
                   {trash
-                    ? "휴지통 내역은 현재 잔액·통계에서 제외됩니다."
-                    : `수입 ${formatMoney(totals?.income || "0", scale, currency)} / 지출 ${formatMoney(totals?.expense || "0", scale, currency)}`}
+                    ? msg("휴지통 내역은 현재 잔액·통계에서 제외됩니다.")
+                    : msg("수입 {0} / 지출 {1}", [
+                        formatMoney(totals?.income || "0", scale, currency),
+                        formatMoney(totals?.expense || "0", scale, currency),
+                      ])}
                 </div>
                 {view === "calendar" ? (
                   <CalendarView
@@ -1563,7 +1596,10 @@ export function Application({
                   >
                     {day && (
                       <div className="calendar-detail">
-                        <h3>{day}의 기록</h3>
+                        <h3>
+                          {day}
+                          {msg("의 기록")}
+                        </h3>
                         {rows(report.items.filter((t) => t.date === day))}
                       </div>
                     )}
@@ -1581,7 +1617,7 @@ export function Application({
                       onClick={() => setPageNumber(pageNumber - 1)}
                     >
                       <Icon name="left" />
-                      이전
+                      {msg("이전")}
                     </button>
                     <span>
                       {pageNumber} /{" "}
@@ -1591,15 +1627,16 @@ export function Application({
                       disabled={pageNumber * report.page_size >= report.count}
                       onClick={() => setPageNumber(pageNumber + 1)}
                     >
-                      다음
+                      {msg("다음")}
                       <Icon name="right" />
                     </button>
                   </div>
                 )}
                 {view === "calendar" && report.count > 200 && (
                   <p className="entry-hint">
-                    날짜별 합계는 전체 기록 기준입니다. 선택일 내역은 위
-                    페이지에서 나누어 확인할 수 있어요.
+                    {msg(
+                      "날짜별 합계는 전체 기록 기준입니다. 선택일 내역은 위 페이지에서 나누어 확인할 수 있어요.",
+                    )}
                   </p>
                 )}
               </>
@@ -1625,9 +1662,9 @@ export function Application({
                     className="panel-heading"
                     style={{ padding: "22px 23px 0" }}
                   >
-                    <h2>분류별로 자세히</h2>
+                    <h2>{msg("분류별로 자세히")}</h2>
                     <span className="panel-title-small">
-                      이체 제외 · 환불 차감
+                      {msg("이체 제외 · 환불 차감")}
                     </span>
                   </div>
                   {report.categories
@@ -1646,18 +1683,20 @@ export function Application({
                                   ?.color || "#a9b99b",
                             }}
                           />
-                          {c.name || categoryName(c.category, en)}
+                          {displayCategory(c.category, c.name)}
                         </span>
                         <strong>
                           {formatMoney(c.amount, c.scale, c.currency)}
                         </strong>
-                        <small>순지출</small>
+                        <small>{msg("순지출")}</small>
                       </div>
                     ))}
                   {!report.categories.length && (
                     <Empty
-                      title="아직 지출 기록이 없어요."
-                      description="기록을 추가하면 분류별 통계를 볼 수 있어요."
+                      title={msg("아직 지출 기록이 없어요.")}
+                      description={msg(
+                        "기록을 추가하면 분류별 통계를 볼 수 있어요.",
+                      )}
                     />
                   )}
                 </section>
@@ -1667,7 +1706,9 @@ export function Application({
               <>
                 <div className="scope-explanation">
                   <Icon name="info" />
-                  선택한 계좌의 잔액을 합산해요. 통화가 다르면 따로 표시합니다.
+                  {msg(
+                    "선택한 계좌의 잔액을 합산해요. 통화가 다르면 따로 표시합니다.",
+                  )}
                 </div>
                 <div className="accounts-grid">
                   {moneyAccounts.map((a) => (
@@ -1693,31 +1734,31 @@ export function Application({
                         <p>
                           {a.ledger_name} ·{" "}
                           {a.archived
-                            ? "보관 중"
+                            ? msg("보관 중")
                             : {
-                                bank: "예금",
-                                cash: "현금",
-                                card: "신용카드",
-                                loan: "대출",
+                                bank: msg("예금"),
+                                cash: msg("현금"),
+                                card: msg("신용카드"),
+                                loan: msg("대출"),
                               }[a.kind]}
                           <br />
                           {a.currency} ·{" "}
                           {a.role === "owner"
-                            ? "책임자"
+                            ? msg("책임자")
                             : a.role === "editor"
-                              ? "편집자"
-                              : "조회자"}
+                              ? msg("편집자")
+                              : msg("조회자")}
                         </p>
                       </div>
                       <div className="account-card-bottom">
                         <strong>
                           {formatMoney(a.balance, a.scale, a.currency, false)}
                           <small>
-                            {a.currency === "KRW" ? "원" : a.currency}
+                            {a.currency === "KRW" ? msg("원") : a.currency}
                           </small>
                         </strong>
                         <span>
-                          자세히
+                          {msg("자세히")}
                           <Icon name="arrow" />
                         </span>
                       </div>
@@ -1727,21 +1768,24 @@ export function Application({
                 {!moneyAccounts.length && (
                   <section className="panel">
                     <Empty
-                      title="이 범위에 계좌가 없어요."
-                      description="계좌를 만들거나 다른 보기 범위를 선택해 주세요."
+                      title={msg("이 범위에 계좌가 없어요.")}
+                      description={msg(
+                        "계좌를 만들거나 다른 보기 범위를 선택해 주세요.",
+                      )}
                     >
                       <button
                         className="primary-button"
                         onClick={() => setModal({ kind: "account" })}
                       >
-                        계좌 만들기
+                        {msg("계좌 만들기")}
                       </button>
                     </Empty>
                   </section>
                 )}
                 <p className="single-scope-note">
-                  개인 가계부는 처음에는 나만 볼 수 있고, 특정 계좌만 따로
-                  공유할 수 있어요.
+                  {msg(
+                    "개인 가계부는 처음에는 나만 볼 수 있고, 특정 계좌만 따로 공유할 수 있어요.",
+                  )}
                 </p>
               </>
             )}
@@ -1773,9 +1817,9 @@ export function Application({
             )}
           </main>
           <footer className="app-footer">
-            <span>기록이 쌓이면, 일상이 보이니까.</span>
+            <span>{msg("기록이 쌓이면, 일상이 보이니까.")}</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.11
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.12
             </span>
           </footer>
         </div>
@@ -1794,7 +1838,7 @@ export function Application({
             onClick={() => navigate(n.id)}
           >
             <Icon name={n.icon} />
-            {en ? n.en : n.short}
+            {msg(n.short)}
           </button>
         ))}
       </nav>
@@ -1802,7 +1846,7 @@ export function Application({
         <button
           className="mobile-fab"
           onClick={() => openEntry()}
-          aria-label="빠른 입력"
+          aria-label={msg("빠른 입력")}
         >
           <Icon name="plus" />
         </button>
@@ -1897,7 +1941,7 @@ export function Application({
       )}
       {toast && (
         <div className="toast visible" role="status">
-          {toast}
+          {msg(toast)}
         </div>
       )}
     </div>
@@ -1907,10 +1951,10 @@ export function Application({
 function TableHeader() {
   return (
     <div className="transaction-header">
-      <span>내용·분류</span>
-      <span>계좌</span>
-      <span>공개 범위</span>
-      <span>금액</span>
+      <span>{msg("내용·분류")}</span>
+      <span>{msg("계좌")}</span>
+      <span>{msg("공개 범위")}</span>
+      <span>{msg("금액")}</span>
     </div>
   );
 }
@@ -1926,8 +1970,8 @@ export function TransactionRows({
   if (!items.length)
     return (
       <Empty
-        title="아직 기록이 없어요."
-        description="다른 범위를 선택하거나 첫 기록을 남겨보세요."
+        title={msg("아직 기록이 없어요.")}
+        description={msg("다른 범위를 선택하거나 첫 기록을 남겨보세요.")}
       />
     );
   let last = "";
@@ -1982,7 +2026,7 @@ export function TransactionRows({
                 <span className="transaction-text">
                   <span className="transaction-title">{first.title}</span>
                   <span className="transaction-meta">
-                    {first.category_name || categoryName(first.category)} ·{" "}
+                    {displayCategory(first.category, first.category_name)} ·{" "}
                     {t.creator}
                     {t.time ? " · " + t.time : ""}
                     {t.legs.some((l) => l.receipts.length > 0) && (
@@ -1992,12 +2036,12 @@ export function TransactionRows({
                 </span>
               </span>
               <span className="transaction-account">
-                {acs.map((a) => a?.name || "계좌").join(" → ")}
+                {acs.map((a) => a?.name || msg("계좌")).join(" → ")}
               </span>
               {partial ? (
                 <span className="privacy-badge shared">
                   <Icon name="people" />
-                  일부만 공유
+                  {msg("일부만 공유")}
                 </span>
               ) : (
                 <Privacy shared={acs.some((a) => a?.shared)} />
@@ -2071,28 +2115,30 @@ function FlowPanel({
     <section className="panel panel-pad">
       <div className="panel-heading">
         <div>
-          <h2>이번 달의 소비 흐름</h2>
-          <p className="panel-subtitle">하루하루 모인 우리의 기록</p>
+          <h2>{msg("이번 달의 소비 흐름")}</h2>
+          <p className="panel-subtitle">{msg("하루하루 모인 우리의 기록")}</p>
         </div>
         {onMore && (
           <button className="text-link" onClick={onMore}>
-            자세히
+            {msg("자세히")}
             <Icon name="arrow" />
           </button>
         )}
       </div>
       <div className="chart-title-row">
         <div>
-          <span className="panel-title-small">누적 순지출</span>
+          <span className="panel-title-small">{msg("누적 순지출")}</span>
           <p className="chart-total">{formatMoney(total, scale, currency)}</p>
         </div>
-        <span className="chart-key">선택한 계좌</span>
+        <span className="chart-key">{msg("선택한 계좌")}</span>
       </div>
       <div className="line-chart">
         <svg
           viewBox="0 0 520 173"
           role="img"
-          aria-label={`이번 달 지출 ${formatMoney(total, scale, currency)}`}
+          aria-label={msg("이번 달 지출 {0}", [
+            formatMoney(total, scale, currency),
+          ])}
         >
           <path
             className="chart-gridline"
@@ -2127,7 +2173,8 @@ function FlowPanel({
                 textAnchor="middle"
                 className="chart-axis"
               >
-                {d}일
+                {d}
+                {msg("일")}
               </text>
             ))}
         </svg>
@@ -2135,9 +2182,12 @@ function FlowPanel({
       <div className="chart-note">
         <span>
           <Icon name="info" />
-          이체 제외 · 환불은 발생일에 차감
+          {msg("이체 제외 · 환불은 발생일에 차감")}
         </span>
-        <span>{report.count}건의 기록</span>
+        <span>
+          {report.count}
+          {msg("건의 기록")}
+        </span>
       </div>
     </section>
   );
@@ -2159,8 +2209,10 @@ function DonutPanel({
     <section className="panel panel-pad donut-panel">
       <div className="panel-heading">
         <div>
-          <h2>어디에 썼을까요?</h2>
-          <p className="panel-subtitle">분류별 순지출 비중 · 양수 항목</p>
+          <h2>{msg("어디에 썼을까요?")}</h2>
+          <p className="panel-subtitle">
+            {msg("분류별 순지출 비중 · 양수 항목")}
+          </p>
         </div>
       </div>
       <div className="donut-layout">
@@ -2172,9 +2224,9 @@ function DonutPanel({
               positive
                 .map(
                   (c) =>
-                    `${c.name || categoryName(c.category)} ${Math.round((Number(c.amount) / (sum || 1)) * 100)}%`,
+                    `${displayCategory(c.category, c.name)} ${Math.round((Number(c.amount) / (sum || 1)) * 100)}%`,
                 )
-                .join(", ") || "아직 지출 없음"
+                .join(", ") || msg("아직 지출 없음")
             }
           >
             <circle
@@ -2209,11 +2261,11 @@ function DonutPanel({
             })}
           </svg>
           <div className="donut-center">
-            <small>가장 많이 쓴 곳</small>
+            <small>{msg("가장 많이 쓴 곳")}</small>
             <strong>
               {positive[0]
-                ? positive[0].name || categoryName(positive[0].category)
-                : "기록 없음"}
+                ? displayCategory(positive[0].category, positive[0].name)
+                : msg("기록 없음")}
             </strong>
           </div>
         </div>
@@ -2228,12 +2280,12 @@ function DonutPanel({
                     "#b3c4a7",
                 }}
               />
-              <span>{c.name || categoryName(c.category)}</span>
+              <span>{displayCategory(c.category, c.name)}</span>
               <strong>{formatMoney(c.amount, scale, currency, false)}</strong>
             </div>
           ))}
           {!data.length && (
-            <p className="panel-subtitle">첫 지출을 남겨보세요.</p>
+            <p className="panel-subtitle">{msg("첫 지출을 남겨보세요.")}</p>
           )}
         </div>
       </div>
@@ -2264,7 +2316,7 @@ function CalendarView({
   return (
     <section className="panel">
       <div className="calendar-grid">
-        {"일월화수목금토".split("").map((d) => (
+        {weekdays().map((d) => (
           <div className="calendar-weekday" key={d}>
             {d}
           </div>
@@ -2282,7 +2334,7 @@ function CalendarView({
               key={i}
               className={"calendar-day " + (day === selected ? "selected" : "")}
               onClick={() => select(day === selected ? "" : day)}
-              aria-label={`${day} 기록 보기`}
+              aria-label={msg("{0} 기록 보기", [day])}
             >
               <span className="calendar-date">{d}</span>
               {total && BigInt(total.income) !== 0n && (
@@ -2322,7 +2374,7 @@ function ExchangeModal({
   }, []);
   return (
     <Modal
-      title="보조 통화와 환율"
+      title={msg("보조 통화와 환율")}
       onClose={() => {
         if (history.state?.exchange) history.back();
         else close();
@@ -2434,7 +2486,7 @@ export function SettingsView({
         "PATCH",
       );
       await refresh();
-      notify("설정을 저장했어요.");
+      notify(msg("설정을 저장했어요."));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -2445,7 +2497,7 @@ export function SettingsView({
     title: string,
     description: string,
     action: () => void,
-    label = "관리",
+    label = msg("관리"),
   ) => (
     <div className="setting-row" key={title}>
       <div>
@@ -2467,11 +2519,11 @@ export function SettingsView({
           close={() => setExchangeOpen(false)}
         />
       )}
-      <nav className="settings-tabs" aria-label="설정 구분">
+      <nav className="settings-tabs" aria-label={msg("설정 구분")}>
         {[
-          ["account-settings", "계정 설정"],
-          ["settings", "설정"],
-          ...(user.admin ? [["administration", "관리"]] : []),
+          ["account-settings", msg("계정 설정")],
+          ["settings", msg("설정")],
+          ...(user.admin ? [["administration", msg("관리")]] : []),
         ].map(([id, label]) => (
           <button
             key={id}
@@ -2486,11 +2538,11 @@ export function SettingsView({
       {section === "account-settings" && (
         <section className="panel">
           <div className="setting-group">
-            <h2>프로필</h2>
+            <h2>{msg("프로필")}</h2>
             <p className="profile-username">@{user.username}</p>
             <form onSubmit={save} className="inline-settings-form">
               <label className="form-label" htmlFor="profile-name-field">
-                표시할 이름
+                {msg("표시할 이름")}
               </label>
               <input
                 id="profile-name-field"
@@ -2504,20 +2556,24 @@ export function SettingsView({
                 className="secondary-button settings-save"
                 disabled={busy}
               >
-                저장
+                {msg("저장")}
               </button>
               <ErrorText error={error} />
             </form>
           </div>
           <div className="setting-group">
-            <h2>로그인과 보안</h2>
+            <h2>{msg("로그인과 보안")}</h2>
             {row(
-              "로그인 보안",
-              `2단계 인증 ${user.totp_enabled ? "사용 중" : "미사용"} · 비밀번호·복구 코드`,
+              msg("로그인 보안"),
+              msg("2단계 인증 {0} · 비밀번호·복구 코드", [
+                user.totp_enabled ? msg("사용 중") : msg("미사용"),
+              ]),
               () => open("security"),
             )}
-            {row("API 앱 비밀번호", "계좌별 접근·기능 권한·만료·폐기", () =>
-              open("api-keys"),
+            {row(
+              msg("API 앱 비밀번호"),
+              msg("계좌별 접근·기능 권한·만료·폐기"),
+              () => open("api-keys"),
             )}
           </div>
         </section>
@@ -2526,16 +2582,16 @@ export function SettingsView({
         <>
           <section className="panel">
             <div className="setting-group">
-              <h2>화면과 표시</h2>
+              <h2>{msg("화면과 표시")}</h2>
               <div className="setting-row appearance-row">
                 <div>
-                  <strong>화면 밝기</strong>
-                  <p>이 브라우저에 적용해요.</p>
+                  <strong>{msg("화면 밝기")}</strong>
+                  <p>{msg("이 브라우저에 적용해요.")}</p>
                 </div>
                 <div className="theme-buttons">
                   {[
-                    ["light", "밝게", "sun"],
-                    ["dark", "어둡게", "moon"],
+                    ["light", msg("밝게"), "sun"],
+                    ["dark", msg("어둡게"), "moon"],
                   ].map(([id, label, icon]) => (
                     <button
                       key={id}
@@ -2551,15 +2607,15 @@ export function SettingsView({
               </div>
               <div className="setting-row appearance-row">
                 <div>
-                  <strong>테마 색상</strong>
-                  <Help>이 계정의 현재 브라우저에 적용해요.</Help>
+                  <strong>{msg("테마 색상")}</strong>
+                  <Help>{msg("이 계정의 현재 브라우저에 적용해요.")}</Help>
                 </div>
                 <div className="accent-options">
                   {[
-                    ["green", "그린"],
-                    ["rose", "로즈"],
-                    ["blue", "블루"],
-                    ["violet", "바이올렛"],
+                    ["green", msg("그린")],
+                    ["rose", msg("로즈")],
+                    ["blue", msg("블루")],
+                    ["violet", msg("바이올렛")],
                   ].map(([id, label]) => (
                     <button
                       key={id}
@@ -2577,7 +2633,7 @@ export function SettingsView({
                 <div className="form-two-cols">
                   <div>
                     <label className="form-label" htmlFor="locale">
-                      언어
+                      {msg("언어")}
                     </label>
                     <select
                       id="locale"
@@ -2587,13 +2643,13 @@ export function SettingsView({
                         setLocale(e.target.value as User["locale"])
                       }
                     >
-                      <option value="ko">한국어</option>
-                      <option value="en">English · 주요 화면</option>
+                      <option value="ko">{msg("한국어")}</option>
+                      <option value="en">{"English"}</option>
                     </select>
                   </div>
                   <div>
                     <label className="form-label" htmlFor="timezone">
-                      시간대
+                      {msg("시간대")}
                     </label>
                     <select
                       id="timezone"
@@ -2619,10 +2675,11 @@ export function SettingsView({
                   </div>
                 </div>
                 <div className="form-label">
-                  <label htmlFor="default-currency">기본 통화</label>
+                  <label htmlFor="default-currency">{msg("기본 통화")}</label>
                   <Help>
-                    기본 통화로 합계를 봐요. 기존 계좌의 통화와 저장 금액은
-                    그대로이며, 환산에는 등록한 환율을 사용해요.
+                    {msg(
+                      "기본 통화로 합계를 봐요. 기존 계좌의 통화와 저장 금액은 그대로이며, 환산에는 등록한 환율을 사용해요.",
+                    )}
                   </Help>
                 </div>
                 <select
@@ -2635,15 +2692,15 @@ export function SettingsView({
                     <option key={code} value={code}>
                       {
                         {
-                          KRW: "대한민국 원",
-                          USD: "미국 달러",
-                          JPY: "일본 엔",
-                          EUR: "유로",
-                          GBP: "영국 파운드",
-                          CNY: "중국 위안",
-                          TWD: "대만 달러",
-                          VND: "베트남 동",
-                          KWD: "쿠웨이트 디나르",
+                          KRW: msg("대한민국 원"),
+                          USD: msg("미국 달러"),
+                          JPY: msg("일본 엔"),
+                          EUR: msg("유로"),
+                          GBP: msg("영국 파운드"),
+                          CNY: msg("중국 위안"),
+                          TWD: msg("대만 달러"),
+                          VND: msg("베트남 동"),
+                          KWD: msg("쿠웨이트 디나르"),
                         }[code]
                       }{" "}
                       ({code})
@@ -2652,10 +2709,13 @@ export function SettingsView({
                 </select>
 
                 <div className="form-label">
-                  <label htmlFor="default-account">빠른 입력 기본 계좌</label>
+                  <label htmlFor="default-account">
+                    {msg("빠른 입력 기본 계좌")}
+                  </label>
                   <Help>
-                    특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본
-                    계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.
+                    {msg(
+                      "특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본 계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.",
+                    )}
                   </Help>
                 </div>
                 <select
@@ -2664,7 +2724,9 @@ export function SettingsView({
                   value={defaultAccount}
                   onChange={(e) => setDefaultAccount(e.target.value)}
                 >
-                  <option value="">자동 선택 · 기본 통화 계좌 우선</option>
+                  <option value="">
+                    {msg("자동 선택 · 기본 통화 계좌 우선")}
+                  </option>
                   {accounts
                     .filter((a) => !a.archived && a.role !== "viewer")
                     .map((a) => (
@@ -2675,7 +2737,7 @@ export function SettingsView({
                 </select>
 
                 <label className="setting-row">
-                  <span>소개 카드 표시 (왼쪽 메뉴·홈)</span>
+                  <span>{msg("소개 카드 표시 (왼쪽 메뉴·홈)")}</span>
                   <input
                     type="checkbox"
                     checked={showSidebar}
@@ -2687,7 +2749,7 @@ export function SettingsView({
                   className="secondary-button settings-save"
                   disabled={busy}
                 >
-                  설정 저장
+                  {msg("설정 저장")}
                 </button>
               </form>
             </div>
@@ -2695,65 +2757,67 @@ export function SettingsView({
           <section className="panel">
             <div className="setting-group">
               {row(
-                "보조 통화와 환율",
-                "필요한 통화를 추가하고 환율을 설정해요.",
+                msg("보조 통화와 환율"),
+                msg("필요한 통화를 추가하고 환율을 설정해요."),
                 () => setExchangeOpen(true),
               )}
             </div>
           </section>
           <section className="panel">
             <div className="setting-group">
-              <h2>가계부와 공유</h2>
-              {row("가계부 관리", "표시 순서·만들기·소개 문구·수정·삭제", () =>
-                open("ledger-manage"),
+              <h2>{msg("가계부와 공유")}</h2>
+              {row(
+                msg("가계부 관리"),
+                msg("표시 순서·만들기·소개 문구·수정·삭제"),
+                () => open("ledger-manage"),
               )}
               {row(
-                "가계부 분류 관리",
-                "수입·지출 분류 추가·수정·순서 변경",
+                msg("가계부 분류 관리"),
+                msg("수입·지출 분류 추가·수정·순서 변경"),
                 () => open("categories"),
               )}
-              {row("공유 관리", "초대·승인·역할 변경·공유 해제", () =>
+              {row(msg("공유 관리"), msg("초대·승인·역할 변경·공유 해제"), () =>
                 open("sharing"),
               )}
               {row(
-                "책임자 이전·공유 나가기",
-                "기록을 유지하고 공유 관계를 정리해요.",
+                msg("책임자 이전·공유 나가기"),
+                msg("기록을 유지하고 공유 관계를 정리해요."),
                 () => open("lifecycle"),
               )}
             </div>
           </section>
           <section className="panel">
             <div className="setting-group">
-              <h2>자료 관리</h2>
+              <h2>{msg("자료 관리")}</h2>
               {row(
-                "기록 휴지통",
-                "현재 가계부 범위의 삭제한 기록을 조회·복구해요.",
+                msg("기록 휴지통"),
+                msg("현재 가계부 범위의 삭제한 기록을 조회·복구해요."),
                 showTrash,
-                "열기",
+                msg("열기"),
               )}
               {row(
-                "삭제한 계좌",
-                "책임자인 계좌를 복구해요.",
+                msg("삭제한 계좌"),
+                msg("책임자인 계좌를 복구해요."),
                 () => open("account-trash"),
-                "열기",
+                msg("열기"),
               )}
               {row(
-                "CSV 내보내기",
-                "기간·검색 조건의 기록을 원래 통화로 내보내요.",
+                msg("CSV 내보내기"),
+                msg("기간·검색 조건의 기록을 원래 통화로 내보내요."),
                 exportCSV,
-                "내보내기",
+                msg("내보내기"),
               )}
               {row(
-                "JSON 자료 내보내기",
-                "전체 기간 자료 · 사진·공유 권한 제외",
+                msg("JSON 자료 내보내기"),
+                msg("전체 기간 자료 · 사진·공유 권한 제외"),
                 exportJSON,
-                "내보내기",
+                msg("내보내기"),
               )}
               {row(
-                "CSV·JSON 가져오기",
-                "미리 보기와 중복 확인 후 반영해요.",
+                msg("CSV·JSON 가져오기"),
+                msg("미리 보기와 중복 확인 후 반영해요."),
                 () => open("import"),
-                "가져오기",
+                msg("가져오기"),
               )}
             </div>
           </section>
@@ -2762,18 +2826,18 @@ export function SettingsView({
       {section === "administration" && user.admin && (
         <section className="panel">
           <div className="setting-group">
-            <h2>서버 관리</h2>
+            <h2>{msg("서버 관리")}</h2>
             {row(
-              "사용자와 가입 관리",
-              "공개 회원가입 허용·새 사용자 초대",
+              msg("사용자와 가입 관리"),
+              msg("공개 회원가입 허용·새 사용자 초대"),
               () => open("admin"),
-              "가입·초대 관리",
+              msg("가입·초대 관리"),
             )}
             {row(
-              "서버 운영 백업",
-              "모든 사용자의 자료와 사진이 포함됩니다. 관리자 전용.",
+              msg("서버 운영 백업"),
+              msg("모든 사용자의 자료와 사진이 포함됩니다. 관리자 전용."),
               () => open("backup"),
-              "백업",
+              msg("백업"),
             )}
           </div>
         </section>

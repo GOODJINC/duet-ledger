@@ -168,7 +168,7 @@ it("도움말을 최상단 팝오버로 열고 화면 오른쪽·아래 경계 �
   expect(tip.showPopover).toHaveBeenCalledTimes(1);
   expect(tip.getAttribute("popover")).toBe("manual");
   expect(
-    Number.parseFloat(tip.style.left) + Number.parseFloat(tip.style.width),
+    Number.parseFloat(tip.style.left) + tip.getBoundingClientRect().width,
   ).toBeLessThanOrEqual(window.innerWidth - 12);
   expect(Number.parseFloat(tip.style.top) + 120).toBeLessThanOrEqual(
     window.innerHeight - 12,
@@ -176,4 +176,26 @@ it("도움말을 최상단 팝오버로 열고 화면 오른쪽·아래 경계 �
   fireEvent.pointerLeave(button);
   expect(tip.hidePopover).toHaveBeenCalled();
   expect(tip.hasAttribute("data-open")).toBe(false);
+});
+
+it("짧은 도움말은 여유 공간이 있으면 불필요하게 왼쪽으로 이동하지 않는다", () => {
+  render(<Help>짧은 설명</Help>);
+  const button = screen.getByRole("button", { name: "도움말" });
+  const tip = document.querySelector<HTMLElement>('[role="tooltip"]')!;
+  const left = window.innerWidth - 180;
+  vi.spyOn(button, "getBoundingClientRect").mockReturnValue({
+    left,
+    right: left + 20,
+    top: 50,
+    bottom: 70,
+    width: 20,
+    height: 20,
+  } as DOMRect);
+  vi.spyOn(tip, "getBoundingClientRect").mockReturnValue({
+    width: 100,
+    height: 40,
+  } as DOMRect);
+  tip.showPopover = vi.fn();
+  fireEvent.pointerEnter(button, { pointerType: "mouse" });
+  expect(Number.parseFloat(tip.style.left)).toBe(left);
 });

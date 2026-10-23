@@ -1,6 +1,7 @@
+import { msg, intlLocale } from "./i18n";
 import { copyText } from "./clipboard";
 import { useEffect, useState, useRef } from "react";
-import { api, post, type Category } from "./api";
+import { api, post, displayCategory, type Category } from "./api";
 import { Modal, ErrorText, Help } from "./ui";
 import type { DialogProps } from "./dialogs";
 
@@ -50,7 +51,7 @@ export function CategoriesDialog(p: DialogProps) {
       });
       await load();
       setName("");
-      p.notify("분류 설정을 저장했어요.");
+      p.notify(msg("분류 설정을 저장했어요."));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -60,7 +61,10 @@ export function CategoriesDialog(p: DialogProps) {
   async function remove(c: Category) {
     if (
       !confirm(
-        `'${c.name}' 분류를 완전히 삭제할까요? 복구할 수 없으며, 과거 거래의 분류명과 금액은 유지됩니다.`,
+        msg(
+          "'{0}' 분류를 완전히 삭제할까요? 복구할 수 없으며, 과거 거래의 분류명과 금액은 유지됩니다.",
+          [c.name],
+        ),
       )
     )
       return;
@@ -73,7 +77,7 @@ export function CategoriesDialog(p: DialogProps) {
         "DELETE",
       );
       await load();
-      p.notify("분류를 삭제했어요.");
+      p.notify(msg("분류를 삭제했어요."));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -92,7 +96,7 @@ export function CategoriesDialog(p: DialogProps) {
         "PUT",
       );
       setList(next);
-      p.notify("분류 순서를 저장했어요.");
+      p.notify(msg("분류 순서를 저장했어요."));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -101,12 +105,14 @@ export function CategoriesDialog(p: DialogProps) {
   }
   return (
     <Modal
-      title="가계부 분류 관리"
-      subtitle="삭제한 분류는 복구할 수 없어요. 과거 거래의 분류명과 금액은 유지됩니다."
+      title={msg("가계부 분류 관리")}
+      subtitle={msg(
+        "삭제한 분류는 복구할 수 없어요. 과거 거래의 분류명과 금액은 유지됩니다.",
+      )}
       onClose={p.close}
     >
       <label className="form-label" htmlFor="category-ledger">
-        가계부
+        {msg("가계부")}
       </label>
       <select
         id="category-ledger"
@@ -125,13 +131,13 @@ export function CategoriesDialog(p: DialogProps) {
           aria-pressed={kind === "expense"}
           onClick={() => setKind("expense")}
         >
-          지출 분류
+          {msg("지출 분류")}
         </button>
         <button
           aria-pressed={kind === "income"}
           onClick={() => setKind("income")}
         >
-          수입 분류
+          {msg("수입 분류")}
         </button>
       </div>
       {list.map((c, index) => (
@@ -155,7 +161,7 @@ export function CategoriesDialog(p: DialogProps) {
         }}
       >
         <label className="form-label" htmlFor="new-category">
-          새 분류 이름
+          {msg("새 분류 이름")}
         </label>
         <div className="category-manage-row">
           <input
@@ -167,7 +173,7 @@ export function CategoriesDialog(p: DialogProps) {
             maxLength={60}
           />
           <button className="secondary-button" disabled={!ledger || busy}>
-            추가
+            {msg("추가")}
           </button>
         </div>
       </form>
@@ -194,13 +200,13 @@ function CategoryRow({
   first: boolean;
   last: boolean;
 }) {
-  const [name, setName] = useState(c.name);
+  const [name, setName] = useState<string | null>(null);
   return (
     <div className="category-manage-row">
       <div className="order-buttons">
         <button
           className="icon-button"
-          aria-label={`${c.name} 위로`}
+          aria-label={msg("{0} 위로", [displayCategory(c.code, c.name)])}
           disabled={disabled || first}
           onClick={up}
         >
@@ -208,7 +214,7 @@ function CategoryRow({
         </button>
         <button
           className="icon-button"
-          aria-label={`${c.name} 아래로`}
+          aria-label={msg("{0} 아래로", [displayCategory(c.code, c.name)])}
           disabled={disabled || last}
           onClick={down}
         >
@@ -216,21 +222,21 @@ function CategoryRow({
         </button>
       </div>
       <input
-        aria-label={`${c.name} 분류 이름`}
+        aria-label={msg("{0} 분류 이름", [displayCategory(c.code, c.name)])}
         className="field-input"
-        value={name}
+        value={name ?? displayCategory(c.code, c.name)}
         onChange={(e) => setName(e.target.value)}
         maxLength={60}
       />
       <button
         className="secondary-button"
         disabled={disabled}
-        onClick={() => save({ ...c, name })}
+        onClick={() => save({ ...c, name: name ?? c.name })}
       >
-        수정
+        {msg("수정")}
       </button>
       <button className="text-link" disabled={disabled} onClick={remove}>
-        삭제
+        {msg("삭제")}
       </button>
     </div>
   );
@@ -274,14 +280,16 @@ export function AdminDialog(p: DialogProps) {
   }
   return (
     <Modal
-      title="사용자와 가입 관리"
-      subtitle="서버 관리자 전용 · 새 계정은 자기 개인 가계부만 만들며 기존 금융 자료에 접근하지 못합니다."
+      title={msg("사용자와 가입 관리")}
+      subtitle={msg(
+        "서버 관리자 전용 · 새 계정은 자기 개인 가계부만 만들며 기존 금융 자료에 접근하지 못합니다.",
+      )}
       onClose={p.close}
     >
       <label className="setting-row">
         <div>
-          <strong>공개 회원가입 허용</strong>
-          <p>꺼 두어도 초대 링크로 가입할 수 있어요.</p>
+          <strong>{msg("공개 회원가입 허용")}</strong>
+          <p>{msg("꺼 두어도 초대 링크로 가입할 수 있어요.")}</p>
         </div>
         <input
           type="checkbox"
@@ -296,7 +304,7 @@ export function AdminDialog(p: DialogProps) {
                 "PATCH",
               );
               setOpen(value);
-              p.notify("회원가입 설정을 저장했어요.");
+              p.notify(msg("회원가입 설정을 저장했어요."));
             });
           }}
         />
@@ -317,18 +325,18 @@ export function AdminDialog(p: DialogProps) {
           })
         }
       >
-        새 사용자 초대 링크 만들기
+        {msg("새 사용자 초대 링크 만들기")}
       </button>
       {link && (
         <div className="modal-note">
           <p>
-            48시간 동안 한 번만 사용할 수 있어요. 새 계정 테스트는 다른
-            브라우저나 시크릿 창에서 진행하세요. 가계부 공유는 별도로
-            설정합니다.
+            {msg(
+              "48시간 동안 한 번만 사용할 수 있어요. 새 계정 테스트는 다른 브라우저나 시크릿 창에서 진행하세요. 가계부 공유는 별도로 설정합니다.",
+            )}
           </p>
           <input
             className="field-input"
-            aria-label="새 사용자 초대 링크"
+            aria-label={msg("새 사용자 초대 링크")}
             readOnly
             value={link}
             onFocus={(e) => e.target.select()}
@@ -338,11 +346,11 @@ export function AdminDialog(p: DialogProps) {
             onClick={() =>
               run(async () => {
                 await copyText(link);
-                p.notify("초대 링크를 복사했어요.");
+                p.notify(msg("초대 링크를 복사했어요."));
               })
             }
           >
-            링크 복사
+            {msg("링크 복사")}
           </button>
         </div>
       )}
@@ -353,14 +361,17 @@ export function AdminDialog(p: DialogProps) {
             <div>
               <strong>
                 {i.used
-                  ? `${i.name} 가입 완료`
+                  ? msg("{0} 가입 완료", [i.name])
                   : i.cancelled
-                    ? "취소된 초대"
+                    ? msg("취소된 초대")
                     : i.expires_at * 1000 < Date.now()
-                      ? "만료된 초대"
-                      : "가입 대기"}
+                      ? msg("만료된 초대")
+                      : msg("가입 대기")}
               </strong>
-              <p>{new Date(i.expires_at * 1000).toLocaleString()} 만료</p>
+              <p>
+                {new Date(i.expires_at * 1000).toLocaleString(intlLocale())}{" "}
+                {msg("만료")}
+              </p>
             </div>
             {!i.used && !i.cancelled && (
               <button
@@ -374,7 +385,7 @@ export function AdminDialog(p: DialogProps) {
                   })
                 }
               >
-                취소
+                {msg("취소")}
               </button>
             )}
           </div>
@@ -396,11 +407,11 @@ export function AccountTrashDialog(p: DialogProps) {
   }, []);
   return (
     <Modal
-      title="삭제한 계좌"
-      subtitle="복구하면 기록과 기존 공유 권한도 다시 활성화됩니다."
+      title={msg("삭제한 계좌")}
+      subtitle={msg("복구하면 기록과 기존 공유 권한도 다시 활성화됩니다.")}
       onClose={p.close}
     >
-      {!items.length && <p>삭제한 계좌가 없어요.</p>}
+      {!items.length && <p>{msg("삭제한 계좌가 없어요.")}</p>}
       {items.map((ac) => (
         <div className="setting-row" key={ac.id}>
           <div>
@@ -411,14 +422,16 @@ export function AccountTrashDialog(p: DialogProps) {
             className="secondary-button"
             disabled={busy}
             onClick={async () => {
-              if (!confirm("계좌·기록과 기존 공유 권한을 다시 활성화할까요?"))
+              if (
+                !confirm(msg("계좌·기록과 기존 공유 권한을 다시 활성화할까요?"))
+              )
                 return;
               setBusy(true);
               try {
                 await post(`/accounts/${ac.id}/restore`);
                 await load();
                 await p.refresh();
-                p.notify("계좌를 복구했어요.");
+                p.notify(msg("계좌를 복구했어요."));
               } catch (e) {
                 setError((e as Error).message);
               } finally {
@@ -426,7 +439,7 @@ export function AccountTrashDialog(p: DialogProps) {
               }
             }}
           >
-            복구
+            {msg("복구")}
           </button>
         </div>
       ))}
@@ -458,14 +471,16 @@ export function ExchangeSettings({
   async function fetchQuote() {
     const version = ++quoteVersion.current;
     setQuoteBusy(true);
-    setQuoteStatus("최신 환율을 불러오는 중이에요…");
+    setQuoteStatus(msg("최신 환율을 불러오는 중이에요…"));
     try {
       const q = await api<{ rate: string; date: string }>(
         `/me/exchange-quote?from=${from}&to=${to}`,
       );
       if (version === quoteVersion.current) {
         setRate(String(q.rate));
-        setQuoteStatus(`${q.date} 기준 · Frankfurter · 확인 후 저장하세요.`);
+        setQuoteStatus(
+          msg("{0} 기준 · Frankfurter · 확인 후 저장하세요.", [q.date]),
+        );
       }
     } catch (e) {
       if (version === quoteVersion.current)
@@ -481,7 +496,7 @@ export function ExchangeSettings({
     );
     if (existing) {
       setRate(existing.rate);
-      setQuoteStatus("저장된 환율을 수정하고 저장하세요.");
+      setQuoteStatus(msg("저장된 환율을 수정하고 저장하세요."));
     } else {
       setRate("");
       if (from !== to) void fetchQuote();
@@ -509,13 +524,17 @@ export function ExchangeSettings({
     <div className="exchange-manager">
       <div className="exchange-heading">
         <span className="exchange-base">
-          기본 통화 <strong>{to}</strong>
+          {msg("기본 통화")} <strong>{to}</strong>
         </span>
-        <p>보조 통화를 여러 개 등록해 함께 사용할 수 있어요.</p>
+        <p>{msg("보조 통화를 여러 개 등록해 함께 사용할 수 있어요.")}</p>
       </div>
-      <section className="exchange-list" aria-label="등록한 환율">
+      <section className="exchange-list" aria-label={msg("등록한 환율")}>
         <h3>
-          등록한 환율 <span>{rates.length}개</span>
+          {msg("등록한 환율")}{" "}
+          <span>
+            {rates.length}
+            {msg("개")}
+          </span>
           <button
             type="button"
             className="text-link add-secondary"
@@ -537,12 +556,12 @@ export function ExchangeSettings({
               }
             }}
           >
-            + 통화 추가
+            {msg("+ 통화 추가")}
           </button>
         </h3>
         {rates.length === 0 && (
           <p className="exchange-empty">
-            아직 보조 통화가 없어요. 통화 추가를 눌러 시작하세요.
+            {msg("아직 보조 통화가 없어요. 통화 추가를 눌러 시작하세요.")}
           </p>
         )}
         {rates.map((r) => (
@@ -559,8 +578,10 @@ export function ExchangeSettings({
                 disabled={busy || r.to !== to}
                 title={
                   r.to !== to
-                    ? "기본 통화가 바뀌었어요. 새 기본 통화 기준으로 환율을 추가하세요."
-                    : "환율 수정"
+                    ? msg(
+                        "기본 통화가 바뀌었어요. 새 기본 통화 기준으로 환율을 추가하세요.",
+                      )
+                    : msg("환율 수정")
                 }
                 onClick={() => {
                   setEditing(true);
@@ -568,10 +589,10 @@ export function ExchangeSettings({
                   setQuoteBusy(false);
                   setFrom(r.from === to ? r.to : r.from);
                   setRate(r.from === to ? "" : r.rate);
-                  setQuoteStatus("저장된 환율을 수정하고 저장하세요.");
+                  setQuoteStatus(msg("저장된 환율을 수정하고 저장하세요."));
                 }}
               >
-                수정
+                {msg("수정")}
               </button>
               <button
                 className="text-link"
@@ -579,16 +600,18 @@ export function ExchangeSettings({
                 onClick={() => {
                   if (
                     confirm(
-                      "이 환율을 삭제할까요? 이미 저장한 계좌 반영 금액은 유지됩니다.",
+                      msg(
+                        "이 환율을 삭제할까요? 이미 저장한 계좌 반영 금액은 유지됩니다.",
+                      ),
                     )
                   )
                     void run(async () => {
                       await post("/me/exchange-rates", r, "DELETE");
-                      notify("환율 설정을 삭제했어요.");
+                      notify(msg("환율 설정을 삭제했어요."));
                     });
                 }}
               >
-                삭제
+                {msg("삭제")}
               </button>
             </div>
           </div>
@@ -602,22 +625,22 @@ export function ExchangeSettings({
             void run(async () => {
               await post("/me/exchange-rates", { from, to, rate }, "PUT");
               setEditing(false);
-              notify("환율을 저장했어요. 다른 통화도 추가할 수 있어요.");
+              notify(msg("환율을 저장했어요. 다른 통화도 추가할 수 있어요."));
             });
           }}
         >
           <h3>
-            {saved ? "환율 수정" : "보조 통화 추가"}
+            {saved ? msg("환율 수정") : msg("보조 통화 추가")}
             <Help>
-              내 모든 가계부 조회에 적용해요. 이미 저장한 결제 금액은 바꾸지
-              않아요. 외부 조회에는 통화 코드만 전달하며, 실제 카드 청구 환율과
-              다를 수 있어요.
+              {msg(
+                "내 모든 가계부 조회에 적용해요. 이미 저장한 결제 금액은 바꾸지 않아요. 외부 조회에는 통화 코드만 전달하며, 실제 카드 청구 환율과 다를 수 있어요.",
+              )}
             </Help>
           </h3>
-          <label htmlFor="exchange-from">보조 통화</label>
+          <label htmlFor="exchange-from">{msg("보조 통화")}</label>
           <select
             id="exchange-from"
-            aria-label="환율 원래 통화"
+            aria-label={msg("환율 원래 통화")}
             className="field-select"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
@@ -628,24 +651,27 @@ export function ExchangeSettings({
                 <option key={c}>{c}</option>
               ))}
           </select>
-          <label htmlFor="exchange-rate">1 {from}의 환산 금액</label>
+          <label htmlFor="exchange-rate">
+            1 {from}
+            {msg("의 환산 금액")}
+          </label>
           <div className="exchange-rate-input">
             <input
               id="exchange-rate"
-              aria-label="환율"
+              aria-label={msg("환율")}
               className="field-input"
               inputMode="decimal"
               value={rate}
               onChange={(e) => {
                 quoteVersion.current++;
                 setQuoteBusy(false);
-                setQuoteStatus("직접 입력한 환율을 사용해요.");
+                setQuoteStatus(msg("직접 입력한 환율을 사용해요."));
                 setRate(e.target.value);
               }}
-              placeholder="환율 입력"
+              placeholder={msg("환율 입력")}
               required
             />
-            <span aria-label="환율 대상 통화">{to}</span>
+            <span aria-label={msg("환율 대상 통화")}>{to}</span>
           </div>
           <p className="exchange-status" role="status">
             {quoteStatus}
@@ -661,7 +687,7 @@ export function ExchangeSettings({
                 setEditing(false);
               }}
             >
-              취소
+              {msg("취소")}
             </button>
             <button
               type="button"
@@ -669,13 +695,13 @@ export function ExchangeSettings({
               disabled={quoteBusy || busy || from === to}
               onClick={() => void fetchQuote()}
             >
-              환율 다시 불러오기
+              {msg("환율 다시 불러오기")}
             </button>
             <button
               className="primary-button"
               disabled={busy || quoteBusy || from === to}
             >
-              환율 저장
+              {msg("환율 저장")}
             </button>
           </div>
         </form>

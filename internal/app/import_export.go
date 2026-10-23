@@ -190,7 +190,7 @@ func (a *App) importCSV(w http.ResponseWriter, r *http.Request, u *User) error {
 			break
 		}
 		if e != nil {
-			return bad(fmt.Sprintf("CSV %d행을 읽지 못했어요.", rownum))
+			return bad(fmt.Sprintf(localizeMessage(requestLocale(r, u), "CSV %d행을 읽지 못했어요."), rownum))
 		}
 		if len(inputs) >= 10000 {
 			return bad("한 번에 1만 행까지 가져올 수 있어요.")
@@ -204,7 +204,7 @@ func (a *App) importCSV(w http.ResponseWriter, r *http.Request, u *User) error {
 		}
 		currency := get("currency")
 		if currency != "" && currency != account.Currency {
-			return bad(fmt.Sprintf("%d행의 통화가 대상 계좌와 달라요.", rownum))
+			return bad(fmt.Sprintf(localizeMessage(requestLocale(r, u), "%d행의 통화가 대상 계좌와 달라요."), rownum))
 		}
 		if name := get("account"); name != "" {
 			sourceAccounts[name] = true
@@ -214,7 +214,7 @@ func (a *App) importCSV(w http.ResponseWriter, r *http.Request, u *User) error {
 		}
 		n, e := minorString(get("amount"), account.Scale)
 		if e != nil {
-			return bad(fmt.Sprintf("%d행: %s", rownum, e.Error()))
+			return bad(fmt.Sprintf(localizeMessage(requestLocale(r, u), "%d행: %s"), rownum, localizeMessage(requestLocale(r, u), e.Error())))
 		}
 		kind := get("kind")
 		if kind == "expense" {
@@ -230,7 +230,7 @@ func (a *App) importCSV(w http.ResponseWriter, r *http.Request, u *User) error {
 			check.Kind = "adjustment"
 		}
 		if _, _, e = a.validateTx(a.DB, u, &check); e != nil {
-			return bad(fmt.Sprintf("%d행: %s", rownum, e.Error()))
+			return bad(fmt.Sprintf(localizeMessage(requestLocale(r, u), "%d행: %s"), rownum, localizeMessage(requestLocale(r, u), e.Error())))
 		}
 		inputs = append(inputs, input)
 	}
@@ -459,6 +459,6 @@ func (a *App) importJSON(w http.ResponseWriter, r *http.Request, u *User) error 
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	writeJSON(w, 201, map[string]any{"ledger_id": ledgerID, "accounts": len(d.Accounts), "transactions": len(d.Transactions), "message": "새 개인 가계부로 가져왔어요. 기존 공유 권한·첨부 사진은 자동으로 복원하지 않아요."})
+	writeJSON(w, 201, map[string]any{"ledger_id": ledgerID, "accounts": len(d.Accounts), "transactions": len(d.Transactions), "message": localizeMessage(requestLocale(r, u), "새 개인 가계부로 가져왔어요. 기존 공유 권한·첨부 사진은 자동으로 복원하지 않아요.")})
 	return nil
 }

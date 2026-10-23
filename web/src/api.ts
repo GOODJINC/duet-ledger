@@ -1,3 +1,4 @@
+import { msg, getLocale, intlLocale } from "./i18n";
 export type ExchangeRate = { from: string; to: string; rate: string };
 export type User = {
   api_enabled?: boolean;
@@ -138,6 +139,7 @@ export async function api<T = unknown>(
   options: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(options.headers);
+  headers.set("Accept-Language", getLocale());
   if (options.body && !(options.body instanceof FormData))
     headers.set("Content-Type", "application/json");
   if (options.method && options.method !== "GET")
@@ -151,14 +153,14 @@ export async function api<T = unknown>(
   if (!response.ok) {
     let error = {
       error: "request_failed",
-      message: "처리하지 못했어요. 연결 상태를 확인해 주세요.",
+      message: msg("처리하지 못했어요. 연결 상태를 확인해 주세요."),
     };
     try {
       error = await response.json();
     } catch {}
     if (response.status === 401 && error.error === "login_required")
       window.dispatchEvent(new Event("duet-ledger:unauthorized"));
-    throw new APIError(response.status, error.error, error.message);
+    throw new APIError(response.status, error.error, msg(error.message));
   }
   return (await response.json()) as T;
 }
@@ -175,7 +177,7 @@ export async function download(path: string, filename: string) {
   });
   if (!response.ok) {
     const e = await response.json();
-    throw new Error(e.message || "내보내기에 실패했어요.");
+    throw new Error(msg(e.message) || msg("내보내기에 실패했어요."));
   }
   const url = URL.createObjectURL(await response.blob());
   const a = document.createElement("a");
@@ -205,18 +207,18 @@ export function formatMoney(
   const negative = n < 0n;
   if (negative) n = -n;
   const base = 10n ** BigInt(scale);
-  let number = (n / base).toLocaleString("ko-KR");
+  let number = (n / base).toLocaleString(intlLocale());
   if (scale) number += "." + (n % base).toString().padStart(scale, "0");
-  return `${negative ? "−" : ""}${number}${unit ? (currency === "KRW" ? "원" : ` ${currency}`) : ""}`;
+  return `${negative ? "−" : ""}${number}${unit ? (currency === "KRW" ? msg("원") : ` ${currency}`) : ""}`;
 }
 export function toMinor(decimal: string, scale: number) {
   const clean = decimal.trim().replaceAll(",", "");
   if (!/^-?\d+(\.\d+)?$/.test(clean))
-    throw new Error("금액을 숫자로 입력해 주세요.");
+    throw new Error(msg("금액을 숫자로 입력해 주세요."));
   const negative = clean.startsWith("-");
   const [whole, fraction = ""] = clean.replace("-", "").split(".");
   if (fraction.length > scale)
-    throw new Error(`소수점 ${scale}자리까지 입력할 수 있어요.`);
+    throw new Error(msg("소수점 {0}자리까지 입력할 수 있어요.", [scale]));
   return (
     (negative ? -1n : 1n) *
     (BigInt(whole) * 10n ** BigInt(scale) +
@@ -244,28 +246,27 @@ export function today(timezone = "Asia/Seoul") {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 export const categories = [
-  { id: "food", ko: "식비", en: "Food", color: "#9fb58c" },
-  { id: "groceries", ko: "장보기", en: "Groceries", color: "#c5cfa5" },
-  { id: "coffee", ko: "카페·간식", en: "Coffee", color: "#d8b79b" },
-  { id: "transport", ko: "교통", en: "Transport", color: "#a6bec7" },
-  { id: "home", ko: "주거·생활", en: "Home", color: "#bcb3cb" },
-  { id: "shopping", ko: "쇼핑", en: "Shopping", color: "#d4b2c1" },
-  { id: "health", ko: "건강", en: "Health", color: "#d8b2a6" },
-  { id: "salary", ko: "월급", en: "Salary", color: "#92b18b" },
-  { id: "side_income", ko: "부수입", en: "Side income", color: "#83a9b8" },
-  { id: "allowance", ko: "용돈", en: "Allowance", color: "#9eaf7e" },
-  { id: "bonus", ko: "상여", en: "Bonus", color: "#d3b179" },
+  { id: "food", label: "식비", color: "#9fb58c" },
+  { id: "groceries", label: "장보기", color: "#c5cfa5" },
+  { id: "coffee", label: "카페·간식", color: "#d8b79b" },
+  { id: "transport", label: "교통", color: "#a6bec7" },
+  { id: "home", label: "주거·생활", color: "#bcb3cb" },
+  { id: "shopping", label: "쇼핑", color: "#d4b2c1" },
+  { id: "health", label: "건강", color: "#d8b2a6" },
+  { id: "salary", label: "월급", color: "#92b18b" },
+  { id: "side_income", label: "부수입", color: "#83a9b8" },
+  { id: "allowance", label: "용돈", color: "#9eaf7e" },
+  { id: "bonus", label: "상여", color: "#d3b179" },
   {
     id: "financial_income",
-    ko: "금융소득",
-    en: "Investment income",
+    label: "금융소득",
     color: "#b79dcc",
   },
-  { id: "other", ko: "기타", en: "Other", color: "#bdc8b3" },
-  { id: "transfer", ko: "이체", en: "Transfer", color: "#a6bcae" },
+  { id: "other", label: "기타", color: "#bdc8b3" },
+  { id: "transfer", label: "이체", color: "#a6bcae" },
 ];
-export const categoryName = (id: string, en = false) =>
-  categories.find((c) => c.id === id)?.[en ? "en" : "ko"] || id;
+export const categoryName = (id: string) =>
+  msg(categories.find((category) => category.id === id)?.label || id);
 export const kindNames: Record<string, string> = {
   income: "수입",
   expense: "지출",
@@ -298,3 +299,10 @@ export type Category = {
   kind: "income" | "expense";
   hidden: boolean;
 };
+
+export function displayCategory(code: string, name?: string) {
+  const builtin = categories.find((category) => category.id === code);
+  return builtin && (!name || name === builtin.label)
+    ? categoryName(code)
+    : name || code;
+}

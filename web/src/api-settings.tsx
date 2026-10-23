@@ -1,3 +1,4 @@
+import { msg, intlLocale, manualURL } from "./i18n";
 import { useEffect, useState, type FormEvent } from "react";
 import { api, post, type User } from "./api";
 import { Modal, Help, ErrorText, PasswordInput } from "./ui";
@@ -72,19 +73,18 @@ export function AdminAPISettings({
   return (
     <section className="panel">
       <div className="setting-group">
-        <h2>외부 API · MCP</h2>
+        <h2>{msg("외부 API · MCP")}</h2>
         <label className="setting-row">
           <span>
-            API 사용 허용 (모든 사용자)
+            {msg("API 사용 허용 (모든 사용자)")}
             <Help>
-              API와 MCP에 함께 적용돼요. 기본은 꺼져 있어요. 허용하면 각
-              사용자가 자기 계좌와 권한을 선택해 앱 비밀번호를 발급합니다. 끄면
-              기존 키도 즉시 차단하고, 다시 켜면 만료·폐기되지 않은 키를 사용할
-              수 있어요.
+              {msg(
+                "API와 MCP에 함께 적용돼요. 기본은 꺼져 있어요. 허용하면 각 사용자가 자기 계좌와 권한을 선택해 앱 비밀번호를 발급합니다. 끄면 기존 키도 즉시 차단하고, 다시 켜면 만료·폐기되지 않은 키를 사용할 수 있어요.",
+              )}
             </Help>
           </span>
           <input
-            aria-label="API 사용 허용"
+            aria-label={msg("API 사용 허용")}
             type="checkbox"
             checked={enabled}
             disabled={busy || !ready}
@@ -92,7 +92,9 @@ export function AdminAPISettings({
           />
         </label>
         <p className="panel-subtitle">
-          사용자는 계정 설정 → API 앱 비밀번호에서 API·MCP 연결을 관리해요.
+          {msg(
+            "사용자는 계정 설정 → API 앱 비밀번호에서 API·MCP 연결을 관리해요.",
+          )}
         </p>
         <ErrorText error={error} />
       </div>
@@ -162,7 +164,7 @@ export function AppPasswordsDialog(p: DialogProps) {
       setName("");
       setForm(false);
       await load();
-      p.notify("앱 비밀번호를 발급했어요.");
+      p.notify(msg("앱 비밀번호를 발급했어요."));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -172,7 +174,10 @@ export function AppPasswordsDialog(p: DialogProps) {
   async function revoke(key: Key) {
     if (
       !confirm(
-        `'${key.name}' 앱 비밀번호를 폐기할까요? 연결된 자동화가 즉시 중지됩니다.`,
+        msg(
+          "'{0}' 앱 비밀번호를 폐기할까요? 연결된 자동화가 즉시 중지됩니다.",
+          [key.name],
+        ),
       )
     )
       return;
@@ -181,7 +186,7 @@ export function AppPasswordsDialog(p: DialogProps) {
     try {
       await post("/me/app-passwords/" + key.id, {}, "DELETE");
       await load();
-      p.notify("앱 비밀번호를 폐기했어요.");
+      p.notify(msg("앱 비밀번호를 폐기했어요."));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -190,44 +195,47 @@ export function AppPasswordsDialog(p: DialogProps) {
   }
   const expiry = (key: Key) =>
     key.revoked_at
-      ? "폐기됨"
+      ? msg("폐기됨")
       : key.expires_at && key.expires_at <= Date.now() / 1000
-        ? "만료됨"
+        ? msg("만료됨")
         : key.expires_at
-          ? new Date(key.expires_at * 1000).toLocaleDateString() + " 만료"
-          : "만료 없음";
+          ? new Date(key.expires_at * 1000).toLocaleDateString(intlLocale()) +
+            msg(" 만료")
+          : msg("만료 없음");
   return (
     <Modal
-      title="API 앱 비밀번호"
-      subtitle="선택한 계좌만 연결하고 앱마다 다른 비밀번호를 발급하세요."
+      title={msg("API 앱 비밀번호")}
+      subtitle={msg(
+        "선택한 계좌만 연결하고 앱마다 다른 비밀번호를 발급하세요.",
+      )}
       onClose={p.close}
     >
       <p className="api-help-links">
-        <a href="/api-help.html" target="_blank" rel="noopener noreferrer">
-          API 연결 안내
+        <a href={manualURL("api")} target="_blank" rel="noopener noreferrer">
+          {msg("API 연결 안내")}
         </a>
-        <a href="/mcp-help.html" target="_blank" rel="noopener noreferrer">
-          Codex MCP 연결 안내
-        </a>
-        <a href="/duet_api.py" download="duet_api.py">
-          호출 도구 다운로드
+        <a href={manualURL("mcp")} target="_blank" rel="noopener noreferrer">
+          {msg("Codex MCP 연결 안내")}
         </a>
       </p>
       {loading ? (
-        <p>불러오는 중이에요…</p>
+        <p>{msg("불러오는 중이에요…")}</p>
       ) : (
         <>
           {!data.enabled && (
             <p className="inline-warning">
-              관리자가 API 사용을 차단한 상태예요. 기존 키도 사용할 수 없으며
-              폐기는 가능해요.
+              {msg(
+                "관리자가 API 사용을 차단한 상태예요. 기존 키도 사용할 수 없으며 폐기는 가능해요.",
+              )}
             </p>
           )}
           {secret && (
             <div className="api-secret">
-              <strong>이번 한 번만 표시돼요. 지금 복사해 보관하세요.</strong>
+              <strong>
+                {msg("이번 한 번만 표시돼요. 지금 복사해 보관하세요.")}
+              </strong>
               <PasswordInput
-                aria-label="발급된 앱 비밀번호"
+                aria-label={msg("발급된 앱 비밀번호")}
                 value={secret}
                 readOnly
                 autoComplete="off"
@@ -236,11 +244,11 @@ export function AppPasswordsDialog(p: DialogProps) {
                 className="secondary-button"
                 onClick={() =>
                   copyText(secret)
-                    .then(() => p.notify("앱 비밀번호를 복사했어요."))
+                    .then(() => p.notify(msg("앱 비밀번호를 복사했어요.")))
                     .catch((e) => setError(e.message))
                 }
               >
-                앱 비밀번호 복사
+                {msg("앱 비밀번호 복사")}
               </button>
             </div>
           )}
@@ -261,32 +269,34 @@ export function AppPasswordsDialog(p: DialogProps) {
               setError("");
             }}
           >
-            {form ? "발급 취소" : "앱 비밀번호 만들기"}
+            {form ? msg("발급 취소") : msg("앱 비밀번호 만들기")}
           </button>
           {form && (
             <form className="api-key-form" onSubmit={issue}>
               <label className="form-label" htmlFor="api-key-name">
-                연결 이름
+                {msg("연결 이름")}
               </label>
               <input
                 id="api-key-name"
                 className="field-input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="예: Codex CLI, 생활비 자동 입력"
+                placeholder={msg("예: Codex CLI, 생활비 자동 입력")}
                 required
                 maxLength={60}
               />
               <fieldset>
-                <legend>접근할 계좌</legend>
+                <legend>{msg("접근할 계좌")}</legend>
                 <p className="entry-hint">
-                  지금 선택한 계좌만 허용해요. 나중에 추가한 계좌는 자동으로
-                  포함하지 않아요.
+                  {msg(
+                    "지금 선택한 계좌만 허용해요. 나중에 추가한 계좌는 자동으로 포함하지 않아요.",
+                  )}
                 </p>
                 {p.accounts.length === 0 && (
                   <p className="entry-hint">
-                    계좌·자산에서 먼저 계좌를 만들거나 계좌 공유를 승인받아
-                    주세요.
+                    {msg(
+                      "계좌·자산에서 먼저 계좌를 만들거나 계좌 공유를 승인받아 주세요.",
+                    )}
                   </p>
                 )}
                 <div className="api-account-list">
@@ -307,8 +317,8 @@ export function AppPasswordsDialog(p: DialogProps) {
                         {a.name}
                         <small>
                           {a.ledger_name} · {a.currency}
-                          {a.role === "viewer" ? " · 조회만 가능" : ""}
-                          {a.archived ? " · 보관됨" : ""}
+                          {a.role === "viewer" ? msg(" · 조회만 가능") : ""}
+                          {a.archived ? msg(" · 보관됨") : ""}
                         </small>
                       </span>
                     </label>
@@ -316,7 +326,7 @@ export function AppPasswordsDialog(p: DialogProps) {
                 </div>
               </fieldset>
               <fieldset>
-                <legend>허용할 기능</legend>
+                <legend>{msg("허용할 기능")}</legend>
                 <div className="api-permissions">
                   {permissions.map(([id, label]) => (
                     <label key={id}>
@@ -331,19 +341,18 @@ export function AppPasswordsDialog(p: DialogProps) {
                           )
                         }
                       />
-                      {label}
+                      {msg(label)}
                     </label>
                   ))}
                 </div>
                 <p className="entry-hint">
-                  조회 권한에는 영수증 다운로드도 포함돼요. 추가·수정 요청은
-                  확인 화면 없이 바로 저장됩니다. 삭제는 휴지통 이동이며, 영수증
-                  해제에는 삭제와 영수증 권한이 모두 필요해요. 공유받은 조회
-                  전용 계좌는 쓰기 권한을 선택해도 변경할 수 없어요.
+                  {msg(
+                    "조회 권한에는 영수증 다운로드도 포함돼요. 추가·수정 요청은 확인 화면 없이 바로 저장됩니다. 삭제는 휴지통 이동이며, 영수증 해제에는 삭제와 영수증 권한이 모두 필요해요. 공유받은 조회 전용 계좌는 쓰기 권한을 선택해도 변경할 수 없어요.",
+                  )}
                 </p>
               </fieldset>
               <label className="form-label" htmlFor="api-key-lifetime">
-                유효기간
+                {msg("유효기간")}
               </label>
               <select
                 id="api-key-lifetime"
@@ -351,13 +360,13 @@ export function AppPasswordsDialog(p: DialogProps) {
                 value={lifetime}
                 onChange={(e) => setLifetime(e.target.value)}
               >
-                <option value="30d">30일</option>
-                <option value="90d">90일</option>
-                <option value="1y">1년</option>
-                <option value="never">만료 없음</option>
+                <option value="30d">{msg("30일")}</option>
+                <option value="90d">{msg("90일")}</option>
+                <option value="1y">{msg("1년")}</option>
+                <option value="never">{msg("만료 없음")}</option>
               </select>
               <label className="form-label" htmlFor="api-key-password">
-                현재 비밀번호
+                {msg("현재 비밀번호")}
               </label>
               <PasswordInput
                 id="api-key-password"
@@ -369,7 +378,7 @@ export function AppPasswordsDialog(p: DialogProps) {
               {p.user.totp_enabled && (
                 <>
                   <label className="form-label" htmlFor="api-key-code">
-                    인증 코드 또는 복구 코드
+                    {msg("인증 코드 또는 복구 코드")}
                   </label>
                   <input
                     id="api-key-code"
@@ -390,28 +399,31 @@ export function AppPasswordsDialog(p: DialogProps) {
                   !data.enabled
                 }
               >
-                발급하기
+                {msg("발급하기")}
               </button>
             </form>
           )}
-          <h3 className="api-section-title">발급한 연결</h3>
+          <h3 className="api-section-title">{msg("발급한 연결")}</h3>
           {data.items.length === 0 && (
-            <p className="entry-hint">아직 발급한 앱 비밀번호가 없어요.</p>
+            <p className="entry-hint">
+              {msg("아직 발급한 앱 비밀번호가 없어요.")}
+            </p>
           )}
           {data.items.map((key) => (
             <div className="api-key-row" key={key.id}>
               <div>
                 <strong>{key.name}</strong>
                 <small>
-                  {expiry(key)} · 계좌 {key.account_ids.length}개
+                  {expiry(key)} {msg("· 계좌")} {key.account_ids.length}
+                  {msg("개")}
                 </small>
                 <small>
-                  계좌:{" "}
+                  {msg("계좌:")}{" "}
                   {key.account_ids
                     .map(
                       (id) =>
                         p.accounts.find((a) => a.id === id)?.name ||
-                        "접근할 수 없는 계좌",
+                        msg("접근할 수 없는 계좌"),
                     )
                     .join(", ")}
                 </small>
@@ -421,10 +433,10 @@ export function AppPasswordsDialog(p: DialogProps) {
                     .join(" · ")}
                 </small>
                 <small>
-                  최근 사용:{" "}
+                  {msg("최근 사용:")}{" "}
                   {key.last_used_at
-                    ? new Date(key.last_used_at).toLocaleString()
-                    : "없음"}
+                    ? new Date(key.last_used_at).toLocaleString(intlLocale())
+                    : msg("없음")}
                 </small>
               </div>
               {!key.revoked_at && (
@@ -433,14 +445,18 @@ export function AppPasswordsDialog(p: DialogProps) {
                   disabled={busy}
                   onClick={() => void revoke(key)}
                 >
-                  폐기
+                  {msg("폐기")}
                 </button>
               )}
             </div>
           ))}
           {logs.length > 0 && (
             <details className="api-request-log">
-              <summary>최근 API 사용 기록 ({logs.length}건)</summary>
+              <summary>
+                {msg("최근 API 사용 기록 (")}
+                {logs.length}
+                {msg("건)")}
+              </summary>
               {logs.map((log) => (
                 <div key={log.id}>
                   <strong>
@@ -449,14 +465,17 @@ export function AppPasswordsDialog(p: DialogProps) {
                   <code>
                     {log.method} {log.path}
                   </code>
-                  <small>{new Date(log.created_at).toLocaleString()}</small>
+                  <small>
+                    {new Date(log.created_at).toLocaleString(intlLocale())}
+                  </small>
                 </div>
               ))}
             </details>
           )}
           <p className="entry-hint">
-            연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키
-            폐기·비밀번호 변경·모든 기기 로그아웃 시 접근이 차단됩니다.
+            {msg(
+              "연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키 폐기·비밀번호 변경·모든 기기 로그아웃 시 접근이 차단됩니다.",
+            )}
           </p>
         </>
       )}

@@ -190,10 +190,10 @@ func (a *App) join(w http.ResponseWriter, r *http.Request, u *User) error {
 		return conflict("사용할 수 없는 아이디예요. 기존 계정이라면 로그인 후 수락해 주세요.")
 	}
 	id := newID()
-	if _, err = tx.Exec("INSERT INTO users(id,username,name,password,created_at) VALUES(?,?,?,?,?)", id, c.Username, c.Name, passwordHash(c.Password), now()); err != nil {
+	if _, err = tx.Exec("INSERT INTO users(id,username,name,password,locale,created_at) VALUES(?,?,?,?,?,?)", id, c.Username, c.Name, passwordHash(c.Password), requestLocale(r, nil), now()); err != nil {
 		return err
 	}
-	if err = createPersonal(tx, id); err != nil {
+	if err = createPersonal(tx, id, requestLocale(r, nil)); err != nil {
 		return err
 	}
 	if financialInvite {
@@ -302,7 +302,7 @@ func (a *App) revokeShare(w http.ResponseWriter, r *http.Request, u *User) error
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	writeJSON(w, 200, map[string]string{"message": "이 공유 경로를 해제했어요. 다른 가계부·계좌 공유 권한이 남아 있으면 접근도 유지돼요."})
+	writeJSON(w, 200, map[string]string{"message": localizeMessage(requestLocale(r, u), "이 공유 경로를 해제했어요. 다른 가계부·계좌 공유 권한이 남아 있으면 접근도 유지돼요.")})
 	return nil
 }
 func (a *App) changeShare(w http.ResponseWriter, r *http.Request, u *User) error {
@@ -412,7 +412,7 @@ func (a *App) transferOwner(w http.ResponseWriter, r *http.Request, u *User) err
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	writeJSON(w, 200, map[string]string{"message": "책임자를 이전했어요. 기존 책임자는 편집자로 남고, 필요하면 가계부에서 나갈 수 있어요."})
+	writeJSON(w, 200, map[string]string{"message": localizeMessage(requestLocale(r, u), "책임자를 이전했어요. 기존 책임자는 편집자로 남고, 필요하면 가계부에서 나갈 수 있어요.")})
 	return nil
 }
 func (a *App) leaveLedger(w http.ResponseWriter, r *http.Request, u *User) error {
@@ -438,7 +438,7 @@ func (a *App) leaveLedger(w http.ResponseWriter, r *http.Request, u *User) error
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	writeJSON(w, 200, map[string]string{"message": "가계부에서 나왔어요. 원본 기록과 따로 공유받은 계좌 권한은 유지됩니다."})
+	writeJSON(w, 200, map[string]string{"message": localizeMessage(requestLocale(r, u), "가계부에서 나왔어요. 원본 기록과 따로 공유받은 계좌 권한은 유지됩니다.")})
 	return nil
 }
 func (a *App) leaveAccount(w http.ResponseWriter, r *http.Request, u *User) error {
@@ -461,6 +461,6 @@ func (a *App) leaveAccount(w http.ResponseWriter, r *http.Request, u *User) erro
 	if err = audit(a.DB, u, "left", "account", id); err != nil {
 		return err
 	}
-	writeJSON(w, 200, map[string]string{"message": "이 계좌의 직접 공유 권한을 해제했어요. 다른 공유 경로가 남아 있으면 접근도 유지됩니다."})
+	writeJSON(w, 200, map[string]string{"message": localizeMessage(requestLocale(r, u), "이 계좌의 직접 공유 권한을 해제했어요. 다른 공유 경로가 남아 있으면 접근도 유지됩니다.")})
 	return nil
 }

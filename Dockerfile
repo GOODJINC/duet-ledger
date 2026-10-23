@@ -3,8 +3,8 @@ WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-fund --no-audit
 COPY web/ ./
-COPY scripts/duet_api.py scripts/sync-api-assets.mjs /src/scripts/
-COPY API.md MCP.md /src/
+COPY manual/ /src/manual/
+COPY internal/app/i18n/ /src/internal/app/i18n/
 RUN npm run build
 
 FROM golang:1.27.3-alpine AS server
