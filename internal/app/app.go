@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.4"
+const Version = "0.1.0-alpha.5"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -45,17 +45,19 @@ type queryer interface {
 	QueryRow(string, ...any) *sql.Row
 }
 type User struct {
-	ID              string `json:"id"`
-	Username        string `json:"username"`
-	Name            string `json:"name"`
-	Admin           bool   `json:"admin"`
-	Locale          string `json:"locale"`
-	Timezone        string `json:"timezone"`
-	TOTP            bool   `json:"totp_enabled"`
-	CSRF            string `json:"csrf,omitempty"`
-	DefaultCurrency string `json:"default_currency"`
-	ShowSidebar     bool   `json:"show_sidebar_message"`
-	SharingPending  bool   `json:"sharing_pending,omitempty"`
+	DefaultAccountID string         `json:"default_account_id"`
+	ExchangeRates    []ExchangeRate `json:"exchange_rates"`
+	ID               string         `json:"id"`
+	Username         string         `json:"username"`
+	Name             string         `json:"name"`
+	Admin            bool           `json:"admin"`
+	Locale           string         `json:"locale"`
+	Timezone         string         `json:"timezone"`
+	TOTP             bool           `json:"totp_enabled"`
+	CSRF             string         `json:"csrf,omitempty"`
+	DefaultCurrency  string         `json:"default_currency"`
+	ShowSidebar      bool           `json:"show_sidebar_message"`
+	SharingPending   bool           `json:"sharing_pending,omitempty"`
 }
 type apiError struct {
 	Status        int
@@ -220,6 +222,8 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/join", a.join, false)
 	add("GET /api/me", a.me, true)
 	add("PATCH /api/me", a.updateMe, true)
+	add("PUT /api/me/exchange-rates", a.saveExchangeRate, true)
+	add("DELETE /api/me/exchange-rates", a.saveExchangeRate, true)
 	add("POST /api/logout", a.logout, true)
 	add("POST /api/logout-all", a.logoutAll, true)
 	add("POST /api/security/password", a.changePassword, true)

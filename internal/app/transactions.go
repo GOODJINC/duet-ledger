@@ -19,46 +19,55 @@ type ReceiptRef struct {
 	Media string `json:"media_type"`
 }
 type Leg struct {
-	ID           string       `json:"id"`
-	AccountID    string       `json:"account_id"`
-	Amount       string       `json:"amount"`
-	Title        string       `json:"title"`
-	Category     string       `json:"category"`
-	CategoryName string       `json:"category_name"`
-	Note         string       `json:"note"`
-	Receipts     []ReceiptRef `json:"receipts"`
+	DisplayAmount string       `json:"display_amount,omitempty"`
+	ID            string       `json:"id"`
+	AccountID     string       `json:"account_id"`
+	Amount        string       `json:"amount"`
+	Title         string       `json:"title"`
+	Category      string       `json:"category"`
+	CategoryName  string       `json:"category_name"`
+	Note          string       `json:"note"`
+	Receipts      []ReceiptRef `json:"receipts"`
 }
 type Transaction struct {
-	ID              string `json:"id"`
-	Kind            string `json:"kind"`
-	Date            string `json:"date"`
-	Time            string `json:"time"`
-	Timezone        string `json:"timezone"`
-	CreatorUsername string `json:"creator_username"`
-	Currency        string `json:"currency"`
-	Scale           int    `json:"scale"`
-	Version         int    `json:"version"`
-	Creator         string `json:"creator"`
-	CanEdit         bool   `json:"can_edit"`
-	Deleted         bool   `json:"deleted"`
-	Legs            []Leg  `json:"legs"`
-	eventID         string
+	OriginalCurrency string `json:"original_currency,omitempty"`
+	OriginalAmount   string `json:"original_amount,omitempty"`
+	ExchangeRate     string `json:"exchange_rate,omitempty"`
+	DisplayCurrency  string `json:"display_currency,omitempty"`
+	DisplayScale     *int   `json:"display_scale,omitempty"`
+	ID               string `json:"id"`
+	Kind             string `json:"kind"`
+	Date             string `json:"date"`
+	Time             string `json:"time"`
+	Timezone         string `json:"timezone"`
+	CreatorUsername  string `json:"creator_username"`
+	Currency         string `json:"currency"`
+	Scale            int    `json:"scale"`
+	Version          int    `json:"version"`
+	Creator          string `json:"creator"`
+	CanEdit          bool   `json:"can_edit"`
+	Deleted          bool   `json:"deleted"`
+	Legs             []Leg  `json:"legs"`
+	eventID          string
 }
 type TxInput struct {
-	allowRemoved bool
-	LedgerID     string `json:"ledger_id"`
-	Kind         string `json:"kind"`
-	Date         string `json:"date"`
-	Time         string `json:"time"`
-	Timezone     string `json:"timezone"`
-	Amount       string `json:"amount"`
-	AccountID    string `json:"account_id"`
-	ToID         string `json:"to_id"`
-	Title        string `json:"title"`
-	Category     string `json:"category"`
-	Note         string `json:"note"`
-	TargetNote   string `json:"target_note"`
-	Version      int    `json:"version"`
+	OriginalCurrency string `json:"original_currency,omitempty"`
+	OriginalAmount   string `json:"original_amount,omitempty"`
+	ExchangeRate     string `json:"exchange_rate,omitempty"`
+	allowRemoved     bool
+	LedgerID         string `json:"ledger_id"`
+	Kind             string `json:"kind"`
+	Date             string `json:"date"`
+	Time             string `json:"time"`
+	Timezone         string `json:"timezone"`
+	Amount           string `json:"amount"`
+	AccountID        string `json:"account_id"`
+	ToID             string `json:"to_id"`
+	Title            string `json:"title"`
+	Category         string `json:"category"`
+	Note             string `json:"note"`
+	TargetNote       string `json:"target_note"`
+	Version          int    `json:"version"`
 }
 type CurrencyTotal struct {
 	Currency string `json:"currency"`
@@ -81,13 +90,14 @@ type DayTotal struct {
 	Expense  string `json:"expense"`
 }
 type TransactionPage struct {
-	Items      []Transaction   `json:"items"`
-	Count      int             `json:"count"`
-	Page       int             `json:"page"`
-	PageSize   int             `json:"page_size"`
-	Totals     []CurrencyTotal `json:"totals"`
-	Categories []CategoryTotal `json:"categories"`
-	Daily      []DayTotal      `json:"daily"`
+	MissingCurrencies []string        `json:"missing_currencies,omitempty"`
+	Items             []Transaction   `json:"items"`
+	Count             int             `json:"count"`
+	Page              int             `json:"page"`
+	PageSize          int             `json:"page_size"`
+	Totals            []CurrencyTotal `json:"totals"`
+	Categories        []CategoryTotal `json:"categories"`
+	Daily             []DayTotal      `json:"daily"`
 }
 
 func placeholders(n int) string { return strings.TrimSuffix(strings.Repeat("?,", n), ",") }
@@ -154,6 +164,9 @@ func (a *App) validateTx(q queryer, u *User, v *TxInput) ([]Account, int64, erro
 	}
 	source, err := a.account(q, u, v.AccountID)
 	if err != nil {
+		return nil, 0, err
+	}
+	if err = checkForeign(v.Kind, source.Currency, v.Amount, v.OriginalCurrency, v.OriginalAmount, v.ExchangeRate); err != nil {
 		return nil, 0, err
 	}
 	if v.LedgerID != "" && v.LedgerID != source.LedgerID {
@@ -240,6 +253,9 @@ func (a *App) writeEvent(tx *sql.Tx, u *User, v TxInput, id string, create bool)
 		if _, err = tx.Exec("UPDATE events SET kind=?,date=?,time=?,timezone=?,currency=?,scale=?,version=version+1,updated_at=? WHERE id=?", v.Kind, v.Date, v.Time, v.Timezone, accounts[0].Currency, accounts[0].Scale, now(), id); err != nil {
 			return "", err
 		}
+	}
+	if _, err = tx.Exec("UPDATE events SET original_currency=?,original_amount=?,exchange_rate=? WHERE id=?", v.OriginalCurrency, v.OriginalAmount, v.ExchangeRate, id); err != nil {
+		return "", err
 	}
 	// Preserve a posting ID when its account remains in the event. Receipts are tied
 	// to that leg; moving a transaction away from an attached leg is rejected.
@@ -607,7 +623,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 	if params.Get("trash") == "true" {
 		deleted = "IS NOT NULL"
 	}
-	rows, err := q.Query(`SELECT e.id,e.kind,e.date,e.time,e.timezone,e.currency,e.scale,e.version,u.name,u.username,e.deleted_at IS NOT NULL,p.id,p.account_id,p.amount,p.title,p.category,p.note,p.category_label FROM events e JOIN postings p ON p.event_id=e.id JOIN users u ON u.id=e.creator_id WHERE p.account_id IN (`+placeholders(len(ids))+`) AND e.date>=? AND e.date<=? AND e.deleted_at `+deleted+` ORDER BY e.date DESC,e.time DESC,e.created_at DESC,e.id,p.amount,p.id LIMIT 40002`, args...)
+	rows, err := q.Query(`SELECT e.id,e.kind,e.date,e.time,e.timezone,e.currency,e.scale,e.version,u.name,u.username,e.deleted_at IS NOT NULL,p.id,p.account_id,p.amount,p.title,p.category,p.note,p.category_label,e.original_currency,e.original_amount,e.exchange_rate FROM events e JOIN postings p ON p.event_id=e.id JOIN users u ON u.id=e.creator_id WHERE p.account_id IN (`+placeholders(len(ids))+`) AND e.date>=? AND e.date<=? AND e.deleted_at `+deleted+` ORDER BY e.date DESC,e.time DESC,e.created_at DESC,e.id,p.amount,p.id LIMIT 40002`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +635,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 		var item Transaction
 		var leg Leg
 		var amount int64
-		if err = rows.Scan(&item.eventID, &item.Kind, &item.Date, &item.Time, &item.Timezone, &item.Currency, &item.Scale, &item.Version, &item.Creator, &item.CreatorUsername, &item.Deleted, &leg.ID, &leg.AccountID, &amount, &leg.Title, &leg.Category, &leg.Note, &leg.CategoryName); err != nil {
+		if err = rows.Scan(&item.eventID, &item.Kind, &item.Date, &item.Time, &item.Timezone, &item.Currency, &item.Scale, &item.Version, &item.Creator, &item.CreatorUsername, &item.Deleted, &leg.ID, &leg.AccountID, &amount, &leg.Title, &leg.Category, &leg.Note, &leg.CategoryName, &item.OriginalCurrency, &item.OriginalAmount, &item.ExchangeRate); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -821,6 +837,12 @@ func (a *App) listTransactions(w http.ResponseWriter, r *http.Request, u *User) 
 		return err
 	}
 	page := summarize(items)
+	if target := r.URL.Query().Get("display_currency"); target != "" {
+		page, err = a.convertReport(items, u, target)
+		if err != nil {
+			return err
+		}
+	}
 	n, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	size, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
 	if n < 1 {

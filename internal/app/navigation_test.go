@@ -106,7 +106,7 @@ func TestVersionThreeHiddenCategoriesUpgradeWithoutLosingHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = a.DB.Exec("DROP TABLE removed_categories; ALTER TABLE postings DROP COLUMN category_label; ALTER TABLE users DROP COLUMN default_currency; DELETE FROM schema_version WHERE version=4;")
+	_, err = a.DB.Exec("DROP TABLE exchange_rates; ALTER TABLE users DROP COLUMN default_account_id; ALTER TABLE events DROP COLUMN original_currency; ALTER TABLE events DROP COLUMN original_amount; ALTER TABLE events DROP COLUMN exchange_rate; DROP TABLE removed_categories; ALTER TABLE postings DROP COLUMN category_label; ALTER TABLE users DROP COLUMN default_currency; DELETE FROM schema_version WHERE version>=4;")
 	if err != nil {
 		t.Fatal(err)
 	}

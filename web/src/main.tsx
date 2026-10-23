@@ -1,3 +1,4 @@
+import { exchangeFactor, convertMinor } from "./exchange";
 import React, {
   useCallback,
   useEffect,
@@ -55,6 +56,7 @@ import {
 } from "./management";
 import {
   CategoriesDialog,
+  ExchangeSettings,
   AdminDialog,
   AccountTrashDialog,
 } from "./preferences";
@@ -68,6 +70,22 @@ type Page =
   | "settings"
   | "account-settings"
   | "administration";
+const pagePaths: Record<Page, string> = {
+  home: "/home",
+  ledger: "/ledger",
+  stats: "/stats",
+  accounts: "/accounts",
+  settings: "/settings",
+  "account-settings": "/account",
+  administration: "/admin",
+};
+function pathPage(): Page {
+  return (
+    (Object.entries(pagePaths).find(
+      ([, path]) => path === location.pathname.replace(/\/$/, ""),
+    )?.[0] as Page) || "home"
+  );
+}
 type ModalState =
   | { kind: "entry"; tx?: Transaction; account?: string }
   | { kind: "account"; account?: Account }
@@ -511,7 +529,10 @@ export function Application({
   clearInvite: () => void;
   joined: boolean;
 }) {
-  const [page, setPage] = useState<Page>("home");
+  const [page, setPage] = useState<Page>(() => {
+    const p = pathPage();
+    return p === "administration" && !user.admin ? "settings" : p;
+  });
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [report, setReport] = useState<Report>(emptyReport);
@@ -550,6 +571,62 @@ export function Application({
     "account-settings",
     "administration",
   ].includes(page);
+  const routeRef = useRef({ modal, monthPicker, categoryPopup, page, invite });
+  routeRef.current = { modal, monthPicker, categoryPopup, page, invite };
+  useEffect(() => {
+    const initial = routeRef.current.page;
+    history.replaceState({ duet: true, overlay: 0 }, "", pagePaths[initial]);
+    const pop = (event: PopStateEvent) => {
+      const state = routeRef.current;
+      let next = pathPage();
+      if (next === "administration" && !user.admin) {
+        next = "settings";
+        history.replaceState(
+          { duet: true, overlay: 0 },
+          "",
+          pagePaths.settings,
+        );
+      }
+      setPage(next);
+      setUserMenu(false);
+      const depth = Number(event.state?.overlay) || 0;
+      if (depth < 2 && state.categoryPopup) {
+        setCategoryPopup(false);
+        setCategoryVersion((v) => v + 1);
+      }
+      if (depth === 0) {
+        setModal(null);
+        setMonthPicker(false);
+        if (state.invite) clearInvite();
+      }
+      // Closed dialogs are not reconstructed from stale browser-forward entries.
+      if (depth > 0 && !state.modal && !state.monthPicker && !state.invite) {
+        history.replaceState({ duet: true, overlay: 0 }, "", pagePaths[next]);
+      }
+    };
+    window.addEventListener("popstate", pop);
+    return () => window.removeEventListener("popstate", pop);
+  }, [user.id, user.admin]);
+  useEffect(() => {
+    const depth = categoryPopup ? 2 : modal || monthPicker || invite ? 1 : 0;
+    const current = Number(history.state?.overlay) || 0;
+    if (depth > current)
+      history.pushState({ duet: true, overlay: depth }, "", pagePaths[page]);
+    else if (depth < current) history.go(depth - current);
+  }, [modal, monthPicker, categoryPopup, invite, page]);
+  function closeLayer() {
+    if (Number(history.state?.overlay) > 0) {
+      history.back();
+      return;
+    }
+    if (categoryPopup) {
+      setCategoryPopup(false);
+      setCategoryVersion((v) => v + 1);
+    } else {
+      setModal(null);
+      setMonthPicker(false);
+    }
+  }
   const en = user.locale === "en";
   useEffect(() => {
     document.body.dataset.accent = accent;
@@ -578,7 +655,8 @@ export function Application({
         from,
         to,
         scope: ledger ? "all" : scope,
-        currency,
+        currency: "",
+        display_currency: currency,
         search: page === "ledger" ? searchTerm : "",
         account: page === "ledger" ? accountFilter : "",
         type: page === "ledger" ? typeFilter : "",
@@ -679,6 +757,8 @@ export function Application({
   function navigate(p: Page) {
     if (p === "administration" && !user.admin) return;
     setUserMenu(false);
+    if (p !== page)
+      history.pushState({ duet: true, overlay: 0 }, "", pagePaths[p]);
     setPage(p);
     setPageNumber(1);
     setTrash(false);
@@ -690,18 +770,37 @@ export function Application({
       (!!ledger || scope === "all" || a.shared === (scope === "shared")) &&
       (!ledger || a.ledger_id === ledger),
   );
-  const moneyAccounts = visibleAccounts.filter((a) => a.currency === currency);
+  const moneyAccounts = visibleAccounts;
   const scale = currencyScales[currency] || 0;
   const selectedLedger = ledgers.find((l) => l.id === ledger);
   const totals = report.totals.find((t) => t.currency === currency);
-  const balance = moneyAccounts.reduce((s, a) => s + BigInt(a.balance), 0n);
+  const missingBalance = moneyAccounts.filter(
+    (a) =>
+      !exchangeFactor(
+        user.exchange_rates || [],
+        a.currency,
+        currency,
+        currency,
+      ),
+  );
+  const balance = moneyAccounts.reduce((sum, a) => {
+    const factor = exchangeFactor(
+      user.exchange_rates || [],
+      a.currency,
+      currency,
+      currency,
+    );
+    return factor
+      ? sum + BigInt(convertMinor(a.balance, a.currency, currency, factor))
+      : sum;
+  }, 0n);
   const dialogProps: DialogProps = {
     selectedLedger: ledger,
     user,
     accounts,
     ledgers,
     refresh,
-    close: () => setModal(null),
+    close: closeLayer,
     notify: setToast,
     categoryVersion,
     manageCategories: (id) => {
@@ -1294,35 +1393,23 @@ export function Application({
               </div>
             )}
             {!isSettings &&
-              [...new Set(visibleAccounts.map((a) => a.currency))].some(
-                (c) => c !== (user.default_currency || "KRW"),
-              ) && (
-                <div className="currency-context">
-                  <span>
-                    {currency} 기준으로 합계를 표시해요. 다른 통화는 별도로 볼
-                    수 있어요.
-                  </span>
-                  <div>
-                    {[
-                      ...new Set([
-                        user.default_currency || "KRW",
-                        ...visibleAccounts.map((a) => a.currency),
-                      ]),
-                    ].map((code) => (
-                      <button
-                        key={code}
-                        className="secondary-button"
-                        aria-pressed={currency === code}
-                        onClick={() => {
-                          setCurrency(code);
-                          setAccountFilter("");
-                          setPageNumber(1);
-                        }}
-                      >
-                        {code}
-                      </button>
-                    ))}
-                  </div>
+              ((report.missing_currencies || []).length > 0 ||
+                missingBalance.length > 0) && (
+                <div className="inline-warning">
+                  환율이 없는 통화는 원금액으로 표시하고 합계에서 제외해요:{" "}
+                  {[
+                    ...new Set([
+                      ...(report.missing_currencies || []),
+                      ...missingBalance.map((a) => a.currency),
+                    ]),
+                  ].join(", ")}
+                  .{" "}
+                  <button
+                    className="text-link"
+                    onClick={() => navigate("settings")}
+                  >
+                    환율 설정
+                  </button>
                 </div>
               )}
             {page === "home" && (
@@ -1409,13 +1496,11 @@ export function Application({
                       }}
                     >
                       <option value="">모든 계좌</option>
-                      {visibleAccounts
-                        .filter((a) => a.currency === currency)
-                        .map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name}
-                          </option>
-                        ))}
+                      {visibleAccounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
                     </select>
                     <select
                       aria-label="거래 종류 필터"
@@ -1659,6 +1744,7 @@ export function Application({
                   page as "settings" | "account-settings" | "administration"
                 }
                 user={user}
+                accounts={accounts}
                 refresh={refresh}
                 navigate={navigate}
                 open={(kind) => {
@@ -1682,7 +1768,7 @@ export function Application({
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.4
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.5
             </span>
           </footer>
         </div>
@@ -1705,17 +1791,20 @@ export function Application({
           </button>
         ))}
       </nav>
-      <button
-        className="mobile-fab"
-        onClick={() => openEntry()}
-        aria-label="빠른 입력"
-      >
-        <Icon name="plus" />
-      </button>
+      {!isSettings && (
+        <button
+          className="mobile-fab"
+          onClick={() => openEntry()}
+          aria-label="빠른 입력"
+        >
+          <Icon name="plus" />
+        </button>
+      )}
       {monthPicker && (
         <MonthDialog
           date={date}
-          close={() => setMonthPicker(false)}
+          timezone={user.timezone}
+          close={closeLayer}
           select={(year, month) => {
             const day = Math.min(
               Number(date.slice(8, 10)),
@@ -1771,10 +1860,7 @@ export function Application({
         <CategoriesDialog
           {...dialogProps}
           selectedLedger={categoryLedger}
-          close={() => {
-            setCategoryPopup(false);
-            setCategoryVersion((v) => v + 1);
-          }}
+          close={closeLayer}
         />
       )}
       {modal?.kind === "categories" && (
@@ -1820,7 +1906,7 @@ function TableHeader() {
     </div>
   );
 }
-function TransactionRows({
+export function TransactionRows({
   items,
   accounts,
   open,
@@ -1848,16 +1934,21 @@ function TransactionRows({
         );
         const partial =
           acs.some((a) => a?.shared) && acs.some((a) => !a?.shared);
+        const displayAmount = first.display_amount ?? first.amount;
+        const displayCurrency = t.display_currency || t.currency;
+        const displayScale = t.display_currency
+          ? currencyScales[t.display_currency]
+          : t.scale;
         const amount =
           t.kind === "transfer" && t.legs.length === 2
             ? formatMoney(
-                BigInt(first.amount) < 0n
-                  ? -BigInt(first.amount)
-                  : BigInt(first.amount),
-                t.scale,
-                t.currency,
+                BigInt(displayAmount) < 0n
+                  ? -BigInt(displayAmount)
+                  : BigInt(displayAmount),
+                displayScale,
+                displayCurrency,
               )
-            : `${BigInt(first.amount) > 0n ? "+" : ""}${formatMoney(first.amount, t.scale, t.currency)}`;
+            : `${BigInt(displayAmount) > 0n ? "+" : ""}${formatMoney(displayAmount, displayScale, displayCurrency)}`;
         return (
           <React.Fragment key={t.id}>
             {group && (
@@ -1915,6 +2006,17 @@ function TransactionRows({
               >
                 {t.kind === "transfer" && t.legs.length === 2 ? "↔ " : ""}
                 {amount}
+                {(t.original_currency || t.currency !== displayCurrency) && (
+                  <small className="original-money">
+                    {t.original_currency
+                      ? formatMoney(
+                          t.original_amount || "0",
+                          currencyScales[t.original_currency],
+                          t.original_currency,
+                        )
+                      : formatMoney(first.amount, t.scale, t.currency)}
+                  </small>
+                )}
               </span>
             </button>
           </React.Fragment>
@@ -2194,6 +2296,7 @@ function CalendarView({
   );
 }
 export function SettingsView({
+  accounts = [],
   user,
   refresh,
   open,
@@ -2209,6 +2312,7 @@ export function SettingsView({
   navigate,
 }: {
   user: User;
+  accounts?: Account[];
   refresh: () => Promise<void>;
   open: (
     k:
@@ -2233,6 +2337,9 @@ export function SettingsView({
   section: "settings" | "account-settings" | "administration";
   navigate: (p: Page) => void;
 }) {
+  const [defaultAccount, setDefaultAccount] = useState(
+    user.default_account_id || "",
+  );
   const [name, setName] = useState(user.name);
   const [locale, setLocale] = useState(user.locale);
   const [timezone, setTimezone] = useState(user.timezone);
@@ -2249,6 +2356,16 @@ export function SettingsView({
     setLocale(user.locale);
     setTimezone(user.timezone);
     setDefaultCurrency(user.default_currency || "KRW");
+    setDefaultAccount(
+      accounts.some(
+        (a) =>
+          a.id === user.default_account_id &&
+          !a.archived &&
+          a.role !== "viewer",
+      )
+        ? user.default_account_id || ""
+        : "",
+    );
     setShowSidebar(user.show_sidebar_message !== false);
     setError("");
   }, [
@@ -2257,6 +2374,7 @@ export function SettingsView({
     user.locale,
     user.timezone,
     user.default_currency,
+    user.default_account_id,
     user.show_sidebar_message,
   ]);
   async function save(e: FormEvent) {
@@ -2271,6 +2389,7 @@ export function SettingsView({
           locale,
           timezone,
           default_currency: defaultCurrency,
+          default_account_id: defaultAccount,
           show_sidebar_message: showSidebar,
         },
         "PATCH",
@@ -2358,7 +2477,7 @@ export function SettingsView({
           <section className="panel">
             <div className="setting-group">
               <h2>화면과 표시</h2>
-              <div className="setting-row">
+              <div className="setting-row appearance-row">
                 <div>
                   <strong>화면 밝기</strong>
                   <p>이 브라우저에 적용해요.</p>
@@ -2380,7 +2499,7 @@ export function SettingsView({
                   ))}
                 </div>
               </div>
-              <div className="setting-row">
+              <div className="setting-row appearance-row">
                 <div>
                   <strong>테마 색상</strong>
                   <p>이 계정의 현재 브라우저에 적용해요.</p>
@@ -2481,6 +2600,28 @@ export function SettingsView({
                   조회와 새 계좌의 기본값이에요. 기존 계좌의 통화·금액은 바뀌지
                   않으며 환율 변환은 하지 않아요.
                 </p>
+                <label className="form-label" htmlFor="default-account">
+                  빠른 입력 기본 계좌
+                </label>
+                <select
+                  id="default-account"
+                  className="field-select"
+                  value={defaultAccount}
+                  onChange={(e) => setDefaultAccount(e.target.value)}
+                >
+                  <option value="">자동 선택 · 기본 통화 계좌 우선</option>
+                  {accounts
+                    .filter((a) => !a.archived && a.role !== "viewer")
+                    .map((a) => (
+                      <option value={a.id} key={a.id}>
+                        {a.name} · {a.currency}
+                      </option>
+                    ))}
+                </select>
+                <p className="entry-hint">
+                  특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본
+                  계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.
+                </p>
                 <label className="setting-row">
                   <span>왼쪽 소개 문구 표시</span>
                   <input
@@ -2498,6 +2639,9 @@ export function SettingsView({
                 </button>
               </form>
             </div>
+          </section>
+          <section className="panel">
+            <ExchangeSettings user={user} refresh={refresh} notify={notify} />
           </section>
           <section className="panel">
             <div className="setting-group">
@@ -2537,13 +2681,13 @@ export function SettingsView({
               )}
               {row(
                 "CSV 내보내기",
-                "현재 가계부·통화와 가계부 화면의 기간·검색 조건을 사용해요.",
+                "기간·검색 조건의 기록을 원래 통화로 내보내요.",
                 exportCSV,
                 "내보내기",
               )}
               {row(
                 "JSON 자료 내보내기",
-                "현재 선택한 범위의 전체 기간 자료. 사진·공유 권한 제외.",
+                "전체 기간 자료 · 사진·공유 권한 제외",
                 exportJSON,
                 "내보내기",
               )}

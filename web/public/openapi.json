@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.0-alpha.4",
+    "version": "0.1.0-alpha.5",
     "description": "Cookie-authenticated local web API. Financial values use integer strings. Cross-account transfers require edit permission on every side. Remote API tokens and MCP are not implemented yet."
   },
   "servers": [
@@ -1079,6 +1079,14 @@
               "minimum": 1,
               "maximum": 200
             }
+          },
+          {
+            "name": "display_currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Convert totals/categories/daily and add item display_currency/display_scale and leg display_amount. Original amounts and account currencies stay unchanged. Items without a conversion rate are listed in missing_currencies and excluded from converted aggregates."
           }
         ]
       },
@@ -2697,6 +2705,122 @@
         ],
         "operationId": "delete_api_ledger_category"
       }
+    },
+    "/api/me/exchange-rates": {
+      "put": {
+        "summary": "Save current user manual rate",
+        "operationId": "put_api_me_exchange_rates",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "rate": {
+                    "type": "string",
+                    "description": "Required for PUT. Account units per 1 source unit, max 12 fractional places."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Only affects the caller. Removes inverse pair to avoid conflicting direct/inverse values. Existing booked native amounts and per-transaction FX snapshots are unchanged."
+      },
+      "delete": {
+        "summary": "Remove current user rate pair",
+        "operationId": "delete_api_me_exchange_rates",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "rate": {
+                    "type": "string",
+                    "description": "Required for PUT. Account units per 1 source unit, max 12 fractional places."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Only affects the caller. Removes inverse pair to avoid conflicting direct/inverse values. Existing booked native amounts and per-transaction FX snapshots are unchanged."
+      }
     }
   },
   "components": {
@@ -2897,6 +3021,18 @@
           "ledger_id": {
             "type": "string",
             "description": "Optional entry context; source and transfer target must belong to this ledger."
+          },
+          "original_currency": {
+            "type": "string",
+            "description": "Optional original charge currency, different from account currency."
+          },
+          "original_amount": {
+            "type": "string",
+            "description": "Positive original amount as a minor-unit integer string."
+          },
+          "exchange_rate": {
+            "type": "string",
+            "description": "Account currency units per 1 original currency unit. Positive decimal, up to 12 fraction digits."
           }
         }
       },
@@ -2950,6 +3086,10 @@
               "KWD"
             ],
             "description": "User preference for default display and new account currency. Omission preserves the current preference. Does not convert balances."
+          },
+          "default_account_id": {
+            "type": "string",
+            "description": "Optional writable, unarchived account preference. Empty uses automatic selection. Scoped entry screens still restrict to their current ledger."
           }
         }
       },

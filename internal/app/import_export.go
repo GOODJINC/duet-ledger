@@ -95,10 +95,10 @@ func (a *App) exportData(w http.ResponseWriter, r *http.Request, u *User) error 
 		w.Header().Set("Content-Disposition", `attachment; filename="duet-ledger-transactions.csv"`)
 		_, _ = w.Write([]byte("\xef\xbb\xbf"))
 		writer := csv.NewWriter(w)
-		_ = writer.Write([]string{"date", "kind", "title", "amount", "category", "note", "account", "currency", "scale", "time", "timezone"})
+		_ = writer.Write([]string{"date", "kind", "title", "amount", "category", "note", "account", "currency", "scale", "time", "timezone", "original_currency", "original_amount", "exchange_rate"})
 		for _, v := range items {
 			for _, l := range v.Legs {
-				row := []string{v.Date, v.Kind, csvSafe(l.Title), decimalString(l.Amount, v.Scale), csvSafe(l.CategoryName), csvSafe(l.Note), csvSafe(names[l.AccountID]), v.Currency, strconv.Itoa(v.Scale), v.Time, v.Timezone}
+				row := []string{v.Date, v.Kind, csvSafe(l.Title), decimalString(l.Amount, v.Scale), csvSafe(l.CategoryName), csvSafe(l.Note), csvSafe(names[l.AccountID]), v.Currency, strconv.Itoa(v.Scale), v.Time, v.Timezone, v.OriginalCurrency, v.OriginalAmount, v.ExchangeRate}
 				if err = writer.Write(row); err != nil {
 					return err
 				}
@@ -135,7 +135,7 @@ func (a *App) exportData(w http.ResponseWriter, r *http.Request, u *User) error 
 	if len(filtered) > 100 || len(items) > 20000 {
 		return bad("JSON 자료 이동은 계좌 100개·거래 2만 건까지예요. 계좌를 나누어 내보내거나 전체 운영 백업을 사용해 주세요.")
 	}
-	data, err := json.Marshal(Export{"duet-ledger", 1, now(), filtered, items})
+	data, err := json.Marshal(Export{"duet-ledger", 2, now(), filtered, items})
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func (a *App) importCSV(w http.ResponseWriter, r *http.Request, u *User) error {
 		if category == "" {
 			category = "other"
 		}
-		input := TxInput{Kind: kind, Date: get("date"), Time: get("time"), Timezone: get("timezone"), Amount: n, AccountID: account.ID, Title: csvUnescape(get("title")), Category: csvUnescape(category), Note: csvUnescape(get("note"))}
+		input := TxInput{OriginalCurrency: get("original_currency"), OriginalAmount: get("original_amount"), ExchangeRate: get("exchange_rate"), Kind: kind, Date: get("date"), Time: get("time"), Timezone: get("timezone"), Amount: n, AccountID: account.ID, Title: csvUnescape(get("title")), Category: csvUnescape(category), Note: csvUnescape(get("note"))}
 		check := input
 		if check.Kind == "transfer" {
 			check.Kind = "adjustment"
@@ -301,7 +301,7 @@ func (a *App) importJSON(w http.ResponseWriter, r *http.Request, u *User) error 
 		return err
 	}
 	d := v.Data
-	if d.Format != "duet-ledger" || d.Version != 1 {
+	if d.Format != "duet-ledger" || (d.Version != 1 && d.Version != 2) {
 		return bad("지원하는 듀엣 가계부 JSON 자료가 아니에요.")
 	}
 	if len(d.Accounts) == 0 || len(d.Accounts) > 100 || len(d.Transactions) > 20000 {
@@ -341,6 +341,13 @@ func (a *App) importJSON(w http.ResponseWriter, r *http.Request, u *User) error 
 		}
 		if item.Kind != "expense" && item.Kind != "income" && item.Kind != "refund" && item.Kind != "adjustment" && item.Kind != "transfer" {
 			return bad("지원하지 않는 거래 유형이에요.")
+		}
+		if len(item.Legs) == 1 {
+			if err := checkForeign(item.Kind, item.Currency, item.Legs[0].Amount, item.OriginalCurrency, item.OriginalAmount, item.ExchangeRate); err != nil {
+				return err
+			}
+		} else if item.OriginalCurrency != "" || item.OriginalAmount != "" || item.ExchangeRate != "" {
+			return bad("이체의 외화 정보를 확인해 주세요.")
 		}
 		var total int64
 		seen := map[string]bool{}
@@ -420,6 +427,9 @@ func (a *App) importJSON(w http.ResponseWriter, r *http.Request, u *User) error 
 	for _, item := range d.Transactions {
 		event := newID()
 		if _, err = tx.Exec("INSERT INTO events(id,kind,date,time,timezone,currency,scale,creator_id,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)", event, item.Kind, item.Date, item.Time, item.Timezone, item.Currency, item.Scale, u.ID, now(), now()); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("UPDATE events SET original_currency=?,original_amount=?,exchange_rate=? WHERE id=?", item.OriginalCurrency, item.OriginalAmount, item.ExchangeRate, event); err != nil {
 			return err
 		}
 		for _, leg := range item.Legs {

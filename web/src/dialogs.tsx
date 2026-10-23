@@ -1,3 +1,9 @@
+import {
+  exchangeFactor,
+  factorDecimal,
+  convertMinor,
+  rateFraction,
+} from "./exchange";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   api,
@@ -81,6 +87,9 @@ export function EntryDialog(
   const [accountId, setAccountId] = useState(
     first?.account_id ||
       (editable.some((a) => a.id === p.accountId) ? p.accountId : undefined) ||
+      editable.find((a) => a.id === p.user.default_account_id)?.id ||
+      editable.find((a) => a.currency === (p.user.default_currency || "KRW"))
+        ?.id ||
       editable[0]?.id ||
       "",
   );
@@ -105,17 +114,65 @@ export function EntryDialog(
   const [categoryError, setCategoryError] = useState("");
   const [title, setTitle] = useState(first?.title || "");
   const [amount, setAmount] = useState(
-    first
-      ? toDecimal(
-          kind === "adjustment"
-            ? first.amount
-            : BigInt(first.amount) < 0n
-              ? (-BigInt(first.amount)).toString()
-              : first.amount,
-          tx!.scale,
-        )
-      : "",
+    tx?.original_currency && tx.original_amount
+      ? toDecimal(tx.original_amount, currencyScales[tx.original_currency])
+      : first
+        ? toDecimal(
+            kind === "adjustment"
+              ? first.amount
+              : BigInt(first.amount) < 0n
+                ? (-BigInt(first.amount)).toString()
+                : first.amount,
+            tx!.scale,
+          )
+        : "",
   );
+  const [inputCurrency, setInputCurrency] = useState(
+    tx?.original_currency ||
+      tx?.currency ||
+      p.user.default_currency ||
+      account?.currency ||
+      "KRW",
+  );
+  const [rate, setRate] = useState(tx?.exchange_rate || "");
+  const foreign =
+    kind !== "transfer" && !!account && inputCurrency !== account.currency;
+  useEffect(() => {
+    if (kind === "transfer") {
+      setInputCurrency(account?.currency || "KRW");
+      return;
+    }
+    if (
+      tx?.original_currency === inputCurrency &&
+      accountId === first?.account_id
+    ) {
+      setRate(tx.exchange_rate || "");
+      return;
+    }
+    const factor = exchangeFactor(
+      p.user.exchange_rates || [],
+      inputCurrency,
+      account?.currency || "KRW",
+      p.user.default_currency || "KRW",
+    );
+    setRate(factor ? factorDecimal(factor) : "");
+  }, [inputCurrency, accountId, kind, JSON.stringify(p.user.exchange_rates)]);
+  let converted = "";
+  try {
+    const f = rateFraction(rate);
+    if (f && account)
+      converted = convertMinor(
+        toMinor(
+          amount,
+          inputCurrency === account.currency
+            ? account.scale
+            : currencyScales[inputCurrency],
+        ),
+        inputCurrency,
+        account.currency,
+        f,
+      );
+  } catch {}
   const [category, setCategory] = useState(first?.category || "food");
   const [note, setNote] = useState(first?.note || "");
   const [targetNote, setTargetNote] = useState(
@@ -189,7 +246,14 @@ export function EntryDialog(
           time: clock,
           timezone: tx?.timezone || p.user.timezone,
           ledger_id: p.selectedLedger || "",
-          amount: toMinor(amount, account.scale),
+          amount: foreign ? converted || "" : toMinor(amount, account.scale),
+          ...(foreign
+            ? {
+                original_currency: inputCurrency,
+                original_amount: toMinor(amount, currencyScales[inputCurrency]),
+                exchange_rate: rate,
+              }
+            : {}),
           account_id: accountId,
           to_id: kind === "transfer" ? target : "",
           title,
@@ -257,10 +321,18 @@ export function EntryDialog(
               </button>
             ))}
           </div>
-          <label className="entry-amount-wrap">
-            <span id="entry-currency">
-              {account?.currency === "KRW" ? "₩" : account?.currency || "₩"}
-            </span>
+          <div className="entry-amount-wrap">
+            <select
+              id="entry-currency"
+              aria-label="입력 통화"
+              value={kind === "transfer" ? account?.currency : inputCurrency}
+              disabled={kind === "transfer"}
+              onChange={(e) => setInputCurrency(e.target.value)}
+            >
+              {Object.keys(currencyScales).map((code) => (
+                <option key={code}>{code}</option>
+              ))}
+            </select>
             <span className="visually-hidden">금액</span>
             <input
               aria-label="금액"
@@ -273,24 +345,50 @@ export function EntryDialog(
               maxLength={25}
               autoFocus
             />
-          </label>
-          <div className="amount-suggestions">
-            {(account?.currency === "KRW"
-              ? [5000, 10000, 30000]
-              : [5, 10, 25]
-            ).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setAmount(String(n))}
-              >
-                {n.toLocaleString()}
-                {account?.currency === "KRW"
-                  ? "원"
-                  : " " + (account?.currency || "")}
-              </button>
-            ))}
           </div>
+          <div className="amount-suggestions">
+            {(inputCurrency === "KRW" ? [5000, 10000, 30000] : [5, 10, 25]).map(
+              (n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setAmount(String(n))}
+                >
+                  {n.toLocaleString()}
+                  {inputCurrency === "KRW" ? "원" : " " + inputCurrency}
+                </button>
+              ),
+            )}
+          </div>
+          {foreign && (
+            <div className="entry-fx">
+              <label className="form-label" htmlFor="entry-rate">
+                적용 환율
+              </label>
+              <div>
+                <div className="fx-rate-line">
+                  <span>1 {inputCurrency} =</span>
+                  <input
+                    id="entry-rate"
+                    className="field-input"
+                    inputMode="decimal"
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    placeholder="환율 입력"
+                    required
+                  />
+                  <span>{account?.currency}</span>
+                </div>
+                <p className="entry-hint">
+                  계좌 반영:{" "}
+                  {converted
+                    ? formatMoney(converted, account!.scale, account!.currency)
+                    : "환율을 설정해 주세요."}{" "}
+                  · 저장한 환율은 이 기록에 보존돼요.
+                </p>
+              </div>
+            </div>
+          )}
           <label className="form-label" htmlFor="entry-title">
             내용
           </label>
@@ -479,27 +577,6 @@ export function EntryDialog(
               />
             </>
           )}
-          {account && (
-            <div className="privacy-notice">
-              <Icon name={account.shared ? "people" : "lock"} />
-              <div>
-                <strong>
-                  {kind === "transfer"
-                    ? "각 계좌를 볼 수 있는 사람에게 따로 표시돼요."
-                    : account.shared
-                      ? "공유된 계좌에 기록하고 있어요."
-                      : "나에게만 보이는 기록이에요."}
-                </strong>
-                <p>
-                  {kind === "transfer"
-                    ? "각 계좌의 메모·영수증은 해당 계좌의 공개 범위를 따릅니다."
-                    : account.shared
-                      ? "거래 내용과 첨부 사진도 공유 대상에게 보입니다."
-                      : "이 계좌의 이름·잔액·내역은 다른 사람에게 공개되지 않아요."}
-                </p>
-              </div>
-            </div>
-          )}
           {tx && !["income", "expense", "transfer"].includes(tx.kind) && (
             <p className="entry-hint">
               이전 버전의 {kindNames[tx.kind]} 기록입니다. 기존 계산 방식으로
@@ -599,18 +676,41 @@ export function EntryDialog(
           </div>
         )}
         <ErrorText error={task.error} />
-        <button
-          className="primary-button entry-submit"
-          disabled={task.busy || !editable.length}
-        >
-          <Busy busy={task.busy}>
-            {savedId
-              ? "사진 변경 다시 시도"
-              : tx
-                ? "수정 저장하기"
-                : "기록 저장하기"}
-          </Busy>
-        </button>
+        <div className="entry-save-area">
+          {account && (
+            <div className="privacy-notice">
+              <Icon name={account.shared ? "people" : "lock"} />
+              <div>
+                <strong>
+                  {kind === "transfer"
+                    ? "각 계좌를 볼 수 있는 사람에게 따로 표시돼요."
+                    : account.shared
+                      ? "공유된 계좌에 기록하고 있어요."
+                      : "나에게만 보이는 기록이에요."}
+                </strong>
+                <p>
+                  {kind === "transfer"
+                    ? "각 계좌의 메모·영수증은 해당 계좌의 공개 범위를 따릅니다."
+                    : account.shared
+                      ? "거래 내용과 첨부 사진도 공유 대상에게 보입니다."
+                      : "이 계좌의 이름·잔액·내역은 다른 사람에게 공개되지 않아요."}
+                </p>
+              </div>
+            </div>
+          )}
+          <button
+            className="primary-button entry-submit"
+            disabled={task.busy || !editable.length}
+          >
+            <Busy busy={task.busy}>
+              {savedId
+                ? "사진 변경 다시 시도"
+                : tx
+                  ? "수정 저장하기"
+                  : "기록 저장하기"}
+            </Busy>
+          </button>
+        </div>
         {tx && !savedId && (
           <button
             type="button"
@@ -1211,6 +1311,18 @@ export function DetailDialog(
       subtitle={`${t.date}${t.time ? " " + t.time : ""} · ${kindNames[t.kind] || t.kind} · ${t.creator}`}
       onClose={p.close}
     >
+      {t.original_currency && (
+        <div className="modal-note">
+          결제 원금액{" "}
+          {formatMoney(
+            t.original_amount || "0",
+            currencyScales[t.original_currency],
+            t.original_currency,
+          )}{" "}
+          · 적용 환율 1 {t.original_currency} = {t.exchange_rate} {t.currency}
+          <p>아래 금액은 계좌에 실제 반영된 기록 금액이에요.</p>
+        </div>
+      )}
       {t.legs.map((l) => {
         const ac = p.accounts.find((a) => a.id === l.account_id)!;
         return (
@@ -1319,10 +1431,12 @@ export function DetailDialog(
 }
 
 export function MonthDialog({
+  timezone = "Asia/Seoul",
   date,
   select,
   close,
 }: {
+  timezone?: string;
   date: string;
   select: (year: number, month: number) => void;
   close: () => void;
@@ -1336,6 +1450,16 @@ export function MonthDialog({
       subtitle="연도를 입력하고 원하는 월을 선택하세요."
       onClose={close}
     >
+      <button
+        className="secondary-button current-month-button"
+        onClick={() => {
+          const now = today(timezone);
+          select(Number(now.slice(0, 4)), Number(now.slice(5, 7)));
+          close();
+        }}
+      >
+        이번 달
+      </button>
       <div className="year-picker">
         <button
           className="icon-button"

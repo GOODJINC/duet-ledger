@@ -8,11 +8,27 @@ func (a *App) migrate() error {
 	if err := a.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 4 {
+	if version > 5 {
 		return fmt.Errorf("unsupported database version: %d", version)
 	}
-	if version == 4 {
+	if version == 5 {
 		return nil
+	}
+	if version == 4 {
+		tx, err := a.DB.Begin()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if _, err = tx.Exec(`ALTER TABLE users ADD COLUMN default_account_id TEXT NOT NULL DEFAULT '';
+ CREATE TABLE exchange_rates(user_id TEXT NOT NULL REFERENCES users(id),from_currency TEXT NOT NULL,to_currency TEXT NOT NULL,rate TEXT NOT NULL,PRIMARY KEY(user_id,from_currency,to_currency));
+ ALTER TABLE events ADD COLUMN original_currency TEXT NOT NULL DEFAULT '';
+ ALTER TABLE events ADD COLUMN original_amount TEXT NOT NULL DEFAULT '';
+ ALTER TABLE events ADD COLUMN exchange_rate TEXT NOT NULL DEFAULT '';
+ INSERT INTO schema_version VALUES(5);`); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if version == 3 {
 		tx, err := a.DB.Begin()
@@ -51,7 +67,10 @@ func (a *App) migrate() error {
 		if _, err = tx.Exec("INSERT INTO schema_version VALUES(4)"); err != nil {
 			return err
 		}
-		return tx.Commit()
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return a.migrate()
 	}
 	if version == 2 {
 		tx, err := a.DB.Begin()

@@ -434,3 +434,131 @@ export function AccountTrashDialog(p: DialogProps) {
     </Modal>
   );
 }
+
+export function ExchangeSettings({
+  user,
+  refresh,
+  notify,
+}: {
+  user: import("./api").User;
+  refresh: () => Promise<void>;
+  notify: (s: string) => void;
+}) {
+  const [from, setFrom] = useState(
+    user.default_currency === "USD" ? "KRW" : "USD",
+  );
+  const [to, setTo] = useState(
+    user.default_currency === "USD" ? "KRW" : user.default_currency || "KRW",
+  );
+  const [rate, setRate] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const names = ["KRW", "USD", "JPY", "EUR", "GBP", "CNY", "TWD", "VND", "KWD"];
+  async function run(action: () => Promise<void>) {
+    setBusy(true);
+    setError("");
+    try {
+      await action();
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="setting-group">
+      <h2>보조 통화와 환율</h2>
+      <p className="panel-subtitle">
+        직접 정한 환율로 기본 통화 합계를 봅니다. 외화 결제의 원금액·적용
+        환율·계좌 반영액은 기록마다 보존해요.
+      </p>
+      {(user.exchange_rates || []).map((r) => (
+        <div className="setting-row" key={r.from + r.to}>
+          <div>
+            <strong>
+              1 {r.from} = {r.rate} {r.to}
+            </strong>
+          </div>
+          <button
+            className="text-link"
+            disabled={busy}
+            onClick={() => {
+              if (
+                confirm(
+                  "환율 설정을 삭제할까요? 이미 저장한 계좌 반영 금액은 유지됩니다.",
+                )
+              )
+                run(async () => {
+                  await post("/me/exchange-rates", r, "DELETE");
+                  notify("환율 설정을 삭제했어요.");
+                });
+            }}
+          >
+            삭제
+          </button>
+        </div>
+      ))}
+      <form
+        className="fx-settings-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          run(async () => {
+            await post("/me/exchange-rates", { from, to, rate }, "PUT");
+            setRate("");
+            notify("환율을 저장했어요.");
+          });
+        }}
+      >
+        <label>
+          보조 통화
+          <select
+            aria-label="환율 원래 통화"
+            className="field-select"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          >
+            {names.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+        </label>
+        <span>1 단위 =</span>
+        <label>
+          환산 금액
+          <input
+            aria-label="환율"
+            className="field-input"
+            inputMode="decimal"
+            value={rate}
+            onChange={(e) => setRate(e.target.value)}
+            placeholder="직접 입력"
+            required
+          />
+        </label>
+        <label>
+          대상 통화
+          <select
+            aria-label="환율 대상 통화"
+            className="field-select"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+          >
+            {names.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
+        </label>
+        <button className="secondary-button" disabled={busy || from === to}>
+          환율 저장
+        </button>
+      </form>
+      <p className="entry-hint">
+        예: 1 USD = 1400 KRW. 역방향 환산도 지원해요. 계좌 통화가 다른 과거
+        내역의 조회 합계는 현재 환율 설정을 따릅니다. 실제 카드 청구액과 다르면
+        거래의 적용 환율을 조정하세요.
+      </p>
+      <ErrorText error={error} />
+    </div>
+  );
+}

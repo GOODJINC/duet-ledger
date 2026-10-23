@@ -1,4 +1,7 @@
+export type ExchangeRate = { from: string; to: string; rate: string };
 export type User = {
+  default_account_id?: string;
+  exchange_rates?: ExchangeRate[];
   id: string;
   username: string;
   name: string;
@@ -40,6 +43,7 @@ export type Leg = {
   id: string;
   account_id: string;
   amount: string;
+  display_amount?: string;
   title: string;
   category: string;
   category_name?: string;
@@ -47,6 +51,11 @@ export type Leg = {
   receipts: Receipt[];
 };
 export type Transaction = {
+  original_currency?: string;
+  original_amount?: string;
+  exchange_rate?: string;
+  display_currency?: string;
+  display_scale?: number;
   id: string;
   kind: string;
   date: string;
@@ -62,6 +71,7 @@ export type Transaction = {
   legs: Leg[];
 };
 export type Report = {
+  missing_currencies?: string[];
   items: Transaction[];
   count: number;
   page: number;

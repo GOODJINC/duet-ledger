@@ -171,6 +171,10 @@ export function Modal({
   return (
     <dialog
       ref={ref}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
       aria-labelledby={headingId}
       className="info-dialog real-dialog"
       onClick={(e) => {
