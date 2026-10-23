@@ -419,7 +419,7 @@ it("원화 계좌의 외화 결제를 원금액·환율·반영액과 함께 저
   await actor.type(screen.getByLabelText("금액"), "20");
   await actor.type(screen.getByLabelText("내용"), "구독료");
   const privacy = screen.getByText("공유된 계좌에 기록하고 있어요.");
-  const attachment = screen.getByText(/이 거래에 영수증 첨부/);
+  const attachment = screen.getByText(/사진 선택 · JPG/);
   expect(
     attachment.compareDocumentPosition(privacy) &
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -659,4 +659,63 @@ it("소개 카드 설정은 왼쪽과 홈에 함께 적용되고 닫기 버튼�
   );
   expect(screen.queryByText("함께 쓰고, 따로 지켜요.")).toBeNull();
   expect(screen.queryByText("혼자서도, 함께여도.")).toBeNull();
+});
+it("여러 보조 통화를 목록과 빠른 입력에서 함께 제공하고 새 통화를 추가한다", async () => {
+  const actor = userEvent.setup();
+  const rates = [
+    { from: "USD", to: "KRW", rate: "1400" },
+    { from: "JPY", to: "KRW", rate: "9" },
+  ];
+  vi.mocked(api).mockResolvedValue({ rate: "1500", date: "2026-10-23" } as any);
+  const v = render(
+    <ExchangeSettings
+      user={{ ...user, default_currency: "KRW", exchange_rates: rates }}
+      refresh={vi.fn(async () => {})}
+      notify={vi.fn()}
+    />,
+  );
+  expect(screen.getByText("1 USD = 1400 KRW")).toBeTruthy();
+  expect(screen.getByText("1 JPY = 9 KRW")).toBeTruthy();
+  await actor.click(screen.getByRole("button", { name: "+ 통화 추가" }));
+  await waitFor(() =>
+    expect(
+      (screen.getByLabelText("환율 원래 통화") as HTMLSelectElement).value,
+    ).toBe("EUR"),
+  );
+  await actor.click(screen.getByRole("button", { name: "환율 저장" }));
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      "/me/exchange-rates",
+      { from: "EUR", to: "KRW", rate: "1500" },
+      "PUT",
+    ),
+  );
+  v.unmount();
+  render(
+    <EntryDialog {...props()} user={{ ...user, exchange_rates: rates }} />,
+  );
+  expect(
+    Array.from(
+      (screen.getByLabelText("입력 통화") as HTMLSelectElement).options,
+    ).map((o) => o.value),
+  ).toEqual(["KRW", "USD", "JPY"]);
+});
+it("사진 선택은 전체 이미지 선택기를 사용하고 촬영은 별도이며 형식을 검증한다", () => {
+  render(<EntryDialog {...props()} />);
+  const picker = screen.getByLabelText("영수증 사진 선택") as HTMLInputElement;
+  const camera = screen.getByLabelText("영수증 촬영") as HTMLInputElement;
+  expect(picker.accept).toBe("image/*");
+  expect(picker.hasAttribute("capture")).toBe(false);
+  expect(camera.getAttribute("capture")).toBe("environment");
+  fireEvent.change(picker, {
+    target: {
+      files: [new File(["x"], "unsupported.heic", { type: "image/heic" })],
+    },
+  });
+  expect(screen.getByText(/JPG 또는 PNG 사진을 선택/)).toBeTruthy();
+  fireEvent.change(picker, {
+    target: { files: [new File(["x"], "receipt.jpg", { type: "image/jpeg" })] },
+  });
+  expect(screen.getByText("receipt.jpg")).toBeTruthy();
+  expect(screen.queryByText(/JPG 또는 PNG 사진을 선택/)).toBeNull();
 });

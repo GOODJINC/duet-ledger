@@ -2079,3 +2079,245 @@ body {
     display: none;
   }
 }
+/* alpha.8: shared metrics for text, select, date and time. */
+.real-dialog .entry-form {
+  --entry-control-size: calc(13px * var(--text-scale, 1.12));
+  --entry-control-height: 44px;
+}
+.real-dialog .entry-form .field-input:not(textarea),
+.real-dialog .entry-form .field-select {
+  font-size: var(--entry-control-size);
+  height: var(--entry-control-height);
+  min-height: var(--entry-control-height);
+  padding: 0 10px;
+  line-height: normal;
+  box-sizing: border-box;
+}
+.real-dialog .entry-form #entry-title {
+  font-size: var(--entry-control-size);
+}
+.entry-form .plain-fieldset > .entry-date-fields {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+.entry-date-fields > div {
+  min-width: 0;
+}
+.entry-date-fields .field-input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.entry-date-fields input::-webkit-date-and-time-value {
+  text-align: left;
+}
+.entry-date-fields input::-webkit-datetime-edit {
+  padding: 0;
+}
+.real-dialog .entry-amount-wrap {
+  align-items: center;
+}
+.real-dialog .entry-amount-wrap select {
+  align-self: center;
+  margin: 0;
+  height: 42px;
+  line-height: normal;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.real-dialog .entry-amount-wrap input {
+  align-self: center;
+  line-height: 1.15;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.receipt-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.receipt-actions .receipt-button {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+.receipt-actions .receipt-button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.receipt-camera {
+  display: none;
+}
+@media (pointer: coarse) {
+  .receipt-camera {
+    display: flex;
+    flex: 0 0 auto !important;
+  }
+}
+@media (max-width: 540px) {
+  .real-dialog .entry-form .field-input:not(textarea),
+  .real-dialog .entry-form .field-select {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .entry-form .plain-fieldset > .entry-date-fields {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+  .real-dialog .entry-form .entry-date-fields .field-input {
+    padding: 0 4px;
+    font-size: var(--entry-control-size);
+  }
+}
+@media (max-width: 360px) {
+  .real-dialog .entry-form .plain-fieldset {
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 10px 6px;
+  }
+}
+.scale-range {
+  display: block;
+  font-size: calc(12px * var(--text-scale, 1.12));
+  color: var(--muted);
+  margin-top: 4px;
+}
+.exchange-manager h3 {
+  font-size: calc(15px * var(--text-scale, 1.12));
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.exchange-heading {
+  margin-bottom: 20px;
+}
+.exchange-base {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  border-radius: 20px;
+  padding: 7px 12px;
+  background: var(--mint-soft);
+  font-size: calc(13px * var(--text-scale, 1.12));
+  color: var(--green);
+}
+.exchange-heading p,
+.exchange-empty {
+  font-size: calc(13px * var(--text-scale, 1.12));
+  line-height: 1.6;
+  color: var(--muted);
+}
+.exchange-list {
+  margin-bottom: 22px;
+}
+.exchange-list h3 span {
+  font-size: calc(12px * var(--text-scale, 1.12));
+  color: var(--muted);
+  font-weight: 400;
+}
+.exchange-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.exchange-row > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.exchange-row strong {
+  font-size: calc(15px * var(--text-scale, 1.12));
+}
+.exchange-row span {
+  font-size: calc(13px * var(--text-scale, 1.12));
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.exchange-row-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.exchange-editor {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--mint-soft);
+}
+.exchange-editor h3 {
+  margin-bottom: 4px;
+}
+.exchange-editor > label {
+  font-size: calc(13px * var(--text-scale, 1.12));
+  color: var(--ink);
+}
+.exchange-editor .field-input,
+.exchange-editor .field-select {
+  height: 44px;
+  font-size: calc(14px * var(--text-scale, 1.12));
+  margin: 0;
+}
+.exchange-rate-input {
+  position: relative;
+}
+.exchange-rate-input input {
+  padding-right: 64px;
+}
+.exchange-rate-input > span {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: calc(14px * var(--text-scale, 1.12));
+  color: var(--muted);
+}
+.exchange-status {
+  margin: 0;
+  font-size: calc(12px * var(--text-scale, 1.12));
+  color: var(--muted);
+  line-height: 1.6;
+}
+.exchange-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.exchange-buttons button {
+  font-size: calc(13px * var(--text-scale, 1.12));
+  padding: 10px 12px;
+}
+.exchange-list h3 .add-secondary {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: calc(13px * var(--text-scale, 1.12));
+}
+@media (max-width: 540px) {
+  .real-dialog .entry-form {
+    --entry-control-size: calc(12px * var(--text-scale, 1.12));
+  }
+  .entry-date-fields input::-webkit-calendar-picker-indicator {
+    width: 12px;
+    margin: 0;
+    padding: 0;
+  }
+  .entry-date-fields input::-webkit-datetime-edit {
+    font-size: inherit;
+  }
+}
+@media (max-width: 360px) {
+  .entry-form .plain-fieldset > .entry-date-fields {
+    grid-column: 1/-1;
+  }
+}

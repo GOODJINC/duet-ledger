@@ -3,7 +3,7 @@ services:
   duet-ledger:
     container_name: duet-ledger
     build: .
-    image: duet-ledger:0.1.0-alpha.7
+    image: duet-ledger:0.1.0-alpha.8
     restart: unless-stopped
     ports:
       - "${DUET_LEDGER_BIND:-127.0.0.1}:${DUET_LEDGER_PORT:-18088}:8080"

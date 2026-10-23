@@ -184,3 +184,24 @@ func TestMarketQuoteRejectsBadProviderResponses(t *testing.T) {
 		c.send("GET", "/me/exchange-quote?from=USD&to=KRW", nil, 400, nil)
 	}
 }
+
+func TestMultipleSecondaryCurrenciesRemainIndependent(t *testing.T) {
+	_, _, c := newTestApp(t)
+	c.send("PUT", "/me/exchange-rates", ExchangeRate{"USD", "KRW", "1400"}, 200, nil)
+	c.send("PUT", "/me/exchange-rates", ExchangeRate{"JPY", "KRW", "9"}, 200, nil)
+	var me User
+	c.send("GET", "/me", nil, 200, &me)
+	if len(me.ExchangeRates) != 2 {
+		t.Fatal("saving JPY removed USD")
+	}
+	c.send("PUT", "/me/exchange-rates", ExchangeRate{"USD", "KRW", "1450"}, 200, nil)
+	c.send("GET", "/me", nil, 200, &me)
+	if len(me.ExchangeRates) != 2 {
+		t.Fatal("editing USD removed another rate")
+	}
+	c.send("DELETE", "/me/exchange-rates", ExchangeRate{"USD", "KRW", ""}, 200, nil)
+	c.send("GET", "/me", nil, 200, &me)
+	if len(me.ExchangeRates) != 1 || me.ExchangeRates[0].From != "JPY" || me.ExchangeRates[0].Rate != "9" {
+		t.Fatal("deleting USD changed JPY")
+	}
+}

@@ -58,6 +58,24 @@ function useTask() {
 export function EntryDialog(
   p: DialogProps & { transaction?: Transaction; accountId?: string },
 ) {
+  function chooseReceipt(e: import("react").ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024)
+      task.setError("사진은 5MB까지 첨부할 수 있어요.");
+    else if (
+      !["image/jpeg", "image/png"].includes(f.type) &&
+      !(f.type === "" && /\.(jpe?g|png)$/i.test(f.name))
+    )
+      task.setError(
+        "JPG 또는 PNG 사진을 선택해 주세요. HEIC·다른 형식은 먼저 변환해 주세요.",
+      );
+    else {
+      task.setError("");
+      setFile(f);
+    }
+    e.target.value = "";
+  }
   const tx = p.transaction;
   const editable = p.accounts.filter(
     (a) =>
@@ -440,11 +458,11 @@ export function EntryDialog(
               </option>
             ))}
           </select>
-          <div className="form-two-cols entry-date-time">
+          <label className="form-label" htmlFor="entry-date">
+            날짜
+          </label>
+          <div className="entry-date-fields">
             <div>
-              <label className="form-label" htmlFor="entry-date">
-                날짜
-              </label>
               <input
                 type="date"
                 id="entry-date"
@@ -647,23 +665,33 @@ export function EntryDialog(
                 </select>
               </>
             )}
-            <label className="receipt-button">
-              <Icon name="camera" />
-              {file ? file.name : "이 거래에 영수증 첨부 · JPG/PNG 5MB 이하"}
-              <input
-                type="file"
-                accept="image/jpeg,image/png"
-                className="visually-hidden"
-                disabled={task.busy}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f && f.size > 5 * 1024 * 1024) {
-                    task.setError("사진은 5MB까지 첨부할 수 있어요.");
-                    e.target.value = "";
-                  } else setFile(f || null);
-                }}
-              />
-            </label>
+            <div className="receipt-actions">
+              <label className="receipt-button">
+                <Icon name="camera" />
+                <span>{file ? file.name : "사진 선택 · JPG/PNG 5MB 이하"}</span>
+                <input
+                  aria-label="영수증 사진 선택"
+                  type="file"
+                  accept="image/*"
+                  className="visually-hidden"
+                  disabled={task.busy}
+                  onChange={chooseReceipt}
+                />
+              </label>
+              <label className="receipt-button receipt-camera">
+                <Icon name="camera" />
+                <span>촬영</span>
+                <input
+                  aria-label="영수증 촬영"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="visually-hidden"
+                  disabled={task.busy}
+                  onChange={chooseReceipt}
+                />
+              </label>
+            </div>
           </>
         )}
         {savedId && task.error && (

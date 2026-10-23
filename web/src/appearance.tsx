@@ -160,10 +160,13 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           </Help>
         </h2>
         <div className="setting-row">
-          <label htmlFor="custom-size">글씨 크기</label>
+          <label htmlFor="custom-size">
+            글씨 크기<small className="scale-range">90~150% · 1% 단위</small>
+          </label>
           <div>
             <input
               id="custom-size"
+              aria-label="글씨 크기"
               type="number"
               min="90"
               max="150"
