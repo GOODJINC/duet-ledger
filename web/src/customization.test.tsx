@@ -132,6 +132,7 @@ it("계정·일반·관리 설정을 분리하고 일반 사용자에게 관리 
     <SettingsView {...p} section="settings" user={{ ...user, admin: false }} />,
   );
   expect(screen.getByText("테마 색상")).toBeTruthy();
+  expect(screen.getByText("디자인 직접 설정")).toBeTruthy();
   expect(
     screen.getByRole("navigation", { name: "설정 구분" }).textContent,
   ).toBe("계정 설정설정");
@@ -139,6 +140,7 @@ it("계정·일반·관리 설정을 분리하고 일반 사용자에게 관리 
   expect(screen.queryByText("서버 운영 백업")).toBeNull();
   v.rerender(<SettingsView {...p} section="administration" />);
   expect(screen.getByText("서버 운영 백업")).toBeTruthy();
+  expect(screen.queryByText("디자인 직접 설정")).toBeNull();
   expect(screen.queryByLabelText("표시할 이름")).toBeNull();
 });
 it("빠른 입력 시간은 필수이며 PC에서는 직접 입력한다", async () => {
@@ -626,4 +628,35 @@ it("단축키가 검색·빠른 입력을 열고 입력 중에는 무시한다",
   expect(await screen.findByRole("dialog")).toBeTruthy();
   expect(screen.queryByText("초기 개발판")).toBeNull();
   expect(document.querySelector(".mobile-ledger-picker")).toBeTruthy();
+});
+it("소개 카드 설정은 왼쪽과 홈에 함께 적용되고 닫기 버튼은 없다", async () => {
+  vi.mocked(api).mockImplementation(async (path) => {
+    if (path === "/accounts") return [account] as any;
+    if (path === "/ledgers") return [ledger] as any;
+    return {
+      items: [],
+      count: 0,
+      page: 1,
+      page_size: 50,
+      totals: [],
+      categories: [],
+      daily: [],
+    } as any;
+  });
+  const p = {
+    user: { ...user, show_sidebar_message: true },
+    setUser: vi.fn(),
+    invite: "",
+    clearInvite: vi.fn(),
+    joined: false,
+  };
+  const v = render(<Application {...p} />);
+  await screen.findByText("함께 쓰고, 따로 지켜요.");
+  expect(screen.getByText("혼자서도, 함께여도.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "소개 문구 숨기기" })).toBeNull();
+  v.rerender(
+    <Application {...p} user={{ ...user, show_sidebar_message: false }} />,
+  );
+  expect(screen.queryByText("함께 쓰고, 따로 지켜요.")).toBeNull();
+  expect(screen.queryByText("혼자서도, 함께여도.")).toBeNull();
 });

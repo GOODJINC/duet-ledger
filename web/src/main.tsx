@@ -1133,26 +1133,6 @@ export function Application({
           </nav>
           {user.show_sidebar_message !== false && (
             <div className="sidebar-together">
-              <button
-                className="icon-button dismiss-sidebar"
-                aria-label="소개 문구 숨기기"
-                onClick={() =>
-                  post(
-                    "/me",
-                    {
-                      name: user.name,
-                      locale: user.locale,
-                      timezone: user.timezone,
-                      show_sidebar_message: false,
-                    },
-                    "PATCH",
-                  )
-                    .then(refresh)
-                    .catch((e) => setToast(e.message))
-                }
-              >
-                <Icon name="close" />
-              </button>
               <div className="together-icon">
                 <Icon name="people" />
               </div>
@@ -1464,7 +1444,7 @@ export function Application({
                       currency={currency}
                       scale={scale}
                     />
-                    {sharedNote()}
+                    {user.show_sidebar_message !== false && sharedNote()}
                   </aside>
                 </div>
               </>
@@ -1781,7 +1761,7 @@ export function Application({
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.6
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.7
             </span>
           </footer>
         </div>
@@ -2619,9 +2599,13 @@ export function SettingsView({
                     </select>
                   </div>
                 </div>
-                <label className="form-label" htmlFor="default-currency">
-                  기본 통화
-                </label>
+                <div className="form-label">
+                  <label htmlFor="default-currency">기본 통화</label>
+                  <Help>
+                    기본 통화로 합계를 봐요. 기존 계좌의 통화와 저장 금액은
+                    그대로이며, 환산에는 등록한 환율을 사용해요.
+                  </Help>
+                </div>
                 <select
                   id="default-currency"
                   className="field-select"
@@ -2647,13 +2631,14 @@ export function SettingsView({
                     </option>
                   ))}
                 </select>
-                <Help>
-                  기본 통화로 합계를 봐요. 기존 계좌의 통화와 저장 금액은
-                  그대로이며, 환산에는 등록한 환율을 사용해요.
-                </Help>
-                <label className="form-label" htmlFor="default-account">
-                  빠른 입력 기본 계좌
-                </label>
+
+                <div className="form-label">
+                  <label htmlFor="default-account">빠른 입력 기본 계좌</label>
+                  <Help>
+                    특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본
+                    계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.
+                  </Help>
+                </div>
                 <select
                   id="default-account"
                   className="field-select"
@@ -2669,12 +2654,9 @@ export function SettingsView({
                       </option>
                     ))}
                 </select>
-                <Help>
-                  특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본
-                  계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.
-                </Help>
+
                 <label className="setting-row">
-                  <span>왼쪽 소개 문구 표시</span>
+                  <span>소개 카드 표시 (왼쪽 메뉴·홈)</span>
                   <input
                     type="checkbox"
                     checked={showSidebar}
@@ -2777,9 +2759,7 @@ export function SettingsView({
           </div>
         </section>
       )}
-      {(section === "settings" || section === "administration") && (
-        <AppearanceSettings userId={user.id} />
-      )}
+      {section === "settings" && <AppearanceSettings userId={user.id} />}
     </div>
   );
 }

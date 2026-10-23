@@ -1455,43 +1455,45 @@ export function MonthDialog({
       subtitle="연도를 입력하고 원하는 월을 선택하세요."
       onClose={close}
     >
-      <button
-        className="secondary-button current-month-button"
-        onClick={() => {
-          const now = today(timezone);
-          select(Number(now.slice(0, 4)), Number(now.slice(5, 7)));
-          close();
-        }}
-      >
-        이번 달
-      </button>
-      <div className="year-picker">
+      <div className="month-toolbar">
+        <div className="year-picker">
+          <button
+            className="icon-button"
+            aria-label="이전 연도"
+            disabled={!valid || Number(year) <= 1900}
+            onClick={() => setYear(String(Number(year) - 1))}
+          >
+            <Icon name="left" />
+          </button>
+          <label htmlFor="picker-year">연도</label>
+          <input
+            id="picker-year"
+            className="field-input"
+            type="number"
+            min={1900}
+            max={2100}
+            step={1}
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+          />
+          <button
+            className="icon-button"
+            aria-label="다음 연도"
+            disabled={!valid || Number(year) >= 2100}
+            onClick={() => setYear(String(Number(year) + 1))}
+          >
+            <Icon name="right" />
+          </button>
+        </div>
         <button
-          className="icon-button"
-          aria-label="이전 연도"
-          disabled={!valid || Number(year) <= 1900}
-          onClick={() => setYear(String(Number(year) - 1))}
+          className="secondary-button current-month-button"
+          onClick={() => {
+            const now = today(timezone);
+            select(Number(now.slice(0, 4)), Number(now.slice(5, 7)));
+            close();
+          }}
         >
-          <Icon name="left" />
-        </button>
-        <label htmlFor="picker-year">연도</label>
-        <input
-          id="picker-year"
-          className="field-input"
-          type="number"
-          min={1900}
-          max={2100}
-          step={1}
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-        />
-        <button
-          className="icon-button"
-          aria-label="다음 연도"
-          disabled={!valid || Number(year) >= 2100}
-          onClick={() => setYear(String(Number(year) + 1))}
-        >
-          <Icon name="right" />
+          이번 달
         </button>
       </div>
       <div className="month-grid">

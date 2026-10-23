@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Help } from "./ui";
+import { Help, Icon } from "./ui";
 
 export type Appearance = {
   scale: number;
@@ -97,10 +97,12 @@ export function useAppearance(id: string) {
 export function AppearanceSettings({ userId }: { userId: string }) {
   const [value, setValue] = useState(() => load(userId));
   const [message, setMessage] = useState("");
+  const [scaleDraft, setScaleDraft] = useState(String(value.scale));
   function save(next: Appearance) {
     try {
       localStorage.setItem(key(userId), JSON.stringify(next));
       setValue(next);
+      setScaleDraft(String(next.scale));
       window.dispatchEvent(new Event("duet-appearance"));
       setMessage("이 브라우저에 적용했어요.");
     } catch {
@@ -162,16 +164,28 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           <div>
             <input
               id="custom-size"
-              type="range"
+              type="number"
               min="90"
               max="150"
-              step="2"
-              value={value.scale}
-              onChange={(e) =>
-                save({ ...value, scale: Number(e.target.value) })
-              }
+              step="1"
+              value={scaleDraft}
+              inputMode="numeric"
+              onChange={(e) => {
+                const raw = e.target.value;
+                setScaleDraft(raw);
+                const n = Number(raw);
+                if (raw && Number.isInteger(n) && n >= 90 && n <= 150)
+                  save({ ...value, scale: n });
+              }}
+              onBlur={() => {
+                const n = Math.round(Number(scaleDraft));
+                save({
+                  ...value,
+                  scale: Math.max(90, Math.min(150, n || value.scale)),
+                });
+              }}
             />
-            <output>{value.scale}%</output>
+            <span aria-hidden="true">%</span>
           </div>
         </div>
         <div className="setting-row">
@@ -193,38 +207,46 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="custom-css">
+          <div className="appearance-file-title">
             CSS 파일{" "}
             <Help>64KB 이하. 외부 주소나 @import는 사용할 수 없어요.</Help>
-            <small>{value.cssName}</small>
+          </div>
+          <label className="design-file-box" htmlFor="custom-css">
+            <Icon name="plus" size={18} />
+            <span>{value.cssName || "CSS 파일 첨부"}</span>
+            <input
+              id="custom-css"
+              type="file"
+              className="visually-hidden"
+              accept=".css,text/css"
+              onChange={(e) => {
+                void upload(e.target.files?.[0], false);
+                e.target.value = "";
+              }}
+            />
           </label>
-          <input
-            id="custom-css"
-            type="file"
-            accept=".css,text/css"
-            onChange={(e) => {
-              void upload(e.target.files?.[0], false);
-              e.target.value = "";
-            }}
-          />
         </div>
         <div className="setting-row">
-          <label htmlFor="custom-font">
+          <div className="appearance-file-title">
             사용자 글꼴{" "}
             <Help>
               WOFF2 형식, 1MB 이하. 사용 권한이 있는 글꼴을 올려 주세요.
             </Help>
-            <small>{value.fontName}</small>
+          </div>
+          <label className="design-file-box" htmlFor="custom-font">
+            <Icon name="plus" size={18} />
+            <span>{value.fontName || "사용자 글꼴 첨부"}</span>
+            <input
+              id="custom-font"
+              type="file"
+              className="visually-hidden"
+              accept=".woff2,font/woff2"
+              onChange={(e) => {
+                void upload(e.target.files?.[0], true);
+                e.target.value = "";
+              }}
+            />
           </label>
-          <input
-            id="custom-font"
-            type="file"
-            accept=".woff2,font/woff2"
-            onChange={(e) => {
-              void upload(e.target.files?.[0], true);
-              e.target.value = "";
-            }}
-          />
         </div>
         <button
           className="secondary-button"

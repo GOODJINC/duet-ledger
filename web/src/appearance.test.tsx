@@ -123,3 +123,17 @@ it("CSS 파일을 적용하고 외부 로딩 CSS와 잘못된 글꼴은 저장�
     JSON.parse(localStorage.getItem("duet-ledger-appearance-upload")!).font,
   ).toBe("");
 });
+it("글씨 배율은 숫자 한 단위로 지정하고 범위를 벗어나면 보정한다", () => {
+  render(<AppearanceSettings userId="number" />);
+  const input = screen.getByLabelText("글씨 크기") as HTMLInputElement;
+  expect(input.type).toBe("number");
+  expect(input.step).toBe("1");
+  fireEvent.change(input, { target: { value: "117" } });
+  expect(
+    JSON.parse(localStorage.getItem("duet-ledger-appearance-number")!).scale,
+  ).toBe(117);
+  fireEvent.change(input, { target: { value: "999" } });
+  fireEvent.blur(input);
+  expect(input.value).toBe("150");
+  expect(document.querySelectorAll(".design-file-box").length).toBe(2);
+});

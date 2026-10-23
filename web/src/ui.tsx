@@ -269,7 +269,6 @@ export const PasswordInput = forwardRef<
 });
 
 export function Help({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
   const id = useId();
   return (
     <span className="help-wrap">
@@ -277,21 +276,11 @@ export function Help({ children }: { children: ReactNode }) {
         type="button"
         className="help-button"
         aria-label="도움말"
-        aria-expanded={open}
-        aria-describedby={open ? id : undefined}
-        onClick={() => setOpen(!open)}
-        onBlur={() => setOpen(false)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") setOpen(false);
-        }}
+        aria-describedby={id}
       >
         <Icon name="info" size={16} />
       </button>
-      <span
-        id={id}
-        role="tooltip"
-        className={open ? "help-tip open" : "help-tip"}
-      >
+      <span id={id} role="tooltip" className="help-tip">
         {children}
       </span>
     </span>
