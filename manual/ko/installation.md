@@ -4,25 +4,36 @@
 
 ## 준비와 실행
 
-Linux 홈서버에 Docker Engine·Compose 플러그인·Git을 준비합니다. Docker 명령을 실행할 권한과 데이터를 보관할 디스크 공간이 필요합니다. 설치 상태는 `docker version`, `docker compose version`으로 확인합니다.
+Linux 서버의 Docker Engine·Compose 플러그인 또는 Arcane이 필요합니다. 공개 이미지를 사용하므로 Git·Go·Node.js는 필요하지 않습니다. 첫 게시가 끝나지 않은 버전은 내려받을 수 없으므로 [Packages](https://github.com/GOODJINC/duet-ledger/pkgs/container/duet-ledger)에서 태그를 확인하세요.
+
+### Arcane
+
+1. 새 스택을 만들고 [Arcane용 Compose 원본](https://github.com/GOODJINC/duet-ledger/blob/main/compose.arcane.yaml)을 붙여넣습니다.
+2. 필요하면 이미지 태그와 호스트 포트를 수정하고 배포합니다. 추가 파일이나 빌드 경로는 필요하지 않습니다.
+3. `http://서버IP:18088`에 접속해 첫 계정을 만듭니다. **첫 계정이 관리자**이며 개인 가계부가 생깁니다.
+
+Arcane용 파일의 기본 바인딩은 `0.0.0.0`입니다. 서버 네트워크에서 접근할 수 있으므로 신뢰하는 네트워크에서 먼저 계정을 만들고, 공개 인터넷 연결에는 HTTPS를 적용하세요. CLI용 기본 Compose는 `127.0.0.1`이며 아래 방법으로 접속 범위를 바꿀 수 있습니다.
+
+### Docker Compose
+
+아래 명령은 설치 폴더와 Compose 파일 하나만 준비합니다.
 
 ```bash
-git clone https://github.com/GOODJINC/duet-ledger.git
+mkdir -p duet-ledger
 cd duet-ledger
-docker compose up -d --build
+curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+docker compose up -d
 docker compose ps
 ```
 
-첫 빌드는 인터넷에서 의존성과 기본 이미지를 내려받으므로 시간이 걸립니다. 실행에는 앱 컨테이너 하나만 필요하며 별도 DB·Redis·MCP 컨테이너를 설치하지 않습니다.
-
-서버에서 `http://localhost:18088`을 열고 첫 관리자 계정을 만듭니다. **외부에 공개하기 전에 계정을 만드세요.** 이후 신규 가입은 기본적으로 초대가 필요합니다. 개인 가계부도 자동 생성됩니다.
+서버에서 `http://localhost:18088`을 엽니다. 앱 컨테이너 하나와 SQLite를 사용하며 별도 DB·Redis·MCP 서비스는 필요하지 않습니다. 지원 이미지는 AMD64·ARM64이며 Docker가 맞는 이미지를 고릅니다.
 
 ## 포트와 다른 PC 접속
 
-기본 설정은 `127.0.0.1:18088`입니다. Compose가 있는 폴더에서 `.env.example`을 `.env`로 복사해 수정합니다.
+기본 설정은 `127.0.0.1:18088`입니다. Compose가 있는 폴더에서 `.env`를 만들거나 Arcane의 환경변수를 설정합니다. `.env`는 선택 사항이며 아래 값만 직접 넣어도 됩니다.
 
 ```bash
-cp .env.example .env
+touch .env
 ```
 
 예를 들어 같은 네트워크에 공개하고 외부 포트를 18888로 바꾸려면:

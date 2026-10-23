@@ -1,0 +1,117 @@
+name: Docker image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Tests and native image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Validate publishing rules and Compose templates
+        run: |
+          node --test scripts/image-metadata.test.mjs
+          node scripts/sync-compose.mjs --check
+          docker compose config --quiet
+          docker compose -f compose.arcane.yaml config --quiet
+          docker compose -f compose.yaml -f compose.build.yaml config --quiet
+      - name: Build web, test and verify packaged app
+        run: |
+          npm --prefix web ci --no-fund --no-audit
+          npm --prefix web run build
+          go test ./...
+          npm --prefix web test
+          mkdir -p bin
+          CGO_ENABLED=0 go build -o bin/duet-ledger ./cmd/duet-ledger
+          node scripts/smoke.mjs
+      - name: Go vet and race checks
+        run: |
+          go vet ./...
+          go test -race ./internal/app
+      - name: Verify the Docker image
+        run: |
+          docker build -t duet-ledger:ci .
+          test "$(docker run --rm duet-ledger:ci version)" = "$(bin/duet-ledger version)"
+
+  publish:
+    name: Publish to GHCR
+    needs: verify
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    concurrency:
+      group: duet-ledger-image-publish
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+      - name: Select version and channels
+        id: meta
+        run: node scripts/image-metadata.mjs
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Refuse to overwrite a published version
+        env:
+          IMAGE_VERSION: ${{ steps.meta.outputs.version }}
+          PACKAGE_OWNER_TYPE: ${{ github.event.repository.owner.type }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/check-image-version.mjs
+      - name: Build and publish AMD64 and ARM64
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            IMAGE_VERSION=${{ steps.meta.outputs.version }}
+            IMAGE_REVISION=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Write installation summary
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          printf '## Published image\n\n`%s:%s`\n\nDigest: `%s`\n\nFirst publish: set package visibility to Public before anonymous installation.\n' "$IMAGE" "$VERSION" "$DIGEST" >> "$GITHUB_STEP_SUMMARY"

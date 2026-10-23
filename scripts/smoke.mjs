@@ -128,6 +128,7 @@ try {
       "api",
       "mcp",
       "troubleshooting",
+      "publishing",
     ]) {
       const result = await fetch(app.url + `/manual/${language}/${page}.html`);
       assert.equal(result.status, 200);

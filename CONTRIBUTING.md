@@ -42,3 +42,19 @@ Adding a language also requires registering it in the UI locale module and selec
 Public manuals live in `manual/`; local `docs/` is excluded from Git. Validate manual links using `npm --prefix web run docs:check`. Update manuals and `CHANGELOG.md` when behavior changes.
 
 기여는 저장소의 AGPL-3.0-only 라이선스로 제공됩니다. Contributions are licensed under the repository's AGPL-3.0-only license.
+
+## 소스 빌드와 이미지 게시 · Source builds and publishing
+
+소스에서 Docker를 빌드할 때는 설치용 Compose에 개발용 덮어쓰기를 함께 지정합니다.
+
+```bash
+git clone https://github.com/GOODJINC/duet-ledger.git
+cd duet-ledger
+docker compose -f compose.yaml -f compose.build.yaml up -d --build
+node --test scripts/image-metadata.test.mjs
+node scripts/sync-compose.mjs --check
+```
+
+`compose.yaml`·`compose.arcane.yaml`은 공개 이미지 설치용입니다. `compose.build.yaml`은 소스 빌드만 선택합니다. 게시 준비는 [한국어](manual/ko/publishing.md) / [English](manual/en/publishing.md) 안내를 따릅니다. 첫 이미지 게시 전에는 GHCR pull이 실패할 수 있습니다.
+
+The default Compose files install published images. Use the build override for local source builds. GitHub pushes/PRs run checks; published Releases or a manual default-branch workflow run publish images. Prereleases never update latest; exact published version tags cannot be overwritten.

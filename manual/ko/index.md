@@ -16,3 +16,5 @@
 앱의 사용자 메뉴에서 계정 설정·설정·관리자 메뉴·도움말을 열 수 있습니다. 이 매뉴얼에는 현재 제공하는 기능만 설명합니다.
 
 [변경 기록](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md) · [오류·기능 제안](https://github.com/GOODJINC/duet-ledger/issues) · [English](../en/index.md)
+
+배포 관리자: [이미지 첫 게시·릴리즈](publishing.md)

@@ -16,17 +16,22 @@ This is **prerelease software**. Test with a small dataset and arrange backups b
 
 ## Quick start
 
-Requires Docker Engine, the Docker Compose plugin and Git.
+Use a published GHCR image. **No Git, Go, Node.js or source build is required.** Check that your version exists in [Packages](https://github.com/GOODJINC/duet-ledger/pkgs/container/duet-ledger); an unpublished tag cannot be pulled. Maintainers can follow [first publication](manual/en/publishing.md).
+
+**Arcane:** create a stack, paste [compose.arcane.yaml](compose.arcane.yaml), and deploy. Open `http://SERVER_IP:18088`. This preset exposes the port on server network interfaces. Create the first administrator on a trusted network before any public exposure.
+
+**Docker Compose:** save [compose.yaml](compose.yaml) in a folder and run:
 
 ```bash
-git clone https://github.com/GOODJINC/duet-ledger.git
+mkdir -p duet-ledger
 cd duet-ledger
-docker compose up -d --build
+curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+docker compose up -d
 ```
 
-Open **http://localhost:18088** on the server and create your first account. **The first account becomes the administrator.** No setup token is needed. Select English on the sign-up screen.
+The CLI preset binds to `127.0.0.1`, so open **http://localhost:18088** on the server. For remote access, ports and HTTPS, see [Installation](manual/en/installation.md).
 
-The default address is accessible only from the server itself. For remote access, port changes and HTTPS, see [Installation](manual/en/installation.md).
+**The first account becomes the administrator.** No setup token is needed. ARM64 and AMD64 images are selected automatically by Docker. Existing source installations should follow the [migration steps](manual/en/operations.md#move-an-existing-installation-to-arcane).
 
 ## Manuals
 

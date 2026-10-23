@@ -16,19 +16,29 @@ The restart policy starts the container after reboots when Docker is running. `/
 
 ## Updating
 
-Read the changelog and storage migration notes first. Save an operational backup and `master.key`. Check and preserve local source modifications before updating.
+Read the changelog and save a backup with its original `master.key`. Change the Compose `image` tag or `DUET_LEDGER_IMAGE` to a published version. Prefer exact versions; prereleases never publish `latest`.
 
 ```bash
-git status
-git pull --ff-only
-docker compose up -d --build
+docker compose pull duet-ledger
+docker compose up -d
 docker compose ps
 docker compose logs --tail 100 duet-ledger
 ```
 
-If installed from a Git tag, fetch and check out your intended published tag before building. Do not assume that unpublished tags or registry images exist: the default installation builds from source.
+In Arcane, change the stack's image version, download the new image and redeploy. Pulling a fixed tag does not switch versions. No Git pull or source build is required.
 
-Keep your data volume and `.env`. Storage migrations may run automatically. **Switching back to an old image alone is not a safe rollback.** A changed schema requires a compatible app and a pre-update data copy. Do not delete the operational volume.
+Keep the volume and environment settings. **An old image alone is not a safe rollback after schema migration.** Use a compatible app and a pre-update data copy. Never delete the production volume during updates.
+
+## Move an existing installation to Arcane
+
+On the same Docker server, reuse `duet-ledger-data`. Moving to another server requires backup and restoration below.
+
+1. Save a backup and key, then pull and verify the intended GHCR image.
+2. In the original source folder run `docker compose stop duet-ledger`, then `docker compose rm -f duet-ledger` to remove **only the old app container**. Do not add `-v`.
+3. Preserve `name: duet-ledger-data` and transfer the original bind address, port, PUBLIC_URL and secure-cookie settings to Arcane. Preserve a Tailscale-only binding by setting `DUET_LEDGER_BIND` to that IP.
+4. Deploy and verify existing accounts, records and photos. **Two app instances must never open the same dataset.**
+
+A local `.env` with `DUET_LEDGER_IMAGE=duet-ledger:...` pins a local image. After publishing, replace it with `ghcr.io/goodjinc/duet-ledger:PUBLISHED_VERSION` to use GHCR.
 
 ## Backup and restore
 

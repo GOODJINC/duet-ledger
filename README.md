@@ -17,16 +17,22 @@
 
 ## 빠른 시작
 
-Docker Engine과 Docker Compose 플러그인, Git이 필요합니다.
+GHCR에 게시된 이미지를 사용합니다. **Git·Go·Node.js 설치나 소스 빌드는 필요하지 않습니다.** [Packages](https://github.com/GOODJINC/duet-ledger/pkgs/container/duet-ledger)에 해당 버전이 있는지 확인하세요. 아직 게시되지 않은 태그는 내려받을 수 없습니다. 배포자는 [첫 게시 절차](manual/ko/publishing.md)를 따릅니다.
+
+**Arcane:** 새 스택을 만들고 [compose.arcane.yaml](compose.arcane.yaml)을 그대로 붙여넣어 배포합니다. **http://서버IP:18088**로 접속하세요. 이 파일은 서버 네트워크에 포트를 엽니다. 신뢰하는 네트워크에서 첫 관리자 계정을 만든 뒤 외부에 공개하세요.
+
+**Docker Compose:** [compose.yaml](compose.yaml)을 폴더에 저장하고 실행합니다.
 
 ```bash
-git clone https://github.com/GOODJINC/duet-ledger.git
+mkdir -p duet-ledger
 cd duet-ledger
-docker compose up -d --build
+curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+docker compose up -d
 ```
 
-서버에서 **http://localhost:18088**을 열고 첫 계정을 만듭니다. **첫 계정이 관리자**가 됩니다. 초기 토큰은 필요하지 않습니다.
-기본적으로 서버 자체에서만 접속할 수 있습니다. 다른 PC 접속·포트 변경·HTTPS는 [설치 안내](manual/ko/installation.md)를 확인하세요.
+CLI용 기본 파일은 `127.0.0.1`에만 연결되므로 서버에서 **http://localhost:18088**을 엽니다. 다른 PC 접속·포트·HTTPS 설정은 [설치 안내](manual/ko/installation.md)를 확인하세요.
+
+**첫 계정이 관리자**가 됩니다. 초기 토큰은 필요하지 않습니다. Docker가 서버에 맞는 AMD64·ARM64 이미지를 선택합니다. 기존 소스 설치자는 [이전 절차](manual/ko/operations.md#기존-설치를-arcane으로-이전)를 확인하세요.
 
 ## 매뉴얼
 

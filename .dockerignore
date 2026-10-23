@@ -12,3 +12,12 @@ docs
 temp
 
 web/public/manual
+
+private-backup/
+
+.env.*
+**/*.key
+**/*.pem
+**/*.zip
+backups
+receipts

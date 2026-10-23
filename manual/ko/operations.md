@@ -16,19 +16,29 @@ docker compose restart duet-ledger
 
 ## 업데이트
 
-먼저 변경 기록과 저장 구조 변경 주의사항을 읽고 운영 백업·`master.key`를 보관합니다. 설치 파일을 직접 수정했다면 `git status`로 확인하고 따로 보관하세요.
+먼저 변경 기록을 읽고 운영 백업과 `master.key`를 별도로 보관합니다. Compose의 `image` 태그 또는 `DUET_LEDGER_IMAGE`를 게시된 새 버전으로 바꿉니다. 알파·베타는 `latest`로 제공하지 않으므로 정확한 버전을 권장합니다.
 
 ```bash
-git status
-git pull --ff-only
-docker compose up -d --build
+docker compose pull duet-ledger
+docker compose up -d
 docker compose ps
 docker compose logs --tail 100 duet-ledger
 ```
 
-Git 태그로 설치했다면 원하는 공개 태그를 내려받아 해당 버전으로 이동한 뒤 빌드합니다. 아직 공개되지 않은 태그나 배포 이미지를 가정하지 마세요. 현재 기본 설치는 저장소 소스에서 직접 빌드합니다.
+Arcane에서는 스택의 이미지 버전을 바꾸고 새 이미지를 받아 재배포합니다. 버전 태그를 고정한 경우 pull만으로 다른 버전으로 바뀌지는 않습니다. Git pull·소스 빌드는 필요하지 않습니다.
 
-기존 데이터 볼륨과 `.env`는 유지합니다. 저장 구조가 자동 변경될 수 있으므로 **이전 이미지로만 바꾸는 것은 안전한 되돌리기가 아닙니다.** 구조가 달라졌다면 업데이트 전 자료 사본과 호환되는 앱이 함께 필요합니다. 운영 볼륨을 삭제하는 명령은 사용하지 마세요.
+기존 데이터 볼륨·환경변수는 유지합니다. 구조가 자동 변경될 수 있으므로 **이전 이미지로만 바꾸는 것은 안전한 되돌리기가 아닙니다.** 구조가 달라졌다면 업데이트 전 자료 사본과 호환 앱이 함께 필요합니다. 운영 볼륨 삭제 명령은 사용하지 마세요.
+
+## 기존 설치를 Arcane으로 이전
+
+같은 Docker 서버에서 실행한다면 기존 `duet-ledger-data` 볼륨을 재사용할 수 있습니다. 다른 서버로 옮기는 경우 아래 백업·복원 절차가 필요합니다.
+
+1. 운영 백업과 키를 보관하고, 사용할 GHCR 이미지를 먼저 내려받아 확인합니다.
+2. 기존 소스 폴더에서 `docker compose stop duet-ledger`, 이어서 `docker compose rm -f duet-ledger`로 **기존 앱 컨테이너만** 제거합니다. `-v`를 붙이지 않습니다.
+3. Arcane용 Compose의 볼륨 `name: duet-ledger-data`를 유지하고, 기존 접속 주소·포트·PUBLIC_URL·보안 쿠키 설정을 그대로 옮깁니다. 기존에 Tailscale IP에만 연결했다면 Arcane의 `DUET_LEDGER_BIND`도 해당 IP로 지정합니다.
+4. 새 스택을 배포하고 기존 계정·기록·사진을 확인합니다. **같은 볼륨을 두 앱이 동시에 열면 안 됩니다.**
+
+현재 로컬 `.env`에 `DUET_LEDGER_IMAGE=duet-ledger:...`가 있으면 로컬 이미지 고정 설정입니다. 게시가 끝난 뒤 `ghcr.io/goodjinc/duet-ledger:게시된버전`으로 바꿔야 공개 이미지를 사용합니다.
 
 ## 백업과 복원
 

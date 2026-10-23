@@ -4,25 +4,36 @@
 
 ## Requirements and startup
 
-Install Docker Engine, the Compose plugin and Git on your Linux server. You need permission to run Docker and disk space for persistent data. Check your installation with `docker version` and `docker compose version`.
+Use Docker Engine with the Compose plugin, or Arcane, on Linux. Published images require no Git, Go or Node.js installation. Verify your tag exists in [Packages](https://github.com/GOODJINC/duet-ledger/pkgs/container/duet-ledger); unpublished versions cannot be downloaded.
+
+### Arcane
+
+1. Create a stack and paste the [Arcane Compose file](https://github.com/GOODJINC/duet-ledger/blob/main/compose.arcane.yaml).
+2. Adjust the image tag and host port if needed, then deploy. No additional file or source-build path is required.
+3. Open `http://SERVER_IP:18088`. **The first account becomes the administrator** and receives a personal ledger.
+
+The Arcane preset binds to `0.0.0.0` for server-network access. Create the first account on a trusted network and configure HTTPS before internet exposure. The CLI preset binds to `127.0.0.1`; change access scope as described below.
+
+### Docker Compose
+
+Only an installation folder and Compose file are needed:
 
 ```bash
-git clone https://github.com/GOODJINC/duet-ledger.git
+mkdir -p duet-ledger
 cd duet-ledger
-docker compose up -d --build
+curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+docker compose up -d
 docker compose ps
 ```
 
-The first build downloads dependencies and base images. Runtime requires only one application container: no separate database, Redis or MCP container.
-
-Open `http://localhost:18088` on the server. Select English and create the first administrator. **Create this account before exposing the server publicly.** Registration then requires invitations by default. A personal ledger is created automatically.
+Open `http://localhost:18088` on the server. One app container and SQLite are used, without separate DB, Redis or MCP services. Docker selects the AMD64 or ARM64 image for your server.
 
 ## Ports and access from another computer
 
-The default binding is `127.0.0.1:18088`. Copy `.env.example` to `.env` in the project folder and edit it.
+The default binding is `127.0.0.1:18088`. Create an optional `.env` beside the Compose file, or set variables in Arcane. Enter the values below directly; no example file is required.
 
 ```bash
-cp .env.example .env
+touch .env
 ```
 
 For example, to listen on your network at port 18888:

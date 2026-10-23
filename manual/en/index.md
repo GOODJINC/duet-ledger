@@ -16,3 +16,5 @@ Start with **installation → create an account → add a test transaction → m
 The app's user menu provides account settings, settings, administration for administrators, and help. These manuals describe currently available features.
 
 [Changelog (Korean)](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md) · [Issues and feature requests](https://github.com/GOODJINC/duet-ledger/issues) · [한국어](../ko/index.md)
+
+Maintainers: [First image publication and releases](publishing.md)

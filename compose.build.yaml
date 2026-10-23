@@ -1,0 +1,7 @@
+# Source builds only: docker compose -f compose.yaml -f compose.build.yaml up -d --build
+services:
+  duet-ledger:
+    image: duet-ledger:local
+    pull_policy: build
+    build:
+      context: .
