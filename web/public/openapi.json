@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.0-alpha.5",
+    "version": "0.1.0-alpha.6",
     "description": "Cookie-authenticated local web API. Financial values use integer strings. Cross-account transfers require edit permission on every side. Remote API tokens and MCP are not implemented yet."
   },
   "servers": [
@@ -2820,6 +2820,92 @@
           }
         },
         "description": "Only affects the caller. Removes inverse pair to avoid conflicting direct/inverse values. Existing booked native amounts and per-transaction FX snapshots are unchanged."
+      }
+    },
+    "/api/me/exchange-quote": {
+      "get": {
+        "summary": "Latest reference FX quote (Frankfurter); never saves a rate automatically",
+        "operationId": "get_api_me_exchange_quote",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "KRW",
+                "USD",
+                "EUR",
+                "JPY",
+                "GBP",
+                "CNY",
+                "TWD",
+                "VND",
+                "KWD"
+              ]
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "KRW",
+                "USD",
+                "EUR",
+                "JPY",
+                "GBP",
+                "CNY",
+                "TWD",
+                "VND",
+                "KWD"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reference rate, cached one hour; date is provider observation date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "base": {
+                      "type": "string"
+                    },
+                    "quote": {
+                      "type": "string"
+                    },
+                    "rate": {
+                      "type": "string"
+                    },
+                    "provider": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported pair or provider failure; manual entry remains available"
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
       }
     }
   },

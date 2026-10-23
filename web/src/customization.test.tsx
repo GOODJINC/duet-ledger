@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, it, expect, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsView, Application, TransactionRows } from "./main";
 import {
@@ -10,7 +16,7 @@ import {
   LedgerDialog,
   type DialogProps,
 } from "./dialogs";
-import { CategoriesDialog, AdminDialog } from "./preferences";
+import { CategoriesDialog, AdminDialog, ExchangeSettings } from "./preferences";
 import {
   api,
   post,
@@ -135,23 +141,27 @@ it("계정·일반·관리 설정을 분리하고 일반 사용자에게 관리 
   expect(screen.getByText("서버 운영 백업")).toBeTruthy();
   expect(screen.queryByLabelText("표시할 이름")).toBeNull();
 });
-it("빠른 입력의 선택 시간은 비울 수 있고 PC에서는 직접 입력한다", async () => {
+it("빠른 입력 시간은 필수이며 PC에서는 직접 입력한다", async () => {
   const p = props();
   const actor = userEvent.setup();
   render(<EntryDialog {...p} manageCategories={vi.fn()} />);
-  const time = screen.getByLabelText("시간 (선택)") as HTMLInputElement;
+  const time = screen.getByLabelText("시간") as HTMLInputElement;
   expect(time.type).toBe("text");
-  expect(time.required).toBe(false);
+  expect(time.required).toBe(true);
+  expect(time.value).toMatch(/^\d{2}:\d{2}$/);
   expect(screen.queryByText("환불·잔액 조정이 필요할 때")).toBeNull();
   expect(screen.getByLabelText("메모 (선택)")).toBeTruthy();
   await actor.clear(time);
   await actor.type(screen.getByLabelText("금액"), "100");
   await actor.type(screen.getByLabelText("내용"), "점심");
   await actor.click(screen.getByRole("button", { name: "기록 저장하기" }));
+  expect(post).not.toHaveBeenCalled();
+  await actor.type(time, "14:30");
+  await actor.click(screen.getByRole("button", { name: "기록 저장하기" }));
   await waitFor(() =>
     expect(post).toHaveBeenCalledWith(
       "/transactions",
-      expect.objectContaining({ time: "" }),
+      expect.objectContaining({ time: "14:30" }),
       "POST",
       expect.any(Object),
     ),
@@ -173,6 +183,7 @@ it("상세 사진은 보기·다운로드만 제공하고 수정에서 해제를
   render(<EntryDialog {...p} transaction={tx} />);
   await actor.click(screen.getByRole("button", { name: "첨부 해제" }));
   expect(api).not.toHaveBeenCalledWith("/receipts/photo", expect.anything());
+  await actor.type(screen.getByLabelText("시간"), "12:30");
   await actor.click(screen.getByRole("button", { name: "수정 저장하기" }));
   await waitFor(() =>
     expect(api).toHaveBeenCalledWith("/receipts/photo", { method: "DELETE" }),
@@ -467,20 +478,7 @@ it("페이지 뒤로가기와 팝업 뒤로가기를 별도로 처리한다", as
   expect(await screen.findByRole("dialog")).toBeTruthy();
   expect(history.state.overlay).toBe(1);
   await actor.type(screen.getByLabelText("내용"), "입력 중");
-  await actor.click(screen.getByRole("button", { name: "분류 관리 열기" }));
-  expect(
-    await screen.findByRole("heading", { name: "가계부 분류 관리" }),
-  ).toBeTruthy();
-  expect(history.state.overlay).toBe(2);
-  history.back();
-  await waitFor(() =>
-    expect(
-      screen.queryByRole("heading", { name: "가계부 분류 관리" }),
-    ).toBeNull(),
-  );
-  expect((screen.getByLabelText("내용") as HTMLInputElement).value).toBe(
-    "입력 중",
-  );
+  expect(screen.queryByRole("button", { name: "분류 관리 열기" })).toBeNull();
   history.back();
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(location.pathname).toBe("/home");
@@ -505,4 +503,127 @@ it("달러 거래를 원화로 표시할 때 원화 소수 자릿수를 사용�
   );
   expect(screen.getByText("+7,000원")).toBeTruthy();
   expect(screen.getByText("5.00 USD")).toBeTruthy();
+});
+
+it("기본 통화만 제공하고 등록한 보조 통화만 입력에 추가한다", () => {
+  const v = render(<EntryDialog {...props()} />);
+  expect(
+    Array.from(
+      (screen.getByLabelText("입력 통화") as HTMLSelectElement).options,
+    ).map((o) => o.value),
+  ).toEqual(["KRW"]);
+  v.unmount();
+  render(
+    <EntryDialog
+      {...props()}
+      user={{
+        ...user,
+        default_currency: "KRW",
+        exchange_rates: [{ from: "USD", to: "KRW", rate: "1400" }],
+      }}
+    />,
+  );
+  expect(
+    Array.from(
+      (screen.getByLabelText("입력 통화") as HTMLSelectElement).options,
+    ).map((o) => o.value),
+  ).toEqual(["KRW", "USD"]);
+});
+it("팝업 바깥 클릭은 입력을 유지하고 ESC 요청은 닫기를 호출한다", () => {
+  const p = props();
+  render(<EntryDialog {...p} />);
+  const dialog = screen.getByRole("dialog");
+  fireEvent.click(dialog, { clientX: -100, clientY: -100 });
+  expect(p.close).not.toHaveBeenCalled();
+  fireEvent(dialog, new Event("cancel", { cancelable: true }));
+  expect(p.close).toHaveBeenCalledTimes(1);
+});
+it("환율 관리가 별도 창에서 열리고 뒤로가기로 닫힌다", async () => {
+  const actor = userEvent.setup();
+  vi.mocked(api).mockResolvedValue({ rate: "1400", date: "2026-10-23" } as any);
+  render(<SettingsView {...settings()} section="settings" />);
+  expect(screen.queryByLabelText("환율")).toBeNull();
+  await actor.click(
+    screen
+      .getByText("보조 통화와 환율")
+      .closest(".setting-row")!
+      .querySelector("button.secondary-button")!,
+  );
+  expect(await screen.findByRole("dialog")).toBeTruthy();
+  await waitFor(() =>
+    expect((screen.getByLabelText("환율") as HTMLInputElement).value).toBe(
+      "1400",
+    ),
+  );
+  expect(post).not.toHaveBeenCalled();
+  await actor.click(screen.getByRole("button", { name: "환율 저장" }));
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      "/me/exchange-rates",
+      { from: "USD", to: "KRW", rate: "1400" },
+      "PUT",
+    ),
+  );
+  history.back();
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+it("환율 API 실패 후 직접 입력으로 저장한다", async () => {
+  const actor = userEvent.setup();
+  vi.mocked(api).mockRejectedValue(new Error("연결 실패"));
+  render(
+    <ExchangeSettings
+      user={user}
+      refresh={vi.fn(async () => {})}
+      notify={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText("연결 실패")).toBeTruthy();
+  await actor.type(screen.getByLabelText("환율"), "1350");
+  await actor.click(screen.getByRole("button", { name: "환율 저장" }));
+  await waitFor(() =>
+    expect(post).toHaveBeenCalledWith(
+      "/me/exchange-rates",
+      { from: "USD", to: "KRW", rate: "1350" },
+      "PUT",
+    ),
+  );
+});
+it("단축키가 검색·빠른 입력을 열고 입력 중에는 무시한다", async () => {
+  vi.mocked(api).mockImplementation(async (path) => {
+    if (path === "/accounts") return [account] as any;
+    if (path === "/ledgers") return [ledger] as any;
+    if (path === "/me") return user as any;
+    if (path.startsWith("/categories")) return [] as any;
+    return {
+      items: [],
+      count: 0,
+      page: 1,
+      page_size: 50,
+      totals: [],
+      categories: [],
+      daily: [],
+    } as any;
+  });
+  render(
+    <Application
+      user={user}
+      setUser={vi.fn()}
+      invite=""
+      clearInvite={vi.fn()}
+      joined={false}
+    />,
+  );
+  await waitFor(() => expect(api).toHaveBeenCalledWith("/accounts"));
+  fireEvent.keyDown(document.body, { key: "/" });
+  const search = await screen.findByPlaceholderText(
+    "내용·분류·메모·작성자 이름·아이디로 검색",
+  );
+  await waitFor(() => expect(document.activeElement).toBe(search));
+  fireEvent.keyDown(search, { key: "q" });
+  expect(screen.queryByRole("dialog")).toBeNull();
+  search.blur();
+  fireEvent.keyDown(document.body, { key: "Q" });
+  expect(await screen.findByRole("dialog")).toBeTruthy();
+  expect(screen.queryByText("초기 개발판")).toBeNull();
+  expect(document.querySelector(".mobile-ledger-picker")).toBeTruthy();
 });

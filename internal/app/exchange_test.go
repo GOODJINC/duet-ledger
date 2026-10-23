@@ -1,7 +1,9 @@
 package app
 
 import (
+	"io"
 	"math/big"
+	"net/http"
 	"strings"
 	"testing"
 )
@@ -126,5 +128,59 @@ func TestConvertedTotalsRejectOverflow(t *testing.T) {
 	}
 	if _, err := roundMinor("9000000000000000", 0, 0, big.NewRat(1000000000000, 1)); err == nil {
 		t.Fatal("individual conversion overflow accepted")
+	}
+}
+
+// External requests are stubbed: these tests never contact a public API.
+type quoteRoundTripper func(*http.Request) (*http.Response, error)
+
+func (f quoteRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+func TestMarketQuoteValidationCacheAndIsolation(t *testing.T) {
+	_, server, c := newTestApp(t)
+	old := quoteClient
+	quoteCache.Lock()
+	quoteCache.values = make(map[string]cachedQuote)
+	quoteCache.Unlock()
+	t.Cleanup(func() {
+		quoteClient = old
+		quoteCache.Lock()
+		quoteCache.values = make(map[string]cachedQuote)
+		quoteCache.Unlock()
+	})
+	calls := 0
+	quoteClient = &http.Client{Transport: quoteRoundTripper(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if r.URL.String() != "https://api.frankfurter.dev/v2/rate/usd/krw" || r.Header.Get("Cookie") != "" || r.Header.Get("Authorization") != "" {
+			t.Errorf("unexpected quote request: %s", r.URL)
+		}
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"date":"2026-10-23","base":"USD","quote":"KRW","rate":1324.760000001}`))}, nil
+	})}
+	newTestClient(t, server).send("GET", "/me/exchange-quote?from=USD&to=KRW", nil, 401, nil)
+	c.send("GET", "/me/exchange-quote?from=https://example.com&to=KRW", nil, 400, nil)
+	c.send("GET", "/me/exchange-quote?from=USD&to=USD", nil, 400, nil)
+	var result map[string]string
+	c.send("GET", "/me/exchange-quote?from=USD&to=KRW", nil, 200, &result)
+	c.send("GET", "/me/exchange-quote?from=USD&to=KRW", nil, 200, nil)
+	if calls != 1 || result["rate"] != "1324.760000001" || result["date"] != "2026-10-23" {
+		t.Fatal("quote decimal/cache mismatch", calls, result)
+	}
+	var me User
+	c.send("GET", "/me", nil, 200, &me)
+	if len(me.ExchangeRates) != 0 {
+		t.Fatal("quote must not save automatically")
+	}
+}
+func TestMarketQuoteRejectsBadProviderResponses(t *testing.T) {
+	_, _, c := newTestApp(t)
+	old := quoteClient
+	t.Cleanup(func() { quoteClient = old })
+	for _, body := range []string{`{"base":"USD","quote":"EUR","date":"2026-10-23","rate":1400}`, `{"base":"USD","quote":"KRW","date":"invalid","rate":1400}`, `{"base":"USD","quote":"KRW","date":"2026-10-23","rate":-1}`, `garbage`} {
+		quoteCache.Lock()
+		quoteCache.values = make(map[string]cachedQuote)
+		quoteCache.Unlock()
+		quoteClient = &http.Client{Transport: quoteRoundTripper(func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(body))}, nil
+		})}
+		c.send("GET", "/me/exchange-quote?from=USD&to=KRW", nil, 400, nil)
 	}
 }

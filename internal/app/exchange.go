@@ -1,10 +1,15 @@
 package app
 
 import (
+	"encoding/json"
+	"io"
 	"math/big"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 type ExchangeRate struct {
@@ -227,4 +232,74 @@ func (a *App) convertReport(items []Transaction, u *User, target string) (Transa
 		out.MissingCurrencies = append(out.MissingCurrencies, c)
 	}
 	return out, nil
+}
+
+// Quotes contain only a currency pair. Never forward account or transaction data.
+var quoteCache = struct {
+	sync.Mutex
+	values map[string]cachedQuote
+}{values: make(map[string]cachedQuote)}
+
+type cachedQuote struct {
+	Value marketQuote
+	Until time.Time
+}
+type marketQuote struct {
+	Date  string      `json:"date"`
+	Base  string      `json:"base"`
+	Quote string      `json:"quote"`
+	Rate  json.Number `json:"rate"`
+}
+
+var quoteClient = &http.Client{Timeout: 8 * time.Second, CheckRedirect: func(req *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }}
+
+func (a *App) exchangeQuote(w http.ResponseWriter, r *http.Request, u *User) error {
+	from, to := r.URL.Query().Get("from"), r.URL.Query().Get("to")
+	if _, ok := currencyScales[from]; !ok {
+		return bad("통화를 확인해 주세요.")
+	}
+	if _, ok := currencyScales[to]; !ok || from == to {
+		return bad("서로 다른 통화를 선택해 주세요.")
+	}
+	key := from + to
+	quoteCache.Lock()
+	defer quoteCache.Unlock()
+	if c, ok := quoteCache.values[key]; ok && time.Now().Before(c.Until) {
+		writeMarketQuote(w, c.Value)
+		return nil
+	}
+	req, err := http.NewRequestWithContext(r.Context(), "GET", "https://api.frankfurter.dev/v2/rate/"+strings.ToLower(from)+"/"+strings.ToLower(to), nil)
+	if err != nil {
+		return err
+	}
+	resp, err := quoteClient.Do(req)
+	if err != nil {
+		return bad("환율을 불러오지 못했어요. 직접 입력해 주세요.")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return bad("제공되는 환율이 없어요. 직접 입력해 주세요.")
+	}
+	var v marketQuote
+	decoder := json.NewDecoder(io.LimitReader(resp.Body, 4096))
+	decoder.UseNumber()
+	if err = decoder.Decode(&v); err != nil {
+		return bad("환율 응답을 확인할 수 없어요.")
+	}
+	if strings.ToUpper(v.Base) != from || strings.ToUpper(v.Quote) != to {
+		return bad("환율 통화가 일치하지 않아요.")
+	}
+	if _, err = time.Parse("2006-01-02", v.Date); err != nil {
+		return bad("환율 기준일을 확인할 수 없어요.")
+	}
+	if _, err = parseRate(v.Rate.String()); err != nil {
+		return bad("지원하는 환율 범위를 벗어나요. 직접 입력해 주세요.")
+	}
+	quoteCache.values[key] = cachedQuote{v, time.Now().Add(time.Hour)}
+	writeMarketQuote(w, v)
+	return nil
+}
+
+func writeMarketQuote(w http.ResponseWriter, v marketQuote) {
+	writeJSON(w, 200, map[string]string{"date": v.Date, "base": v.Base, "quote": v.Quote, "rate": v.Rate.String(), "provider": "Frankfurter"})
 }

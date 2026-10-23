@@ -28,6 +28,7 @@ import {
   type Report,
 } from "./api";
 import {
+  Help,
   PasswordInput,
   Brand,
   Icon,
@@ -60,6 +61,7 @@ import {
   AdminDialog,
   AccountTrashDialog,
 } from "./preferences";
+import { AppearanceSettings, useAppearance } from "./appearance";
 import "./app.css";
 
 type Page =
@@ -627,6 +629,38 @@ export function Application({
       setMonthPicker(false);
     }
   }
+  useAppearance(user.id);
+  useEffect(() => {
+    const shortcut = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.isComposing ||
+        e.repeat ||
+        el?.closest("input,textarea,select,[contenteditable=true]") ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      if (e.key === "/") {
+        e.preventDefault();
+        navigate("ledger");
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLInputElement>(
+              ".search-box input, input[placeholder*='작성자']",
+            )
+            ?.focus(),
+        );
+      } else if (e.key.toLowerCase() === "q") {
+        e.preventDefault();
+        openEntry();
+      }
+    };
+    document.addEventListener("keydown", shortcut);
+    return () => document.removeEventListener("keydown", shortcut);
+  });
   const en = user.locale === "en";
   useEffect(() => {
     document.body.dataset.accent = accent;
@@ -774,15 +808,6 @@ export function Application({
   const scale = currencyScales[currency] || 0;
   const selectedLedger = ledgers.find((l) => l.id === ledger);
   const totals = report.totals.find((t) => t.currency === currency);
-  const missingBalance = moneyAccounts.filter(
-    (a) =>
-      !exchangeFactor(
-        user.exchange_rates || [],
-        a.currency,
-        currency,
-        currency,
-      ),
-  );
   const balance = moneyAccounts.reduce((sum, a) => {
     const factor = exchangeFactor(
       user.exchange_rates || [],
@@ -1183,7 +1208,15 @@ export function Application({
             </div>
             <div className="header-right">
               {loading && <Icon name="loader" className="spin loading-mark" />}
-              <span className="alpha-tag">초기 개발판</span>
+              <button
+                className="mobile-ledger-picker secondary-button"
+                onClick={() => setModal({ kind: "ledgers" })}
+                aria-label="가계부 선택"
+              >
+                <Icon name="book" />
+                <span>{selectedLedger?.name || "모아 보기"}</span>
+                <Icon name="down" />
+              </button>
               <div className="user-menu-wrap" ref={userMenuRef}>
                 <button
                   className="profile-button"
@@ -1392,26 +1425,6 @@ export function Application({
                 </div>
               </div>
             )}
-            {!isSettings &&
-              ((report.missing_currencies || []).length > 0 ||
-                missingBalance.length > 0) && (
-                <div className="inline-warning">
-                  환율이 없는 통화는 원금액으로 표시하고 합계에서 제외해요:{" "}
-                  {[
-                    ...new Set([
-                      ...(report.missing_currencies || []),
-                      ...missingBalance.map((a) => a.currency),
-                    ]),
-                  ].join(", ")}
-                  .{" "}
-                  <button
-                    className="text-link"
-                    onClick={() => navigate("settings")}
-                  >
-                    환율 설정
-                  </button>
-                </div>
-              )}
             {page === "home" && (
               <>
                 {!accounts.length && (
@@ -1768,7 +1781,7 @@ export function Application({
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.5
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.6
             </span>
           </footer>
         </div>
@@ -2295,6 +2308,35 @@ function CalendarView({
     </section>
   );
 }
+function ExchangeModal({
+  user,
+  refresh,
+  notify,
+  close,
+}: {
+  user: User;
+  refresh: () => Promise<void>;
+  notify: (s: string) => void;
+  close: () => void;
+}) {
+  useEffect(() => {
+    history.pushState({ ...history.state, exchange: true }, "", location.href);
+    const pop = () => close();
+    window.addEventListener("popstate", pop);
+    return () => window.removeEventListener("popstate", pop);
+  }, []);
+  return (
+    <Modal
+      title="보조 통화와 환율"
+      onClose={() => {
+        if (history.state?.exchange) history.back();
+        else close();
+      }}
+    >
+      <ExchangeSettings user={user} refresh={refresh} notify={notify} />
+    </Modal>
+  );
+}
 export function SettingsView({
   accounts = [],
   user,
@@ -2337,6 +2379,7 @@ export function SettingsView({
   section: "settings" | "account-settings" | "administration";
   navigate: (p: Page) => void;
 }) {
+  const [exchangeOpen, setExchangeOpen] = useState(false);
   const [defaultAccount, setDefaultAccount] = useState(
     user.default_account_id || "",
   );
@@ -2411,7 +2454,7 @@ export function SettingsView({
     <div className="setting-row" key={title}>
       <div>
         <strong>{title}</strong>
-        <p>{description}</p>
+        <Help>{description}</Help>
       </div>
       <button className="secondary-button" onClick={action}>
         {label}
@@ -2420,6 +2463,14 @@ export function SettingsView({
   );
   return (
     <div className="settings-page">
+      {exchangeOpen && (
+        <ExchangeModal
+          user={user}
+          refresh={refresh}
+          notify={notify}
+          close={() => setExchangeOpen(false)}
+        />
+      )}
       <nav className="settings-tabs" aria-label="설정 구분">
         {[
           ["account-settings", "계정 설정"],
@@ -2440,8 +2491,8 @@ export function SettingsView({
         <section className="panel">
           <div className="setting-group">
             <h2>프로필</h2>
-            <p className="panel-subtitle">@{user.username}</p>
-            <form onSubmit={save}>
+            <p className="profile-username">@{user.username}</p>
+            <form onSubmit={save} className="inline-settings-form">
               <label className="form-label" htmlFor="profile-name-field">
                 표시할 이름
               </label>
@@ -2502,7 +2553,7 @@ export function SettingsView({
               <div className="setting-row appearance-row">
                 <div>
                   <strong>테마 색상</strong>
-                  <p>이 계정의 현재 브라우저에 적용해요.</p>
+                  <Help>이 계정의 현재 브라우저에 적용해요.</Help>
                 </div>
                 <div className="accent-options">
                   {[
@@ -2523,7 +2574,7 @@ export function SettingsView({
                   ))}
                 </div>
               </div>
-              <form onSubmit={save}>
+              <form onSubmit={save} className="inline-settings-form">
                 <div className="form-two-cols">
                   <div>
                     <label className="form-label" htmlFor="locale">
@@ -2596,10 +2647,10 @@ export function SettingsView({
                     </option>
                   ))}
                 </select>
-                <p className="entry-hint">
-                  조회와 새 계좌의 기본값이에요. 기존 계좌의 통화·금액은 바뀌지
-                  않으며 환율 변환은 하지 않아요.
-                </p>
+                <Help>
+                  기본 통화로 합계를 봐요. 기존 계좌의 통화와 저장 금액은
+                  그대로이며, 환산에는 등록한 환율을 사용해요.
+                </Help>
                 <label className="form-label" htmlFor="default-account">
                   빠른 입력 기본 계좌
                 </label>
@@ -2618,10 +2669,10 @@ export function SettingsView({
                       </option>
                     ))}
                 </select>
-                <p className="entry-hint">
+                <Help>
                   특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본
                   계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.
-                </p>
+                </Help>
                 <label className="setting-row">
                   <span>왼쪽 소개 문구 표시</span>
                   <input
@@ -2641,7 +2692,13 @@ export function SettingsView({
             </div>
           </section>
           <section className="panel">
-            <ExchangeSettings user={user} refresh={refresh} notify={notify} />
+            <div className="setting-group">
+              {row(
+                "보조 통화와 환율",
+                "필요한 통화를 추가하고 환율을 설정해요.",
+                () => setExchangeOpen(true),
+              )}
+            </div>
           </section>
           <section className="panel">
             <div className="setting-group">
@@ -2719,6 +2776,9 @@ export function SettingsView({
             )}
           </div>
         </section>
+      )}
+      {(section === "settings" || section === "administration") && (
+        <AppearanceSettings userId={user.id} />
       )}
     </div>
   );

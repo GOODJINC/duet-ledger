@@ -329,7 +329,17 @@ export function EntryDialog(
               disabled={kind === "transfer"}
               onChange={(e) => setInputCurrency(e.target.value)}
             >
-              {Object.keys(currencyScales).map((code) => (
+              {[
+                ...new Set([
+                  p.user.default_currency || "KRW",
+                  ...(p.user.exchange_rates || []).flatMap((r) => [
+                    r.from,
+                    r.to,
+                  ]),
+                  ...(tx ? [inputCurrency] : []),
+                  ...(kind === "transfer" && account ? [account.currency] : []),
+                ]),
+              ].map((code) => (
                 <option key={code}>{code}</option>
               ))}
             </select>
@@ -447,11 +457,12 @@ export function EntryDialog(
               />
             </div>
             <div>
-              <label className="form-label" htmlFor="entry-time">
-                시간 (선택)
+              <label className="visually-hidden" htmlFor="entry-time">
+                시간
               </label>
               <input
                 id="entry-time"
+                required
                 type={mobileTime ? "time" : "text"}
                 inputMode={mobileTime ? undefined : "numeric"}
                 className="field-input"
@@ -507,20 +518,6 @@ export function EntryDialog(
                 <span className="form-label">
                   {categoryKind === "income" ? "수입 분류" : "지출 분류"}
                 </span>
-                {p.manageCategories &&
-                  account?.ledger_id &&
-                  p.ledgers.some(
-                    (l) => l.id === account.ledger_id && l.role === "owner",
-                  ) && (
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label="분류 관리 열기"
-                      onClick={() => p.manageCategories?.(account.ledger_id)}
-                    >
-                      <Icon name="settings" />
-                    </button>
-                  )}
               </div>
               <div className="category-picker">
                 {choices.map((c) => (
@@ -1204,7 +1201,15 @@ export function AccountDialog(
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
                   >
-                    {Object.keys(currencyScales).map((c) => (
+                    {[
+                      ...new Set([
+                        p.user.default_currency || "KRW",
+                        ...(p.user.exchange_rates || []).flatMap((r) => [
+                          r.from,
+                          r.to,
+                        ]),
+                      ]),
+                    ].map((c) => (
                       <option key={c}>{c}</option>
                     ))}
                   </select>

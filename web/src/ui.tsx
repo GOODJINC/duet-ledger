@@ -177,18 +177,6 @@ export function Modal({
       }}
       aria-labelledby={headingId}
       className="info-dialog real-dialog"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          const r = e.currentTarget.getBoundingClientRect();
-          if (
-            e.clientX < r.left ||
-            e.clientX > r.right ||
-            e.clientY < r.top ||
-            e.clientY > r.bottom
-          )
-            onClose();
-        }
-      }}
     >
       <div className="dialog-head">
         <div>
@@ -279,3 +267,33 @@ export const PasswordInput = forwardRef<
     </span>
   );
 });
+
+export function Help({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <span className="help-wrap">
+      <button
+        type="button"
+        className="help-button"
+        aria-label="도움말"
+        aria-expanded={open}
+        aria-describedby={open ? id : undefined}
+        onClick={() => setOpen(!open)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
+      >
+        <Icon name="info" size={16} />
+      </button>
+      <span
+        id={id}
+        role="tooltip"
+        className={open ? "help-tip open" : "help-tip"}
+      >
+        {children}
+      </span>
+    </span>
+  );
+}

@@ -1,5 +1,5 @@
 import { copyText } from "./clipboard";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, post, type Category } from "./api";
 import { Modal, ErrorText } from "./ui";
 import type { DialogProps } from "./dialogs";
@@ -447,12 +447,39 @@ export function ExchangeSettings({
   const [from, setFrom] = useState(
     user.default_currency === "USD" ? "KRW" : "USD",
   );
-  const [to, setTo] = useState(
-    user.default_currency === "USD" ? "KRW" : user.default_currency || "KRW",
-  );
+  const [to] = useState(user.default_currency || "KRW");
   const [rate, setRate] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [quoteStatus, setQuoteStatus] = useState("");
+  const [quoteBusy, setQuoteBusy] = useState(false);
+  const quoteVersion = useRef(0);
+  async function fetchQuote() {
+    const version = ++quoteVersion.current;
+    setQuoteBusy(true);
+    setQuoteStatus("최신 환율을 불러오는 중이에요…");
+    try {
+      const q = await api<{ rate: string; date: string }>(
+        `/me/exchange-quote?from=${from}&to=${to}`,
+      );
+      if (version === quoteVersion.current) {
+        setRate(String(q.rate));
+        setQuoteStatus(`${q.date} 기준 · Frankfurter · 확인 후 저장하세요.`);
+      }
+    } catch (e) {
+      if (version === quoteVersion.current)
+        setQuoteStatus((e as Error).message);
+    } finally {
+      if (version === quoteVersion.current) setQuoteBusy(false);
+    }
+  }
+  useEffect(() => {
+    setRate("");
+    if (from !== to) void fetchQuote();
+    return () => {
+      quoteVersion.current++;
+    };
+  }, [from, to]);
   const names = ["KRW", "USD", "JPY", "EUR", "GBP", "CNY", "TWD", "VND", "KWD"];
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -468,7 +495,6 @@ export function ExchangeSettings({
   }
   return (
     <div className="setting-group">
-      <h2>보조 통화와 환율</h2>
       <p className="panel-subtitle">
         직접 정한 환율로 기본 통화 합계를 봅니다. 외화 결제의 원금액·적용
         환율·계좌 반영액은 기록마다 보존해요.
@@ -518,9 +544,11 @@ export function ExchangeSettings({
             value={from}
             onChange={(e) => setFrom(e.target.value)}
           >
-            {names.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
+            {names
+              .filter((c) => c !== to)
+              .map((c) => (
+                <option key={c}>{c}</option>
+              ))}
           </select>
         </label>
         <span>1 단위 =</span>
@@ -531,32 +559,49 @@ export function ExchangeSettings({
             className="field-input"
             inputMode="decimal"
             value={rate}
-            onChange={(e) => setRate(e.target.value)}
+            onChange={(e) => {
+              quoteVersion.current++;
+              setQuoteBusy(false);
+              setQuoteStatus("직접 입력한 환율을 사용해요.");
+              setRate(e.target.value);
+            }}
             placeholder="직접 입력"
             required
           />
         </label>
         <label>
-          대상 통화
-          <select
-            aria-label="환율 대상 통화"
-            className="field-select"
+          기본 통화
+          <input
+            className="field-input"
             value={to}
-            onChange={(e) => setTo(e.target.value)}
-          >
-            {names.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+            readOnly
+            aria-label="환율 대상 통화"
+          />
         </label>
-        <button className="secondary-button" disabled={busy || from === to}>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={quoteBusy || from === to}
+          onClick={() => void fetchQuote()}
+        >
+          환율 다시 불러오기
+        </button>
+        <button
+          className="secondary-button"
+          disabled={busy || quoteBusy || from === to}
+        >
           환율 저장
         </button>
       </form>
+      <p className="entry-hint" role="status">
+        {quoteStatus}
+      </p>
       <p className="entry-hint">
-        예: 1 USD = 1400 KRW. 역방향 환산도 지원해요. 계좌 통화가 다른 과거
-        내역의 조회 합계는 현재 환율 설정을 따릅니다. 실제 카드 청구액과 다르면
-        거래의 적용 환율을 조정하세요.
+        저장하면 내 모든 가계부 조회에 적용해요. 환율 조회 시 통화 코드만 외부
+        서비스에 전달돼요. 실시간·카드 청구 환율과 다를 수 있어요. 예: 1 USD =
+        1400 KRW. 역방향 환산도 지원해요. 계좌 통화가 다른 과거 내역의 조회
+        합계는 현재 환율 설정을 따릅니다. 실제 카드 청구액과 다르면 거래의 적용
+        환율을 조정하세요.
       </p>
       <ErrorText error={error} />
     </div>

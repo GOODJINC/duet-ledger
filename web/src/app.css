@@ -1,6 +1,6 @@
 @import "../src-base.css";
 :root {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1.12));
 }
 .live-app {
   min-height: 100dvh;
@@ -16,7 +16,7 @@
   text-align: left;
 }
 .sidebar .brand {
-  font-size: 23px;
+  font-size: calc(23px * var(--text-scale, 1.12));
 }
 .mobile-logo {
   display: none;
@@ -27,7 +27,7 @@
   color: var(--muted);
 }
 .alpha-tag {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   padding: 4px 7px;
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -50,11 +50,11 @@
   border-radius: 7px;
   background: var(--paper);
   color: var(--muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   max-width: 100%;
 }
 .currency-select {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   padding: 6px 8px;
 }
 .advanced-filters {
@@ -76,7 +76,7 @@
   display: block;
 }
 .transaction-row .transaction-amount {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .transaction-account {
   overflow-wrap: anywhere;
@@ -97,10 +97,10 @@
   margin-bottom: 23px;
 }
 .welcome-card strong {
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale, 1.12));
 }
 .welcome-card p {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   color: var(--muted);
   margin-top: 9px;
   line-height: 1.8;
@@ -110,7 +110,7 @@
   align-items: center;
   justify-content: center;
   gap: 24px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   color: var(--muted);
   padding: 22px;
 }
@@ -142,7 +142,7 @@
   border: 1px solid #efd5ca;
   border-radius: 9px;
   padding: 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   line-height: 1.8;
   margin-top: 15px;
 }
@@ -151,7 +151,7 @@
   background: #fff1e9;
   border: 1px solid #ecd8c8;
   color: #956c52;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   border-radius: 10px;
   margin-bottom: 18px;
   display: flex;
@@ -160,7 +160,7 @@
   gap: 14px;
 }
 .error-banner button {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   text-decoration: underline;
   flex-shrink: 0;
 }
@@ -191,7 +191,7 @@
   height: 25px;
 }
 .boot-screen p {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .boot-screen .error-message {
   max-width: 440px;
@@ -215,23 +215,23 @@
   padding: 0;
 }
 .auth-story h1 {
-  font-size: clamp(28px, 2.5vw, 40px);
+  font-size: calc(clamp(28px, 2.5vw, 40px) * var(--text-scale, 1.12));
   line-height: 1.55;
   letter-spacing: -0.06em;
 }
 .auth-story > div > p:not(.eyebrow) {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1.12));
   color: #7d8b70;
   line-height: 2;
   margin-top: 22px;
 }
 .auth-story .eyebrow {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   letter-spacing: 0.1em;
   margin-bottom: 20px;
 }
 .auth-story > small {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   color: #91a17f;
 }
 .auth-main {
@@ -248,27 +248,27 @@
   max-width: 355px;
 }
 .auth-card h2 {
-  font-size: 25px;
+  font-size: calc(25px * var(--text-scale, 1.12));
   letter-spacing: -0.05em;
   line-height: 1.5;
 }
 .auth-subtitle {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   color: var(--muted);
   line-height: 1.9;
   margin: 12px 0 27px;
 }
 .auth-card .field-input {
   padding: 13px;
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1.12));
 }
 .auth-card .form-label {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   margin-top: 20px;
 }
 .auth-card .entry-submit {
   padding: 15px;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1.12));
   margin-top: 26px;
 }
 .auth-mobile-brand {
@@ -278,7 +278,7 @@
   border-top: 1px solid var(--line);
   padding-top: 22px;
   margin-top: 25px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   color: var(--muted);
   display: flex;
   align-items: flex-start;
@@ -291,13 +291,13 @@
   margin-top: 3px;
 }
 .setup-hint {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   color: var(--muted);
   line-height: 1.9;
   margin-top: 10px;
 }
 .setup-hint code {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   background: var(--mint-soft);
   border-radius: 4px;
   padding: 3px;
@@ -360,53 +360,53 @@
   width: min(520px, calc(100% - 28px));
 }
 .real-dialog .dialog-head h2 {
-  font-size: 21px;
+  font-size: calc(21px * var(--text-scale, 1.12));
 }
 .real-dialog .dialog-head p {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .real-dialog .form-label {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   margin-top: 18px;
 }
 .real-dialog .field-input,
 .real-dialog .field-select {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1.12));
 }
 .real-dialog .privacy-notice p,
 .real-dialog .entry-hint {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
 }
 .real-dialog .privacy-notice strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   line-height: 1.7;
 }
 .real-dialog .modal-note {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .real-dialog .entry-types button {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1.12));
 }
 .real-dialog .category-choice {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
 }
 .real-dialog .receipt-button {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .real-dialog .entry-submit {
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1.12));
 }
 .real-dialog .detail-line {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .real-dialog .inline-warning {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .real-dialog .dialog-content {
   padding-bottom: 28px;
 }
 .real-dialog .setting-explainer {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .real-dialog .privacy-notice > svg {
   width: 17px;
@@ -420,7 +420,7 @@
   border-top: 1px solid var(--line);
 }
 .subform h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1.12));
   margin-bottom: 15px;
 }
 .ledger-options .profile-choice {
@@ -435,7 +435,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1.12));
   margin-top: 23px;
 }
 .management-row {
@@ -450,19 +450,19 @@
   min-width: 0;
 }
 .management-row strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   font-weight: 550;
   overflow-wrap: anywhere;
 }
 .management-row p {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   color: var(--muted);
   margin: 6px 0;
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
 .management-row small {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   color: var(--muted);
 }
 .row-actions {
@@ -482,16 +482,16 @@
   border: 1px solid var(--line);
 }
 .invite-link-box > strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .invite-link-box > p {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   color: var(--muted);
   line-height: 1.9;
   margin: 7px 0 12px;
 }
 .invite-link-box input {
-  font-size: 11px !important;
+  font-size: calc(11px * var(--text-scale, 1.12)) !important;
 }
 .invite-link-box button {
   margin-top: 10px;
@@ -529,14 +529,14 @@
 .import-preview {
   max-height: 240px;
   overflow: auto;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1.12));
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   line-height: 1.7;
 }
 .secret-key {
   display: block;
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale, 1.12));
   padding: 16px;
   background: var(--mint-soft);
   color: var(--green);
@@ -546,7 +546,7 @@
   user-select: all;
 }
 .recovery-codes {
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale, 1.12));
   letter-spacing: 0.06em;
   line-height: 2.1;
   background: var(--mint-soft);
@@ -569,10 +569,10 @@
   height: 14px;
 }
 .summary-card .amount {
-  font-size: clamp(23px, 2.2vw, 31px);
+  font-size: calc(clamp(23px, 2.2vw, 31px) * var(--text-scale, 1.12));
 }
 .summary-card .amount .won {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .calendar-income,
 .calendar-expense {
@@ -619,7 +619,7 @@ body[data-theme="dark"] .book-two {
 }
 @media (max-width: 1120px) {
   .sidebar .brand {
-    font-size: 22px;
+    font-size: calc(22px * var(--text-scale, 1.12));
   }
   .advanced-filters {
     gap: 7px;
@@ -637,7 +637,7 @@ body[data-theme="dark"] .book-two {
   }
   .live-app .mini-brand {
     display: flex;
-    font-size: 19px;
+    font-size: calc(19px * var(--text-scale, 1.12));
   }
   .live-app .mobile-nav {
     position: fixed;
@@ -667,7 +667,7 @@ body[data-theme="dark"] .book-two {
   }
   .heading-actions .primary-button {
     display: flex !important;
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
     padding: 9px 10px;
   }
   .heading-actions .primary-button svg {
@@ -678,12 +678,12 @@ body[data-theme="dark"] .book-two {
     gap: 6px;
   }
   .currency-select {
-    font-size: 9px;
+    font-size: calc(9px * var(--text-scale, 1.12));
     padding: 6px 4px;
     width: 51px;
   }
   .scope-tabs button {
-    font-size: 10px !important;
+    font-size: calc(10px * var(--text-scale, 1.12)) !important;
     padding: 7px 8px;
   }
   .scope-tabs button svg {
@@ -695,7 +695,7 @@ body[data-theme="dark"] .book-two {
   }
   .month-label {
     min-width: 72px;
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
   }
   .month-nav button {
     width: 17px;
@@ -707,29 +707,29 @@ body[data-theme="dark"] .book-two {
     gap: 14px;
   }
   .welcome-card strong {
-    font-size: 13px;
+    font-size: calc(13px * var(--text-scale, 1.12));
   }
   .welcome-card p {
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
   }
   .welcome-card .primary-button {
-    font-size: 12px;
+    font-size: calc(12px * var(--text-scale, 1.12));
     padding: 12px;
   }
   .live-app .summary-card .amount {
-    font-size: 23px;
+    font-size: calc(23px * var(--text-scale, 1.12));
   }
   .live-app .summary-card.total .amount {
-    font-size: 32px;
+    font-size: calc(32px * var(--text-scale, 1.12));
   }
   .summary-card .amount .won {
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
   }
   .summary-card.total .amount .won {
-    font-size: 13px;
+    font-size: calc(13px * var(--text-scale, 1.12));
   }
   .transaction-row .transaction-amount {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .transaction-account {
     max-width: 190px;
@@ -738,42 +738,42 @@ body[data-theme="dark"] .book-two {
     text-overflow: ellipsis;
   }
   .transaction-title {
-    font-size: 12px;
+    font-size: calc(12px * var(--text-scale, 1.12));
   }
   .advanced-filters .compact-date {
     width: 130px;
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
   }
   .advanced-filters .compact-select {
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
     padding: 8px;
     max-width: 135px;
   }
   .advanced-filters .secondary-button {
-    font-size: 9px;
+    font-size: calc(9px * var(--text-scale, 1.12));
   }
   .scope-explanation {
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
     flex-wrap: wrap;
     line-height: 1.9;
   }
   .stats-category-line {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .setting-row {
     gap: 13px;
   }
   .setting-row > div > strong {
-    font-size: 12px;
+    font-size: calc(12px * var(--text-scale, 1.12));
   }
   .setting-row > div > p {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .setting-group h2 {
-    font-size: 14px;
+    font-size: calc(14px * var(--text-scale, 1.12));
   }
   .alpha-tag {
-    font-size: 8px;
+    font-size: calc(8px * var(--text-scale, 1.12));
   }
   .live-app .header-right .profile-button > span:not(.avatar) {
     display: none;
@@ -788,16 +788,16 @@ body[data-theme="dark"] .book-two {
     grid-template-columns: 1fr;
   }
   .live-app .page-heading h1 {
-    font-size: 23px;
+    font-size: calc(23px * var(--text-scale, 1.12));
   }
   .live-app .page-subtitle {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .live-app .page-heading {
     gap: 10px;
   }
   .search-field input {
-    font-size: 12px;
+    font-size: calc(12px * var(--text-scale, 1.12));
   }
   .app-frame {
     container-type: normal;
@@ -846,13 +846,13 @@ body[data-theme="dark"] .book-two {
   }
   .auth-mobile-brand .brand {
     padding: 0;
-    font-size: 23px;
+    font-size: calc(23px * var(--text-scale, 1.12));
   }
   .auth-card h2 {
-    font-size: 23px;
+    font-size: calc(23px * var(--text-scale, 1.12));
   }
   .auth-subtitle {
-    font-size: 12px;
+    font-size: calc(12px * var(--text-scale, 1.12));
   }
   .real-dialog {
     max-height: 94dvh;
@@ -871,36 +871,36 @@ body[data-theme="dark"] .book-two {
     padding-right: 22px;
   }
   .real-dialog .dialog-head h2 {
-    font-size: 20px;
+    font-size: calc(20px * var(--text-scale, 1.12));
   }
   .real-dialog .dialog-head p {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .real-dialog .field-input,
   .real-dialog .field-select {
-    font-size: 16px;
+    font-size: calc(16px * var(--text-scale, 1.12));
   }
   .real-dialog .compact-select {
     max-width: 100px;
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
   }
   .real-dialog .row-actions {
     gap: 7px;
   }
   .real-dialog .entry-types button {
-    font-size: 12px;
+    font-size: calc(12px * var(--text-scale, 1.12));
   }
   .real-dialog .management-row strong {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .real-dialog .management-row p {
-    font-size: 10px;
+    font-size: calc(10px * var(--text-scale, 1.12));
   }
   .real-dialog .modal-note {
-    font-size: 11px;
+    font-size: calc(11px * var(--text-scale, 1.12));
   }
   .real-dialog .entry-amount-wrap input {
-    font-size: 36px;
+    font-size: calc(36px * var(--text-scale, 1.12));
   }
   .live-app .sidebar {
     display: none;
@@ -1167,7 +1167,7 @@ body[data-theme="dark"] textarea::placeholder {
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 9px 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .accent-choice[aria-pressed="true"] {
   outline: 2px solid var(--green);
@@ -1333,7 +1333,7 @@ body[data-theme="dark"] .primary-button {
   gap: 12px;
 }
 .ledger-summary {
-  font-size: 14px;
+  font-size: calc(14px * var(--text-scale, 1.12));
   line-height: 1.7;
   flex-wrap: wrap;
   color: var(--ink);
@@ -1371,7 +1371,7 @@ body[data-theme="dark"] .primary-button {
     gap: 10px;
   }
   .ledger-summary {
-    font-size: 13px;
+    font-size: calc(13px * var(--text-scale, 1.12));
   }
 }
 .trash-mode {
@@ -1454,7 +1454,7 @@ body[data-theme="dark"] .primary-button:hover {
   padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   color: var(--muted);
 }
 .currency-context > div {
@@ -1518,7 +1518,7 @@ body[data-theme="dark"] .primary-button:hover {
   background: var(--mint-soft);
   color: var(--green);
   padding: 8px;
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale, 1.12));
 }
 .entry-form .entry-date-time {
   display: grid;
@@ -1566,7 +1566,7 @@ body[data-theme="dark"] .primary-button:hover {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
 }
 .fx-rate-line input {
   width: 110px;
@@ -1605,7 +1605,7 @@ body[data-theme="dark"] .primary-button:hover {
 .fx-settings-form label {
   flex: 1;
   min-width: 90px;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1.12));
   color: var(--muted);
 }
 .fx-settings-form input,
@@ -1615,7 +1615,7 @@ body[data-theme="dark"] .primary-button:hover {
 .original-money {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1.12));
   font-weight: 400;
   color: var(--muted);
 }
@@ -1666,4 +1666,242 @@ body[data-theme="dark"] .primary-button:hover {
 }
 .settings-page .appearance-row {
   flex-wrap: wrap;
+}
+
+/* Readable, stable layouts and user-adjustable typography. */
+html {
+  scrollbar-gutter: stable;
+}
+body {
+  --text-scale: 1.12;
+}
+.entry-amount-wrap select {
+  flex: 0 0 92px;
+  width: 92px;
+  min-width: 92px;
+  padding-right: 24px;
+}
+.entry-form .form-label {
+  font-size: calc(14px * var(--text-scale, 1.12));
+}
+.entry-save-area {
+  box-shadow: none;
+  position: static;
+  margin-top: 12px;
+}
+.entry-form .entry-date-time {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.entry-form .entry-date-time > div:first-child {
+  display: contents;
+}
+.entry-form .entry-date-time > div:last-child {
+  display: block;
+}
+.entry-form .entry-date-time {
+  grid-column: 1 / -1;
+  grid-template-columns: 88px minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.entry-date-time .form-label {
+  margin: 0;
+}
+.profile-username {
+  font-size: calc(17px * var(--text-scale, 1.12));
+  font-weight: 600;
+  margin: 10px 0 20px;
+}
+.settings-page .setting-row strong,
+.settings-page .form-label {
+  font-size: calc(14px * var(--text-scale, 1.12));
+}
+.settings-page .setting-row p,
+.settings-page .panel-subtitle {
+  font-size: calc(13px * var(--text-scale, 1.12));
+}
+.settings-page .inline-settings-form {
+  display: grid;
+  grid-template-columns: 155px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 12px;
+}
+.inline-settings-form > .form-two-cols {
+  display: contents;
+}
+.inline-settings-form > .form-two-cols > div {
+  display: contents;
+}
+.inline-settings-form > label.form-label {
+  grid-column: 1;
+  margin: 0;
+}
+.inline-settings-form > .field-input,
+.inline-settings-form > .field-select {
+  grid-column: 2;
+}
+.inline-settings-form .form-two-cols label {
+  grid-column: 1;
+  margin: 0;
+}
+.inline-settings-form .form-two-cols select {
+  grid-column: 2;
+}
+.inline-settings-form > .setting-row,
+.inline-settings-form > .settings-save,
+.inline-settings-form > .error-text {
+  grid-column: 1/-1;
+}
+.inline-settings-form .help-wrap {
+  grid-column: 3;
+}
+.settings-page .panel {
+  overflow: visible;
+}
+.help-wrap {
+  display: inline-flex;
+  position: relative;
+  vertical-align: middle;
+  font-weight: 400;
+}
+.help-button {
+  display: inline-flex;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: help;
+}
+.help-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  width: min(290px, 75vw);
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #24313d;
+  color: #fff;
+  font-size: calc(13px * var(--text-scale, 1.12));
+  line-height: 1.6;
+  box-shadow: 0 4px 14px #0003;
+  z-index: 40;
+  text-align: left;
+}
+.help-tip.open,
+.help-wrap:hover .help-tip,
+.help-button:focus-visible + .help-tip {
+  display: block;
+}
+.setting-group h2 .help-tip {
+  right: auto;
+  left: 0;
+}
+.setting-row input[type="file"] {
+  width: min(240px, 50%);
+  font-size: calc(12px * var(--text-scale, 1.12));
+}
+.setting-row label small {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: calc(12px * var(--text-scale, 1.12));
+}
+.sidebar-bottom,
+.sidebar-bottom p,
+.sidebar-bottom span,
+.page-footer,
+.page-footer p,
+.page-footer span,
+footer {
+  font-size: calc(12px * var(--text-scale, 1.12));
+}
+.mobile-ledger-picker {
+  display: none;
+}
+@media (max-width: 760px) {
+  .mobile-ledger-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 145px;
+    padding: 8px;
+  }
+  .mobile-ledger-picker span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mobile-ledger-picker svg {
+    flex-shrink: 0;
+    width: 16px;
+  }
+  .settings-page .inline-settings-form {
+    grid-template-columns: 105px minmax(0, 1fr) 26px;
+    gap: 12px 8px;
+  }
+  .entry-form .entry-date-time {
+    grid-template-columns: 72px minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+  .entry-form .entry-date-time > div {
+    grid-template-columns: none;
+  }
+  .help-tip {
+    width: min(260px, 75vw);
+  }
+}
+
+.app-footer,
+.app-footer > span,
+.sidebar-bottom small,
+.sidebar-bottom strong {
+  font-size: calc(12px * var(--text-scale, 1.12));
+}
+.real-dialog .entry-form .form-label {
+  font-size: calc(14px * var(--text-scale, 1.12));
+}
+@media (max-width: 480px) {
+  .app-header {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .header-right {
+    gap: 6px;
+  }
+  .mobile-ledger-picker {
+    max-width: 120px;
+  }
+  .mobile-ledger-picker > svg:first-child {
+    display: none;
+  }
+  .profile-button {
+    gap: 5px;
+  }
+  .profile-button > .avatar {
+    display: none;
+  }
+}
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
+}
+@media (max-width: 700px) {
+  .live-app .header-right .profile-button > span:not(.avatar) {
+    display: block;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: calc(12px * var(--text-scale, 1.12));
+  }
+  .live-app .header-right {
+    gap: 6px;
+  }
+}
+
+body {
+  font-size: calc(14px * var(--text-scale, 1.12));
 }

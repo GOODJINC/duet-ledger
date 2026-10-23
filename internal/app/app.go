@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.5"
+const Version = "0.1.0-alpha.6"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -222,6 +222,7 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/join", a.join, false)
 	add("GET /api/me", a.me, true)
 	add("PATCH /api/me", a.updateMe, true)
+	add("GET /api/me/exchange-quote", a.exchangeQuote, true)
 	add("PUT /api/me/exchange-rates", a.saveExchangeRate, true)
 	add("DELETE /api/me/exchange-rates", a.saveExchangeRate, true)
 	add("POST /api/logout", a.logout, true)
@@ -289,7 +290,7 @@ func (a *App) Routes() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
 		if a.Config.SecureCookie {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000")
 		}
