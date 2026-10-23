@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.0-alpha.9",
-    "description": "Cookie-authenticated local web API. Financial values use integer strings. Cross-account transfers require edit permission on every side. Remote API tokens and MCP are not implemented yet."
+    "version": "0.1.0-alpha.10",
+    "description": "Duet Ledger web session API and scoped external /api/v1 app-password API. Amounts are integer strings. API access defaults off; an administrator must enable it. Every external request intersects the app-password account allowlist with current user access. MCP is not implemented."
   },
   "servers": [
     {
@@ -3103,6 +3103,1150 @@
           }
         }
       }
+    },
+    "/api/me/app-passwords": {
+      "get": {
+        "summary": "List own app-password metadata, never secrets",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AppPassword"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_api_me_app_passwords"
+      },
+      "post": {
+        "summary": "Issue app password after password/TOTP verification",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedAppPassword"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppPasswordInput"
+              }
+            }
+          }
+        },
+        "operationId": "post_api_me_app_passwords"
+      }
+    },
+    "/api/me/app-passwords/{id}": {
+      "delete": {
+        "summary": "Immediately revoke own app password",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "delete_api_me_app_passwords_id"
+      }
+    },
+    "/api/me/api-requests": {
+      "get": {
+        "summary": "Own latest 100 API calls; no query/body/secret logging",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "credential_id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "method": {
+                        "type": "string"
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "integer"
+                      },
+                      "created_at": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_api_me_api_requests"
+      }
+    },
+    "/api/admin/api-settings": {
+      "get": {
+        "summary": "Read administrator API policy",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_api_admin_api_settings"
+      },
+      "patch": {
+        "summary": "Enable or pause API for all users; admin only",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              }
+            }
+          }
+        },
+        "description": "Defaults off. Disabling pauses existing app passwords; enabling resumes unexpired/unrevoked ones.",
+        "operationId": "patch_api_admin_api_settings"
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "summary": "Connection identity and granted permissions",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "timezone": {
+                      "type": "string"
+                    },
+                    "default_currency": {
+                      "type": "string"
+                    },
+                    "app_password_id": {
+                      "type": "string"
+                    },
+                    "app_password_name": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "integer"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/APIPermission"
+                      }
+                    },
+                    "account_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_me"
+      }
+    },
+    "/api/v1/accounts": {
+      "get": {
+        "summary": "Read selected accessible accounts; read permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/APIAccount"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_accounts"
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "summary": "Read category choices for a selected account; read permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "expense",
+                "income"
+              ]
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_categories"
+      }
+    },
+    "/api/v1/transactions": {
+      "get": {
+        "summary": "Search transactions and scoped aggregates; read permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITransactionPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "private",
+                "shared"
+              ]
+            }
+          },
+          {
+            "name": "ledger",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trash",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "display_currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Convert totals/categories/daily and add item display_currency/display_scale and leg display_amount. Original amounts and account currencies stay unchanged. Items without a conversion rate are listed in missing_currencies and excluded from converted aggregates."
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_transactions"
+      },
+      "post": {
+        "summary": "Immediately save transaction; create permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Identical request already applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APICreateTransactionInput"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here. Reusing a key with identical input returns 200 and the original ID. Different input returns 409. Idempotency keys are isolated per app password. Both transfer accounts must be allowed and writable.",
+        "operationId": "post_api_v1_transactions"
+      }
+    },
+    "/api/v1/transactions/{id}": {
+      "get": {
+        "summary": "Read a transaction by a visible posting ID; read permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APITransaction"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_transactions_id"
+      },
+      "put": {
+        "summary": "Immediately update full transaction; update permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "posting_ids": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIUpdateTransactionInput"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here. All original and target accounts must be allowed and editable; version must match.",
+        "operationId": "put_api_v1_transactions_id"
+      },
+      "delete": {
+        "summary": "Move transaction to trash; delete permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here. No permanent deletion. All transfer sides must be editable.",
+        "operationId": "delete_api_v1_transactions_id"
+      }
+    },
+    "/api/v1/transactions/{id}/restore": {
+      "post": {
+        "summary": "Restore trashed transaction; delete permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "post_api_v1_transactions_id_restore"
+      }
+    },
+    "/api/v1/statistics": {
+      "get": {
+        "summary": "Scoped statistics without transaction list; read permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIStatistics"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "private",
+                "shared"
+              ]
+            }
+          },
+          {
+            "name": "ledger",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trash",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "display_currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Convert totals/categories/daily and add item display_currency/display_scale and leg display_amount. Original amounts and account currencies stay unchanged. Items without a conversion rate are listed in missing_currencies and excluded from converted aggregates."
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_statistics"
+      }
+    },
+    "/api/v1/transactions/{id}/receipts": {
+      "post": {
+        "summary": "Attach receipt to selected account posting; receipts permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here. JPG/PNG <=5MB, <=16 megapixels; normalized by server.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "operationId": "post_api_v1_transactions_id_receipts"
+      }
+    },
+    "/api/v1/receipts/{id}": {
+      "get": {
+        "summary": "Download selected-account receipt; read permission",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Normalized image",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "get_api_v1_receipts_id"
+      },
+      "delete": {
+        "summary": "Detach receipt; delete AND receipts permissions",
+        "security": [
+          {
+            "appPassword": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Structured error; 400 validation, 401 invalid/expired/revoked key, 403 disabled/insufficient rights, 404 outside scope, 409 conflict, 429 rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
+        "operationId": "delete_api_v1_receipts_id"
+      }
     }
   },
   "components": {
@@ -3116,6 +4260,12 @@
         "type": "apiKey",
         "in": "header",
         "name": "X-CSRF-Token"
+      },
+      "appPassword": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "dl_app_<random secret>",
+        "description": "Random per-user app password issued in account settings. Shown once. Not an OAuth access-token issuer."
       }
     },
     "schemas": {
@@ -3629,6 +4779,594 @@
         "properties": {
           "registration_open": {
             "type": "boolean"
+          }
+        }
+      },
+      "APIPermission": {
+        "type": "string",
+        "enum": [
+          "read",
+          "create",
+          "update",
+          "delete",
+          "receipts"
+        ]
+      },
+      "AppPasswordInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "account_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 500,
+            "uniqueItems": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIPermission"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "lifetime": {
+            "type": "string",
+            "enum": [
+              "30d",
+              "90d",
+              "1y",
+              "never"
+            ],
+            "description": "1y is 365 days. never has expires_at=0."
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "writeOnly": true
+          },
+          "code": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "TOTP or recovery code when enabled"
+          }
+        },
+        "required": [
+          "name",
+          "account_ids",
+          "permissions",
+          "lifetime",
+          "password"
+        ]
+      },
+      "AppPassword": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "account_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIPermission"
+            }
+          },
+          "expires_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "type": "string"
+          }
+        }
+      },
+      "IssuedAppPassword": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "app_password": {
+            "type": "string",
+            "description": "Shown only in this response. Store securely; never returned by list endpoints."
+          },
+          "expires_at": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "app_password",
+          "expires_at"
+        ]
+      },
+      "APIAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ledger_id": {
+            "type": "string"
+          },
+          "ledger_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "owner_name": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "integer"
+          },
+          "opening": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "balance": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "shared": {
+            "type": "boolean"
+          }
+        }
+      },
+      "APIReceipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "media_type": {
+            "type": "string"
+          }
+        }
+      },
+      "APILeg": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "display_amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "category_name": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "receipts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIReceipt"
+            }
+          }
+        }
+      },
+      "APITransaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "creator_username": {
+            "type": "string"
+          },
+          "original_currency": {
+            "type": "string"
+          },
+          "original_amount": {
+            "type": "string"
+          },
+          "exchange_rate": {
+            "type": "string"
+          },
+          "display_currency": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "integer"
+          },
+          "display_scale": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "can_edit": {
+            "type": "boolean"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APILeg"
+            }
+          }
+        }
+      },
+      "APITotal": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "integer"
+          },
+          "income": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "expense": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "APICategoryTotal": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "integer"
+          },
+          "category": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "APIDayTotal": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "integer"
+          },
+          "date": {
+            "type": "string"
+          },
+          "income": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "expense": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "APIStatistics": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "totals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APITotal"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APICategoryTotal"
+            }
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIDayTotal"
+            }
+          },
+          "missing_currencies": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "APITransactionPage": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "totals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APITotal"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APICategoryTotal"
+            }
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIDayTotal"
+            }
+          },
+          "missing_currencies": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APITransaction"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          }
+        }
+      },
+      "APICreateTransactionInput": {
+        "type": "object",
+        "required": [
+          "kind",
+          "date",
+          "amount",
+          "account_id",
+          "title",
+          "category"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense",
+              "transfer"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$",
+            "description": "Minimum currency units; signed only for adjustment."
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "to_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "target_note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "time": {
+            "type": "string",
+            "description": "Optional local clock time HH:mm; empty preserves unknown legacy time."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone for the entered date/time."
+          },
+          "ledger_id": {
+            "type": "string",
+            "description": "Optional entry context; source and transfer target must belong to this ledger."
+          },
+          "original_currency": {
+            "type": "string",
+            "description": "Optional original charge currency, different from account currency."
+          },
+          "original_amount": {
+            "type": "string",
+            "description": "Positive original amount as a minor-unit integer string."
+          },
+          "exchange_rate": {
+            "type": "string",
+            "description": "Account currency units per 1 original currency unit. Positive decimal, up to 12 fraction digits."
+          }
+        }
+      },
+      "APIUpdateTransactionInput": {
+        "type": "object",
+        "required": [
+          "kind",
+          "date",
+          "amount",
+          "account_id",
+          "title",
+          "category",
+          "version"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "income",
+              "expense",
+              "transfer",
+              "adjustment",
+              "refund"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$",
+            "description": "Minimum currency units; signed only for adjustment."
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "to_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "target_note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "time": {
+            "type": "string",
+            "description": "Optional local clock time HH:mm; empty preserves unknown legacy time."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone for the entered date/time."
+          },
+          "ledger_id": {
+            "type": "string",
+            "description": "Optional entry context; source and transfer target must belong to this ledger."
+          },
+          "original_currency": {
+            "type": "string",
+            "description": "Optional original charge currency, different from account currency."
+          },
+          "original_amount": {
+            "type": "string",
+            "description": "Positive original amount as a minor-unit integer string."
+          },
+          "exchange_rate": {
+            "type": "string",
+            "description": "Account currency units per 1 original currency unit. Positive decimal, up to 12 fraction digits."
           }
         }
       }

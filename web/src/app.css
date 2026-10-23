@@ -2392,3 +2392,104 @@ body {
 .exchange-editor h3 .help-wrap {
   flex-shrink: 0;
 }
+.api-key-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.api-key-form .form-label {
+  margin: 0;
+}
+.api-key-form fieldset {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+}
+.api-key-form legend {
+  font-size: calc(14px * var(--text-scale, 1.12));
+  padding: 0 4px;
+}
+.api-account-list {
+  max-height: 240px;
+  overflow: auto;
+}
+.api-account-list label,
+.api-permissions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: calc(13px * var(--text-scale, 1.12));
+}
+.api-account-list small,
+.api-key-row small {
+  display: block;
+  color: var(--muted);
+  font-size: calc(12px * var(--text-scale, 1.12));
+  margin-top: 5px;
+}
+.api-permissions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+}
+.api-secret {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  margin: 0 0 18px;
+  border: 1px solid var(--green);
+  background: var(--mint-soft);
+  border-radius: 12px;
+}
+.api-secret strong {
+  font-size: calc(14px * var(--text-scale, 1.12));
+}
+.api-section-title {
+  font-size: calc(16px * var(--text-scale, 1.12));
+  margin: 24px 0 12px;
+}
+.api-key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.api-key-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.api-key-row > button {
+  flex-shrink: 0;
+}
+.api-request-log {
+  margin: 20px 0;
+}
+.api-request-log > div {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.api-request-log code,
+.api-request-log small {
+  display: block;
+  font-size: calc(12px * var(--text-scale, 1.12));
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+}
+.api-help-links {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+.api-help-links a {
+  font-size: calc(13px * var(--text-scale, 1.12));
+  color: var(--green);
+  text-underline-offset: 3px;
+}

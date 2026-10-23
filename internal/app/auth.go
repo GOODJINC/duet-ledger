@@ -152,6 +152,7 @@ func (a *App) user(id string) (*User, error) {
 	if err == nil {
 		u.ExchangeRates, err = a.exchangeRates(id)
 	}
+	u.APIEnabled = a.apiEnabled()
 	u.TOTP = secret != ""
 	return u, err
 }
@@ -214,6 +215,9 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request, u *User) error {
 	return nil
 }
 func (a *App) logoutAll(w http.ResponseWriter, r *http.Request, u *User) error {
+	if err := revokeAppPasswords(a.DB, u.ID); err != nil {
+		return err
+	}
 	if _, err := a.DB.Exec("DELETE FROM sessions WHERE user_id=?", u.ID); err != nil {
 		return err
 	}
@@ -323,6 +327,9 @@ func (a *App) changePassword(w http.ResponseWriter, r *http.Request, u *User) er
 	if _, err = tx.Exec("UPDATE users SET password=? WHERE id=?", passwordHash(v.Password), u.ID); err != nil {
 		return err
 	}
+	if err = revokeAppPasswords(tx, u.ID); err != nil {
+		return err
+	}
 	if _, err = tx.Exec("DELETE FROM sessions WHERE user_id=?", u.ID); err != nil {
 		return err
 	}
@@ -429,6 +436,9 @@ func (a *App) confirmTOTP(w http.ResponseWriter, r *http.Request, u *User) error
 	if _, err = tx.Exec("UPDATE users SET totp=totp_pending,totp_pending='',totp_counter=?,recovery=? WHERE id=?", counter, string(b), u.ID); err != nil {
 		return err
 	}
+	if err = revokeAppPasswords(tx, u.ID); err != nil {
+		return err
+	}
 	if _, err = tx.Exec("DELETE FROM sessions WHERE user_id=?", u.ID); err != nil {
 		return err
 	}
@@ -469,6 +479,9 @@ func (a *App) disableTOTP(w http.ResponseWriter, r *http.Request, u *User) error
 	}
 	defer tx.Rollback()
 	if _, err = tx.Exec("UPDATE users SET totp='',totp_pending='',recovery='[]',totp_counter=0 WHERE id=?", u.ID); err != nil {
+		return err
+	}
+	if err = revokeAppPasswords(tx, u.ID); err != nil {
 		return err
 	}
 	if _, err = tx.Exec("DELETE FROM sessions WHERE user_id=?", u.ID); err != nil {

@@ -10,3 +10,6 @@ docs
 *.test
 
 temp
+
+web/public/duet_api.py
+web/public/api-guide.md

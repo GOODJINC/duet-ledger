@@ -100,7 +100,9 @@ func (a *App) accounts(q queryer, u *User) ([]Account, error) {
 			v.LedgerID = ""
 			v.LedgerName = "공유받은 계좌"
 		}
-		out = append(out, v)
+		if u.API == nil || u.API.Accounts[v.ID] {
+			out = append(out, v)
+		}
 	}
 	err = rows.Err()
 	rows.Close()

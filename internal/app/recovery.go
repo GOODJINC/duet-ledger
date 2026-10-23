@@ -154,6 +154,10 @@ func Restore(archive, dataDir, keyFile string) error {
 			return err
 		}
 	}
+	if err = revokeAppPasswords(db, ""); err != nil {
+		db.Close()
+		return err
+	}
 	if err = db.Close(); err != nil {
 		return err
 	}
@@ -185,6 +189,9 @@ func (a *App) ResetPassword(username, password string, disableTOTP bool) error {
 		if _, err = tx.Exec("UPDATE users SET totp='',totp_pending='',recovery='[]',totp_counter=0 WHERE id=?", id); err != nil {
 			return err
 		}
+	}
+	if err = revokeAppPasswords(tx, id); err != nil {
+		return err
 	}
 	if _, err = tx.Exec("DELETE FROM sessions WHERE user_id=?", id); err != nil {
 		return err

@@ -8,11 +8,27 @@ func (a *App) migrate() error {
 	if err := a.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 5 {
+	if version > 6 {
 		return fmt.Errorf("unsupported database version: %d", version)
 	}
-	if version == 5 {
+	if version == 6 {
 		return nil
+	}
+	if version == 5 {
+		tx, err := a.DB.Begin()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if _, err = tx.Exec(`CREATE TABLE api_credentials(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),name TEXT NOT NULL,secret_hash TEXT NOT NULL UNIQUE,permissions TEXT NOT NULL,expires_at INTEGER NOT NULL,created_at TEXT NOT NULL,last_used_at TEXT,revoked_at TEXT);
+CREATE TABLE api_credential_accounts(credential_id TEXT NOT NULL REFERENCES api_credentials(id),account_id TEXT NOT NULL REFERENCES accounts(id),PRIMARY KEY(credential_id,account_id));
+CREATE TABLE api_requests(id TEXT PRIMARY KEY,credential_id TEXT NOT NULL REFERENCES api_credentials(id),user_id TEXT NOT NULL REFERENCES users(id),method TEXT NOT NULL,path TEXT NOT NULL,status INTEGER NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX api_requests_user ON api_requests(user_id,created_at);
+INSERT INTO server_settings VALUES('api_enabled','false');
+INSERT INTO schema_version VALUES(6);`); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if version == 4 {
 		tx, err := a.DB.Begin()
@@ -28,7 +44,10 @@ func (a *App) migrate() error {
  INSERT INTO schema_version VALUES(5);`); err != nil {
 			return err
 		}
-		return tx.Commit()
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return a.migrate()
 	}
 	if version == 3 {
 		tx, err := a.DB.Begin()

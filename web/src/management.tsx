@@ -985,7 +985,7 @@ export function SecurityDialog(p: DialogProps) {
           }
         >
           <Icon name="logout" />
-          모든 기기에서 로그아웃
+          모든 기기 로그아웃·API 키 폐기
         </button>
       </div>
     </Modal>

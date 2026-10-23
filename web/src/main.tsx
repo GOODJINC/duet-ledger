@@ -66,6 +66,7 @@ import {
   ServerAppearanceSettings,
   useAppearance,
 } from "./appearance";
+import { AppPasswordsDialog, AdminAPISettings } from "./api-settings";
 import "./app.css";
 
 type Page =
@@ -111,6 +112,7 @@ type ModalState =
         | "import"
         | "backup"
         | "security"
+        | "api-keys"
         | "lifecycle"
         | "admin"
         | "categories"
@@ -1773,7 +1775,7 @@ export function Application({
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.9
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.10
             </span>
           </footer>
         </div>
@@ -1883,6 +1885,7 @@ export function Application({
       {modal?.kind === "lifecycle" && <LifecycleDialog {...dialogProps} />}
       {modal?.kind === "sharing" && <SharingDialog {...dialogProps} />}
       {modal?.kind === "security" && <SecurityDialog {...dialogProps} />}
+      {modal?.kind === "api-keys" && <AppPasswordsDialog {...dialogProps} />}
       {modal?.kind === "import" && <ImportDialog {...dialogProps} />}
       {modal?.kind === "backup" && <BackupDialog {...dialogProps} />}
       {invite && (
@@ -2352,6 +2355,7 @@ export function SettingsView({
     k:
       | "sharing"
       | "security"
+      | "api-keys"
       | "import"
       | "backup"
       | "lifecycle"
@@ -2511,6 +2515,9 @@ export function SettingsView({
               "로그인 보안",
               `2단계 인증 ${user.totp_enabled ? "사용 중" : "미사용"} · 비밀번호·복구 코드`,
               () => open("security"),
+            )}
+            {row("API 앱 비밀번호", "계좌별 접근·기능 권한·만료·폐기", () =>
+              open("api-keys"),
             )}
           </div>
         </section>
@@ -2772,6 +2779,9 @@ export function SettingsView({
         </section>
       )}
       {section === "settings" && <AppearanceSettings userId={user.id} />}
+      {section === "administration" && user.admin && (
+        <AdminAPISettings user={user} refresh={refresh} />
+      )}
       {section === "administration" && user.admin && (
         <ServerAppearanceSettings />
       )}

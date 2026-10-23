@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.9"
+const Version = "0.1.0-alpha.10"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -45,6 +45,8 @@ type queryer interface {
 	QueryRow(string, ...any) *sql.Row
 }
 type User struct {
+	API              *APIScope      `json:"-"`
+	APIEnabled       bool           `json:"api_enabled"`
 	DefaultAccountID string         `json:"default_account_id"`
 	ExchangeRates    []ExchangeRate `json:"exchange_rates"`
 	ID               string         `json:"id"`
@@ -181,6 +183,10 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 		var u *User
 		var err error
 		if auth {
+			if r.Header.Get("Authorization") != "" {
+				writeJSON(w, 403, map[string]string{"error": "wrong_auth_route", "message": "앱 비밀번호는 /api/v1 경로에서만 사용해 주세요."})
+				return
+			}
 			u, err = a.authenticate(r)
 			if err == nil && r.Method != "GET" && r.Method != "HEAD" && !secureEqual(r.Header.Get("X-CSRF-Token"), u.CSRF) {
 				err = &apiError{403, "csrf", "화면을 새로고침하고 다시 시도해 주세요."}
@@ -228,6 +234,13 @@ func (a *App) Routes() http.Handler {
 	add("GET /api/appearance/{kind}", a.appearanceAsset, true)
 	add("PUT /api/admin/appearance/{kind}", a.updateAppearanceAsset, true)
 	add("DELETE /api/admin/appearance/{kind}", a.updateAppearanceAsset, true)
+	add("GET /api/me/app-passwords", a.listAppPasswords, true)
+	add("POST /api/me/app-passwords", a.createAppPassword, true)
+	add("DELETE /api/me/app-passwords/{id}", a.revokeAppPassword, true)
+	add("GET /api/me/api-requests", a.listAPIRequests, true)
+	add("GET /api/admin/api-settings", a.apiSettings, true)
+	add("PATCH /api/admin/api-settings", a.apiSettings, true)
+	a.addExternalAPI(m)
 	add("GET /api/me", a.me, true)
 	add("PATCH /api/me", a.updateMe, true)
 	add("GET /api/me/exchange-quote", a.exchangeQuote, true)
@@ -329,6 +342,9 @@ func (a *App) assets() http.Handler {
 	})
 }
 func audit(q queryer, u *User, action, targetType, target string) error {
+	if u.API != nil {
+		action = "api." + u.API.ID + "." + action
+	}
 	_, err := q.Exec("INSERT INTO audit VALUES(?,?,?,?,?,?)", newID(), u.ID, action, targetType, target, now())
 	return err
 }

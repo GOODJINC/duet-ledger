@@ -143,7 +143,18 @@ func (a *App) deleteReceipt(w http.ResponseWriter, r *http.Request, u *User) err
 	if _, err = a.receiptPosting(u, pid, true); err != nil {
 		return err
 	}
-	if _, err = a.DB.Exec("UPDATE receipts SET deleted_at=? WHERE id=?", now(), r.PathValue("id")); err != nil {
+	tx, err := a.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.Exec("UPDATE receipts SET deleted_at=? WHERE id=?", now(), r.PathValue("id")); err != nil {
+		return err
+	}
+	if err = audit(tx, u, "receipt_removed", "posting", pid); err != nil {
+		return err
+	}
+	if err = tx.Commit(); err != nil {
 		return err
 	}
 	writeJSON(w, 200, map[string]bool{"ok": true})

@@ -1,5 +1,6 @@
 export type ExchangeRate = { from: string; to: string; rate: string };
 export type User = {
+  api_enabled?: boolean;
   default_account_id?: string;
   exchange_rates?: ExchangeRate[];
   id: string;

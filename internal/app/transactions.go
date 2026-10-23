@@ -359,6 +359,9 @@ func (a *App) createTransaction(w http.ResponseWriter, r *http.Request, u *User)
 	if len(key) > 128 {
 		return bad("요청 식별자가 너무 길어요.")
 	}
+	if key != "" && u.API != nil {
+		key = "api:" + u.API.ID + ":" + key
+	}
 	tx, err := a.DB.Begin()
 	if err != nil {
 		return err
@@ -698,7 +701,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 			return nil, e
 		}
 		for id, value := range editable {
-			out[indices[id]].CanEdit = value
+			out[indices[id]].CanEdit = value && (u.API == nil || u.API.Permissions["update"])
 		}
 	}
 	receiptArgs := []any{}
