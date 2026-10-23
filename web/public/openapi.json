@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.0-alpha.8",
+    "version": "0.1.0-alpha.9",
     "description": "Cookie-authenticated local web API. Financial values use integer strings. Cross-account transfers require edit permission on every side. Remote API tokens and MCP are not implemented yet."
   },
   "servers": [
@@ -2904,6 +2904,202 @@
           },
           "401": {
             "description": "Authentication required"
+          }
+        }
+      }
+    },
+    "/api/appearance": {
+      "get": {
+        "summary": "Shared CSS/font metadata for signed-in users",
+        "operationId": "get_api_appearance",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Global asset metadata; empty strings when unset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "css": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "font": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Login required"
+          }
+        }
+      }
+    },
+    "/api/appearance/{kind}": {
+      "get": {
+        "summary": "Read shared CSS or WOFF2 font; login required",
+        "operationId": "get_api_appearance_asset",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "css",
+                "font"
+              ]
+            }
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Raw asset; no-store",
+            "content": {
+              "text/css": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "font/woff2": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Login required"
+          },
+          "404": {
+            "description": "Asset not set"
+          }
+        }
+      }
+    },
+    "/api/admin/appearance/{kind}": {
+      "put": {
+        "summary": "Upload shared asset (administrator only; no app file size cap)",
+        "operationId": "put_api_admin_appearance_asset",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "css",
+                "font"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved; server validates CSS or WOFF2 header"
+          },
+          "400": {
+            "description": "Invalid file"
+          },
+          "401": {
+            "description": "Login required"
+          },
+          "403": {
+            "description": "Administrator and CSRF required"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove shared asset for all users (administrator only)",
+        "operationId": "delete_api_admin_appearance_asset",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "css",
+                "font"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved; server validates CSS or WOFF2 header"
+          },
+          "400": {
+            "description": "Invalid file"
+          },
+          "401": {
+            "description": "Login required"
+          },
+          "403": {
+            "description": "Administrator and CSRF required"
           }
         }
       }

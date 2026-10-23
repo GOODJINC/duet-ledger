@@ -678,19 +678,6 @@ export function EntryDialog(
                   onChange={chooseReceipt}
                 />
               </label>
-              <label className="receipt-button receipt-camera">
-                <Icon name="camera" />
-                <span>촬영</span>
-                <input
-                  aria-label="영수증 촬영"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="visually-hidden"
-                  disabled={task.busy}
-                  onChange={chooseReceipt}
-                />
-              </label>
             </div>
           </>
         )}

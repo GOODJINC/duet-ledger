@@ -444,6 +444,7 @@ export function ExchangeSettings({
   refresh: () => Promise<void>;
   notify: (s: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const [from, setFrom] = useState(
     user.default_currency === "USD" ? "KRW" : "USD",
   );
@@ -474,6 +475,7 @@ export function ExchangeSettings({
     }
   }
   useEffect(() => {
+    if (!editing) return;
     const existing = (user.exchange_rates || []).find(
       (r) => r.from === from && r.to === to,
     );
@@ -487,7 +489,7 @@ export function ExchangeSettings({
     return () => {
       quoteVersion.current++;
     };
-  }, [from, to]);
+  }, [from, to, editing]);
   const names = ["KRW", "USD", "JPY", "EUR", "GBP", "CNY", "TWD", "VND", "KWD"];
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -529,7 +531,10 @@ export function ExchangeSettings({
                 (c) =>
                   c !== to && !rates.some((r) => r.from === c && r.to === to),
               );
-              if (next) setFrom(next);
+              if (next) {
+                setFrom(next);
+                setEditing(true);
+              }
             }}
           >
             + 통화 추가
@@ -537,7 +542,7 @@ export function ExchangeSettings({
         </h3>
         {rates.length === 0 && (
           <p className="exchange-empty">
-            아직 보조 통화가 없어요. 아래에서 첫 통화를 추가하세요.
+            아직 보조 통화가 없어요. 통화 추가를 눌러 시작하세요.
           </p>
         )}
         {rates.map((r) => (
@@ -558,6 +563,7 @@ export function ExchangeSettings({
                     : "환율 수정"
                 }
                 onClick={() => {
+                  setEditing(true);
                   quoteVersion.current++;
                   setQuoteBusy(false);
                   setFrom(r.from === to ? r.to : r.from);
@@ -588,77 +594,92 @@ export function ExchangeSettings({
           </div>
         ))}
       </section>
-      <form
-        className="exchange-editor"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void run(async () => {
-            await post("/me/exchange-rates", { from, to, rate }, "PUT");
-            notify("환율을 저장했어요. 다른 통화도 추가할 수 있어요.");
-          });
-        }}
-      >
-        <h3>
-          {saved ? "환율 수정" : "보조 통화 추가"}
-          <Help>
-            내 모든 가계부 조회에 적용해요. 이미 저장한 결제 금액은 바꾸지
-            않아요. 외부 조회에는 통화 코드만 전달하며, 실제 카드 청구 환율과
-            다를 수 있어요.
-          </Help>
-        </h3>
-        <label htmlFor="exchange-from">보조 통화</label>
-        <select
-          id="exchange-from"
-          aria-label="환율 원래 통화"
-          className="field-select"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
+      {editing && (
+        <form
+          className="exchange-editor"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              await post("/me/exchange-rates", { from, to, rate }, "PUT");
+              setEditing(false);
+              notify("환율을 저장했어요. 다른 통화도 추가할 수 있어요.");
+            });
+          }}
         >
-          {names
-            .filter((c) => c !== to)
-            .map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-        </select>
-        <label htmlFor="exchange-rate">1 {from}의 환산 금액</label>
-        <div className="exchange-rate-input">
-          <input
-            id="exchange-rate"
-            aria-label="환율"
-            className="field-input"
-            inputMode="decimal"
-            value={rate}
-            onChange={(e) => {
-              quoteVersion.current++;
-              setQuoteBusy(false);
-              setQuoteStatus("직접 입력한 환율을 사용해요.");
-              setRate(e.target.value);
-            }}
-            placeholder="환율 입력"
-            required
-          />
-          <span aria-label="환율 대상 통화">{to}</span>
-        </div>
-        <p className="exchange-status" role="status">
-          {quoteStatus}
-        </p>
-        <div className="exchange-buttons">
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={quoteBusy || busy || from === to}
-            onClick={() => void fetchQuote()}
+          <h3>
+            {saved ? "환율 수정" : "보조 통화 추가"}
+            <Help>
+              내 모든 가계부 조회에 적용해요. 이미 저장한 결제 금액은 바꾸지
+              않아요. 외부 조회에는 통화 코드만 전달하며, 실제 카드 청구 환율과
+              다를 수 있어요.
+            </Help>
+          </h3>
+          <label htmlFor="exchange-from">보조 통화</label>
+          <select
+            id="exchange-from"
+            aria-label="환율 원래 통화"
+            className="field-select"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
           >
-            환율 다시 불러오기
-          </button>
-          <button
-            className="primary-button"
-            disabled={busy || quoteBusy || from === to}
-          >
-            환율 저장
-          </button>
-        </div>
-      </form>
+            {names
+              .filter((c) => c !== to)
+              .map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+          </select>
+          <label htmlFor="exchange-rate">1 {from}의 환산 금액</label>
+          <div className="exchange-rate-input">
+            <input
+              id="exchange-rate"
+              aria-label="환율"
+              className="field-input"
+              inputMode="decimal"
+              value={rate}
+              onChange={(e) => {
+                quoteVersion.current++;
+                setQuoteBusy(false);
+                setQuoteStatus("직접 입력한 환율을 사용해요.");
+                setRate(e.target.value);
+              }}
+              placeholder="환율 입력"
+              required
+            />
+            <span aria-label="환율 대상 통화">{to}</span>
+          </div>
+          <p className="exchange-status" role="status">
+            {quoteStatus}
+          </p>
+          <div className="exchange-buttons">
+            <button
+              type="button"
+              className="text-link"
+              disabled={busy}
+              onClick={() => {
+                quoteVersion.current++;
+                setQuoteBusy(false);
+                setEditing(false);
+              }}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={quoteBusy || busy || from === to}
+              onClick={() => void fetchQuote()}
+            >
+              환율 다시 불러오기
+            </button>
+            <button
+              className="primary-button"
+              disabled={busy || quoteBusy || from === to}
+            >
+              환율 저장
+            </button>
+          </div>
+        </form>
+      )}
       <ErrorText error={error} />
     </div>
   );

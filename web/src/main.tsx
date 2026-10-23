@@ -61,7 +61,11 @@ import {
   AdminDialog,
   AccountTrashDialog,
 } from "./preferences";
-import { AppearanceSettings, useAppearance } from "./appearance";
+import {
+  AppearanceSettings,
+  ServerAppearanceSettings,
+  useAppearance,
+} from "./appearance";
 import "./app.css";
 
 type Page =
@@ -81,6 +85,14 @@ const pagePaths: Record<Page, string> = {
   "account-settings": "/account",
   administration: "/admin",
 };
+function pageURL(page: Page): string {
+  return (
+    pagePaths[page] +
+    (new URLSearchParams(location.search).has("safe-theme")
+      ? "?safe-theme=1"
+      : "")
+  );
+}
 function pathPage(): Page {
   return (
     (Object.entries(pagePaths).find(
@@ -577,7 +589,7 @@ export function Application({
   routeRef.current = { modal, monthPicker, categoryPopup, page, invite };
   useEffect(() => {
     const initial = routeRef.current.page;
-    history.replaceState({ duet: true, overlay: 0 }, "", pagePaths[initial]);
+    history.replaceState({ duet: true, overlay: 0 }, "", pageURL(initial));
     const pop = (event: PopStateEvent) => {
       const state = routeRef.current;
       let next = pathPage();
@@ -586,7 +598,7 @@ export function Application({
         history.replaceState(
           { duet: true, overlay: 0 },
           "",
-          pagePaths.settings,
+          pageURL("settings"),
         );
       }
       setPage(next);
@@ -603,7 +615,7 @@ export function Application({
       }
       // Closed dialogs are not reconstructed from stale browser-forward entries.
       if (depth > 0 && !state.modal && !state.monthPicker && !state.invite) {
-        history.replaceState({ duet: true, overlay: 0 }, "", pagePaths[next]);
+        history.replaceState({ duet: true, overlay: 0 }, "", pageURL(next));
       }
     };
     window.addEventListener("popstate", pop);
@@ -613,7 +625,7 @@ export function Application({
     const depth = categoryPopup ? 2 : modal || monthPicker || invite ? 1 : 0;
     const current = Number(history.state?.overlay) || 0;
     if (depth > current)
-      history.pushState({ duet: true, overlay: depth }, "", pagePaths[page]);
+      history.pushState({ duet: true, overlay: depth }, "", pageURL(page));
     else if (depth < current) history.go(depth - current);
   }, [modal, monthPicker, categoryPopup, invite, page]);
   function closeLayer() {
@@ -792,7 +804,7 @@ export function Application({
     if (p === "administration" && !user.admin) return;
     setUserMenu(false);
     if (p !== page)
-      history.pushState({ duet: true, overlay: 0 }, "", pagePaths[p]);
+      history.pushState({ duet: true, overlay: 0 }, "", pageURL(p));
     setPage(p);
     setPageNumber(1);
     setTrash(false);
@@ -1761,7 +1773,7 @@ export function Application({
           <footer className="app-footer">
             <span>기록이 쌓이면, 일상이 보이니까.</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.8
+              Duet Ledger <span className="footer-dot">·</span> 0.1.0 alpha.9
             </span>
           </footer>
         </div>
@@ -2760,6 +2772,9 @@ export function SettingsView({
         </section>
       )}
       {section === "settings" && <AppearanceSettings userId={user.id} />}
+      {section === "administration" && user.admin && (
+        <ServerAppearanceSettings />
+      )}
     </div>
   );
 }

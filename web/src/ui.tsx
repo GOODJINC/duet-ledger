@@ -6,6 +6,7 @@ import {
   forwardRef,
   type InputHTMLAttributes,
   type ReactNode,
+  type PointerEvent,
 } from "react";
 import {
   Eye,
@@ -270,17 +271,79 @@ export const PasswordInput = forwardRef<
 
 export function Help({ children }: { children: ReactNode }) {
   const id = useId();
+  const tip = useRef<HTMLSpanElement>(null);
+  const anchor = useRef<HTMLButtonElement>(null);
+  function hide() {
+    const el = tip.current;
+    if (!el) return;
+    if (typeof el.hidePopover === "function") {
+      try {
+        el.hidePopover();
+      } catch {}
+    }
+    el.removeAttribute("data-open");
+  }
+  function show(e: PointerEvent) {
+    if (e.pointerType === "touch") return;
+    const el = tip.current,
+      button = anchor.current;
+    if (!el || !button) return;
+    const rect = button.getBoundingClientRect();
+    const dialog = button.closest("dialog")?.getBoundingClientRect();
+    const left = dialog?.width ? Math.max(12, dialog.left + 12) : 12;
+    const right = dialog?.width
+      ? Math.min(window.innerWidth - 12, dialog.right - 12)
+      : window.innerWidth - 12;
+    const top = dialog?.height ? Math.max(12, dialog.top + 12) : 12;
+    const bottom = dialog?.height
+      ? Math.min(window.innerHeight - 12, dialog.bottom - 12)
+      : window.innerHeight - 12;
+    const width = Math.max(80, Math.min(290, right - left));
+    el.style.width = width + "px";
+    el.style.maxHeight = Math.max(80, bottom - top) + "px";
+    if (typeof el.showPopover === "function") el.showPopover();
+    else el.setAttribute("data-open", "true");
+    const height = el.getBoundingClientRect().height;
+    el.style.left = Math.max(left, Math.min(rect.left, right - width)) + "px";
+    el.style.top =
+      Math.max(
+        top,
+        Math.min(
+          rect.bottom + 8 + height <= bottom
+            ? rect.bottom + 8
+            : rect.top - height - 8,
+          bottom - height,
+        ),
+      ) + "px";
+  }
+  useEffect(() => {
+    window.addEventListener("resize", hide);
+    window.addEventListener("scroll", hide, true);
+    return () => {
+      window.removeEventListener("resize", hide);
+      window.removeEventListener("scroll", hide, true);
+    };
+  }, []);
   return (
     <span className="help-wrap">
       <button
+        ref={anchor}
         type="button"
         className="help-button"
         aria-label="도움말"
         aria-describedby={id}
+        onPointerEnter={show}
+        onPointerLeave={hide}
       >
         <Icon name="info" size={16} />
       </button>
-      <span id={id} role="tooltip" className="help-tip">
+      <span
+        ref={tip}
+        popover="manual"
+        id={id}
+        role="tooltip"
+        className="help-tip help-floating"
+      >
         {children}
       </span>
     </span>

@@ -141,6 +141,7 @@ it("계정·일반·관리 설정을 분리하고 일반 사용자에게 관리 
   v.rerender(<SettingsView {...p} section="administration" />);
   expect(screen.getByText("서버 운영 백업")).toBeTruthy();
   expect(screen.queryByText("디자인 직접 설정")).toBeNull();
+  expect(screen.getByText("공통 CSS·글꼴")).toBeTruthy();
   expect(screen.queryByLabelText("표시할 이름")).toBeNull();
 });
 it("빠른 입력 시간은 필수이며 PC에서는 직접 입력한다", async () => {
@@ -552,6 +553,8 @@ it("환율 관리가 별도 창에서 열리고 뒤로가기로 닫힌다", asyn
       .querySelector("button.secondary-button")!,
   );
   expect(await screen.findByRole("dialog")).toBeTruthy();
+  expect(screen.queryByLabelText("환율")).toBeNull();
+  await actor.click(screen.getByRole("button", { name: "+ 통화 추가" }));
   await waitFor(() =>
     expect((screen.getByLabelText("환율") as HTMLInputElement).value).toBe(
       "1400",
@@ -579,6 +582,9 @@ it("환율 API 실패 후 직접 입력으로 저장한다", async () => {
       notify={vi.fn()}
     />,
   );
+  expect(screen.queryByLabelText("환율")).toBeNull();
+  expect(api).not.toHaveBeenCalled();
+  await actor.click(screen.getByRole("button", { name: "+ 통화 추가" }));
   expect(await screen.findByText("연결 실패")).toBeTruthy();
   await actor.type(screen.getByLabelText("환율"), "1350");
   await actor.click(screen.getByRole("button", { name: "환율 저장" }));
@@ -700,13 +706,13 @@ it("여러 보조 통화를 목록과 빠른 입력에서 함께 제공하고 �
     ).map((o) => o.value),
   ).toEqual(["KRW", "USD", "JPY"]);
 });
-it("사진 선택은 전체 이미지 선택기를 사용하고 촬영은 별도이며 형식을 검증한다", () => {
+it("사진 선택 하나만 제공하고 미지원 이미지 형식을 검증한다", () => {
   render(<EntryDialog {...props()} />);
   const picker = screen.getByLabelText("영수증 사진 선택") as HTMLInputElement;
-  const camera = screen.getByLabelText("영수증 촬영") as HTMLInputElement;
+  expect(screen.queryByLabelText("영수증 촬영")).toBeNull();
   expect(picker.accept).toBe("image/*");
   expect(picker.hasAttribute("capture")).toBe(false);
-  expect(camera.getAttribute("capture")).toBe("environment");
+
   fireEvent.change(picker, {
     target: {
       files: [new File(["x"], "unsupported.heic", { type: "image/heic" })],
@@ -718,4 +724,42 @@ it("사진 선택은 전체 이미지 선택기를 사용하고 촬영은 별도
   });
   expect(screen.getByText("receipt.jpg")).toBeTruthy();
   expect(screen.queryByText(/JPG 또는 PNG 사진을 선택/)).toBeNull();
+});
+it("안전 모드 주소는 관리 초기 화면과 설정 이동에서도 유지된다", async () => {
+  history.replaceState({}, "", "/admin?safe-theme=1");
+  vi.mocked(api).mockImplementation(async (path) => {
+    if (path === "/accounts") return [account] as any;
+    if (path === "/ledgers") return [ledger] as any;
+    if (path === "/appearance")
+      return {
+        css: { name: "", revision: "" },
+        font: { name: "", revision: "" },
+      } as any;
+    return {
+      items: [],
+      count: 0,
+      page: 1,
+      page_size: 50,
+      totals: [],
+      categories: [],
+      daily: [],
+    } as any;
+  });
+  render(
+    <Application
+      user={user}
+      setUser={vi.fn()}
+      invite=""
+      clearInvite={vi.fn()}
+      joined={false}
+    />,
+  );
+  expect(location.search).toBe("?safe-theme=1");
+  expect(screen.getByText("공통 CSS·글꼴")).toBeTruthy();
+  const actor = userEvent.setup();
+  await actor.click(screen.getByRole("button", { name: "사용자 메뉴" }));
+  await actor.click(screen.getAllByRole("button", { name: "설정" })[0]);
+  expect(location.pathname).toBe("/settings");
+  expect(location.search).toBe("?safe-theme=1");
+  expect(screen.queryByText("공통 CSS·글꼴")).toBeNull();
 });

@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.8"
+const Version = "0.1.0-alpha.9"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -163,7 +163,11 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		r.Body = http.MaxBytesReader(w, r.Body, 22<<20)
+		// Administrator appearance uploads have no application file-size cap.
+		// Authentication and CSRF checks still run before their body is consumed.
+		if !(r.Method == "PUT" && strings.HasPrefix(r.URL.Path, "/api/admin/appearance/")) {
+			r.Body = http.MaxBytesReader(w, r.Body, 22<<20)
+		}
 		if r.Method != "GET" && r.Method != "HEAD" {
 			if !a.sameOrigin(r) {
 				writeJSON(w, 403, map[string]string{"error": "origin", "message": "허용되지 않은 접속 주소예요."})
@@ -220,6 +224,10 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/setup", a.setup, false)
 	add("POST /api/login", a.login, false)
 	add("POST /api/join", a.join, false)
+	add("GET /api/appearance", a.serverAppearance, true)
+	add("GET /api/appearance/{kind}", a.appearanceAsset, true)
+	add("PUT /api/admin/appearance/{kind}", a.updateAppearanceAsset, true)
+	add("DELETE /api/admin/appearance/{kind}", a.updateAppearanceAsset, true)
 	add("GET /api/me", a.me, true)
 	add("PATCH /api/me", a.updateMe, true)
 	add("GET /api/me/exchange-quote", a.exchangeQuote, true)
