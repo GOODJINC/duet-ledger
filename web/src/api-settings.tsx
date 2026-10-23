@@ -72,14 +72,15 @@ export function AdminAPISettings({
   return (
     <section className="panel">
       <div className="setting-group">
-        <h2>외부 API</h2>
+        <h2>외부 API · MCP</h2>
         <label className="setting-row">
           <span>
             API 사용 허용 (모든 사용자)
             <Help>
-              기본은 꺼져 있어요. 허용하면 각 사용자가 자기 계좌와 권한을 선택해
-              앱 비밀번호를 발급합니다. 끄면 기존 키도 즉시 차단하고, 다시 켜면
-              만료·폐기되지 않은 키를 사용할 수 있어요.
+              API와 MCP에 함께 적용돼요. 기본은 꺼져 있어요. 허용하면 각
+              사용자가 자기 계좌와 권한을 선택해 앱 비밀번호를 발급합니다. 끄면
+              기존 키도 즉시 차단하고, 다시 켜면 만료·폐기되지 않은 키를 사용할
+              수 있어요.
             </Help>
           </span>
           <input
@@ -91,7 +92,7 @@ export function AdminAPISettings({
           />
         </label>
         <p className="panel-subtitle">
-          사용자는 계정 설정 → API 앱 비밀번호에서 연결을 관리해요.
+          사용자는 계정 설정 → API 앱 비밀번호에서 API·MCP 연결을 관리해요.
         </p>
         <ErrorText error={error} />
       </div>
@@ -204,6 +205,9 @@ export function AppPasswordsDialog(p: DialogProps) {
       <p className="api-help-links">
         <a href="/api-help.html" target="_blank" rel="noopener noreferrer">
           API 연결 안내
+        </a>
+        <a href="/mcp-help.html" target="_blank" rel="noopener noreferrer">
+          Codex MCP 연결 안내
         </a>
         <a href="/duet_api.py" download="duet_api.py">
           호출 도구 다운로드

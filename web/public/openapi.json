@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.0-alpha.10",
+    "version": "0.1.0-alpha.11",
     "description": "Duet Ledger web session API and scoped external /api/v1 app-password API. Amounts are integer strings. API access defaults off; an administrator must enable it. Every external request intersects the app-password account allowlist with current user access. MCP is not implemented."
   },
   "servers": [

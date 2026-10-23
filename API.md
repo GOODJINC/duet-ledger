@@ -126,4 +126,8 @@ Content-Type: application/json
 
 현재 API는 브라우저의 다른 사이트에서 자유롭게 호출하는 공개 CORS를 제공하지 않습니다. 로컬 CLI·서버 자동화에서 호출할 수 있습니다. 키 발급·폐기·관리 설정은 웹 로그인에서만 가능하고 API 키로 다시 키를 발급하거나 권한을 넓힐 수 없습니다.
 
-OpenAPI 명세는 서버의 `/openapi.json`에서 확인합니다. CLI용 연동 규칙은 [integrations/CLI.md](integrations/CLI.md)를 참고하세요. MCP 서버는 아직 제공하지 않습니다.
+OpenAPI 명세는 서버의 `/openapi.json`에서 확인합니다. CLI용 연동 규칙은 [integrations/CLI.md](integrations/CLI.md)를 참고하세요. Codex CLI용 MCP 서버는 같은 포트의 `/mcp`에 제공됩니다. [MCP 연결 안내](MCP.md)를 참고하세요.
+
+## MCP 직접 연결
+
+동일한 관리자 허용·앱 비밀번호·계좌/기능 권한으로 홈서버의 `/mcp`에 연결할 수 있습니다. [MCP 안내](MCP.md)를 확인하세요.

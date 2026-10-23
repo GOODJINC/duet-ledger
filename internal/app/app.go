@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.10"
+const Version = "0.1.0-alpha.11"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -241,6 +241,7 @@ func (a *App) Routes() http.Handler {
 	add("GET /api/admin/api-settings", a.apiSettings, true)
 	add("PATCH /api/admin/api-settings", a.apiSettings, true)
 	a.addExternalAPI(m)
+	a.addMCP(m)
 	add("GET /api/me", a.me, true)
 	add("PATCH /api/me", a.updateMe, true)
 	add("GET /api/me/exchange-quote", a.exchangeQuote, true)

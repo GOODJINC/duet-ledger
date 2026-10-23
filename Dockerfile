@@ -4,7 +4,7 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-fund --no-audit
 COPY web/ ./
 COPY scripts/duet_api.py scripts/sync-api-assets.mjs /src/scripts/
-COPY API.md /src/API.md
+COPY API.md MCP.md /src/
 RUN npm run build
 
 FROM golang:1.27.3-alpine AS server
