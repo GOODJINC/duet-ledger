@@ -1,20 +1,14 @@
 # Duet Ledger manual
 
-Manage personal and shared finances with one account. Sharing is optional: all core features work for a single user.
+| Guide                                 | Contents                                                       |
+| ------------------------------------- | -------------------------------------------------------------- |
+| [Installation](installation.md)       | Docker/Arcane, addresses, ports, HTTPS and PWA                 |
+| [Usage](usage.md)                     | Ledgers, accounts, transactions, sharing, statistics and rates |
+| [Operations](operations.md)           | Updates, backups, restoration and sign-in recovery             |
+| [API](api.md)                         | App passwords, Postman, transactions, statistics and receipts  |
+| [MCP](mcp.md)                         | AI client connections and tools                                |
+| [Troubleshooting](troubleshooting.md) | Connectivity, settings, permissions and support                |
 
-| Guide | Contents |
-| --- | --- |
-| [Installation](installation.md) | Docker, ports, remote access, HTTPS and PWA |
-| [Usage](usage.md) | Ledgers, accounts, transactions, sharing, statistics and settings |
-| [Operations](operations.md) | Updates, backups, restoration and administrator recovery |
-| [API](api.md) | App passwords, Postman, every external endpoint and errors |
-| [MCP](mcp.md) | Codex CLI setup, tools, inputs, permissions and troubleshooting |
-| [Troubleshooting](troubleshooting.md) | Connectivity, accounts, amounts, permissions and support |
+Start with **installation → create an account → add transactions → make a backup**. Sharing is optional.
 
-Start with **installation → create an account → add a test transaction → make a backup**.
-
-The app's user menu provides account settings, settings, administration for administrators, and help. These manuals describe currently available features.
-
-[Changelog (Korean)](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md) · [Issues and feature requests](https://github.com/GOODJINC/duet-ledger/issues) · [한국어](../ko/index.md)
-
-Maintainers: [First image publication and releases](publishing.md)
+[Changelog](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md) · [Support](https://github.com/GOODJINC/duet-ledger/issues) · [한국어](../ko/index.md)

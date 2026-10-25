@@ -2,21 +2,21 @@
 
 [Manual home](index.md)
 
-| Problem | Check first |
-| --- | --- |
-| Cannot connect from another computer | Default binding is127.0.0.1. Check `.env`, recreate the service, and check firewall/Tailscale |
-| `no configuration file provided` | Run from the Compose folder or specify `-f /actual/path/compose.yaml` |
-| First-time setup appears again | Before creating an account, verify the original data volume and `DUET_LEDGER_DATA_DIR`; you may have connected an empty dataset |
-| Port already in use | Change the host port and recreate |
-| Sign-in fails after HTTPS setup | Check the real origin, `PUBLIC_URL`, preserved Host header and secure-cookie setting |
-| PWA cannot be installed | Use trusted HTTPS; plain HTTP remains restricted over Tailscale |
-| Accepted sharing invitation but no records | The owner must approve it; verify which account accepted |
-| Access remains after sharing removal | Check other grants, including ledger membership and direct account sharing |
-| Display currency does not change account currency | Expected: existing accounts and amounts are preserved. Configure default account and additional currencies separately |
-| No gallery option | Photo/file picker varies by device/browser; convert HEIC to JPG/PNG |
-| Custom CSS makes the UI unusable | Open `/admin?safe-theme=1` and remove shared CSS/font files |
-| API requires Idempotency-Key | Add and enable it in Postman **Headers**, not Body or Params |
-| MCP environment variable missing | Enter/export the app password and restart Codex in the same terminal |
+| Problem                                           | Check first                                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Cannot connect from another computer              | Compose defaults to `127.0.0.1`; the Arcane preset uses `0.0.0.0`. Check address, port and firewall, then redeploy              |
+| `no configuration file provided`                  | Run from the Compose folder or specify `-f /actual/path/compose.yaml`                                                           |
+| First-time setup appears again                    | Before creating an account, verify the original data volume and `DUET_LEDGER_DATA_DIR`; you may have connected an empty dataset |
+| Port already in use                               | Change the host port and recreate                                                                                               |
+| Sign-in fails after HTTPS setup                   | Check the real origin, `PUBLIC_URL`, preserved Host header and secure-cookie setting                                            |
+| PWA cannot be installed                           | Use trusted HTTPS; plain HTTP may restrict installation                                                                         |
+| Accepted sharing invitation but no records        | The owner must approve it; verify which account accepted                                                                        |
+| Access remains after sharing removal              | Check other grants, including ledger membership and direct account sharing                                                      |
+| Display currency does not change account currency | Expected: existing accounts and amounts are preserved. Configure default account and additional currencies separately           |
+| No gallery option                                 | Photo/file picker varies by device/browser; convert HEIC to JPG/PNG                                                             |
+| Custom CSS makes the UI unusable                  | Open `/admin?safe-theme=1` and remove shared CSS/font files                                                                     |
+| API requires Idempotency-Key                      | Add and enable it in Postman **Headers**, not Body or Params                                                                    |
+| MCP environment variable missing                  | Enter/export the app password and restart Codex in the same terminal                                                            |
 
 ## Requesting support
 

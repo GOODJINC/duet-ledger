@@ -4,15 +4,15 @@
 
 ## Preparation
 
-MCP lets an AI client use ledger features as tools. Connect directly to **`/mcp`** on the existing app; no extra container or port is needed. The current integration supports Codex CLI using Streamable HTTP and a manually configured Bearer app password. It does not provide OAuth login or promise compatibility with every cloud MCP service.
+Connect an AI client to the server's `/mcp` endpoint using **Streamable HTTP** and a **Bearer app password**. No extra container is required.
 
-The administrator first enables API access. Users then create a key in **Account settings → API app passwords**, selecting accounts, capabilities and expiration. Existing API keys also work. See [Authentication](api.md#connection-and-authentication).
+Follow [API authentication](api.md#connection-and-authentication) to enable API access and create a key. Select only necessary accounts and permissions. Use HTTPS for internet access.
 
-A remote CLI needs network or Tailscale access to the server. Use HTTPS on the public internet. **Running a CLI locally does not keep data local if its model is cloud-hosted: query results and photos may be sent to that AI service.** Connect only necessary accounts.
+**Cloud AI services may receive queried records and receipt images.**
 
 ## Connect Codex CLI
 
-Example for Bash on Linux/Fedora. Replace `192.168.1.10` with your server's IP or domain. Use `127.0.0.1` only when the CLI runs on the server itself.
+Example for Bash. Replace `192.168.1.10` with your server's IP or domain. Use `127.0.0.1` only when the CLI runs on the server itself.
 
 ```bash
 codex mcp add duet-ledger \
@@ -43,33 +43,33 @@ Use `codex mcp list` or `/mcp` inside Codex to check status. `codex mcp remove d
 
 ## First use
 
-Start with read-only permissions:
+Example requests:
 
 - “Use Duet Ledger MCP to show my current time zone and accessible accounts.”
 - “Show yesterday's transactions and totals in my configured time zone.”
 - “Summarize this month's spending by category.”
 
-With a create-enabled test key, ask to record a small test expense and check it in the app. **Creates and updates save immediately.** Any additional tool approval is controlled by the AI client's own settings.
+With create permission, ask to record lunch in a named account with the amount and time. **Creates and updates save immediately.** Any additional tool approval is controlled by the AI client's own settings.
 
 ## Tools and arguments
 
 Only permitted capabilities appear in the tool list. Every business call rechecks selected accounts and current sharing rights. A viewer cannot write even with a write-enabled key.
 
-| Tool | Permission | Main arguments |
-| --- | --- | --- |
-| `get_context` | Valid key | `{}` |
-| `list_accounts` | read | `{}` |
-| `list_categories` | read | `account`, `kind` (`expense`/`income`) |
-| `list_transactions` | read | `from`, `to`, optional filters |
-| `get_statistics` | read | `from`, `to`, optional filters |
-| `get_transaction` | read | Transaction `id` |
-| `get_receipt` | read | Receipt `id` |
-| `create_transaction` | create | `request_id`, `transaction` |
-| `update_transaction` | update | `id`, `version`, complete `transaction` |
-| `delete_transaction` | delete | `id`, `version` |
-| `restore_transaction` | delete | `id`, `version` |
-| `attach_receipt` | receipts | Transaction `id`, `image_base64` |
-| `delete_receipt` | delete + receipts | Receipt `id` |
+| Tool                  | Permission        | Main arguments                          |
+| --------------------- | ----------------- | --------------------------------------- |
+| `get_context`         | Valid key         | `{}`                                    |
+| `list_accounts`       | read              | `{}`                                    |
+| `list_categories`     | read              | `account`, `kind` (`expense`/`income`)  |
+| `list_transactions`   | read              | `from`, `to`, optional filters          |
+| `get_statistics`      | read              | `from`, `to`, optional filters          |
+| `get_transaction`     | read              | Transaction `id`                        |
+| `get_receipt`         | read              | Receipt `id`                            |
+| `create_transaction`  | create            | `request_id`, `transaction`             |
+| `update_transaction`  | update            | `id`, `version`, complete `transaction` |
+| `delete_transaction`  | delete            | `id`, `version`                         |
+| `restore_transaction` | delete            | `id`, `version`                         |
+| `attach_receipt`      | receipts          | Transaction `id`, `image_base64`        |
+| `delete_receipt`      | delete + receipts | Receipt `id`                            |
 
 `get_context` returns the user, time zone, current time (`current_datetime`), permissions and selected account IDs. Calculate “yesterday” and “this month” in that time zone. Date ranges are inclusive `YYYY-MM-DD` values.
 
@@ -83,14 +83,14 @@ These are arguments to `create_transaction`, not a direct HTTP API body. Put inp
 
 ```json
 {
-  "request_id": "new-unique-request-identifier",
+  "request_id": "expense-20260115-001",
   "transaction": {
     "kind": "expense",
     "account_id": "LOOKED_UP_ACCOUNT_ID",
-    "date": "2026-10-23",
+    "date": "2026-01-15",
     "time": "12:30",
-    "amount": "100",
-    "title": "MCP test",
+    "amount": "12000",
+    "title": "Lunch",
     "category": "food"
   }
 }
@@ -110,18 +110,18 @@ The connected AI, rather than a built-in OCR model, extracts receipt contents an
 
 ## Errors and operation
 
-| Symptom | Check |
-| --- | --- |
-| Connection fails | Server, port, Tailscale, firewall and final `/mcp` path |
-| Environment variable missing | Enter and export the key, then restart Codex in that terminal |
-| 401 | Wrong, expired or revoked key; security change or restore |
-| 403 | Administrator disabled API, missing permission or current sharing role |
-| Account missing | Account selected for key and still shared |
-| 409 / tool conflict | Fetch latest transaction and review changes |
-| 429 | Wait; creation retries must reuse the same `request_id` |
+| Symptom                      | Check                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| Connection fails             | Server, port, network, firewall and final `/mcp` path                  |
+| Environment variable missing | Enter and export the key, then restart Codex in that terminal          |
+| 401                          | Wrong, expired or revoked key; security change or restore              |
+| 403                          | Administrator disabled API, missing permission or current sharing role |
+| Account missing              | Account selected for key and still shared                              |
+| 409 / tool conflict          | Fetch latest transaction and review changes                            |
+| 429                          | Wait; creation retries must reuse the same `request_id`                |
 
 MCP is stateless and authenticates each HTTP request. Use POST; GET and DELETE return405. Request bodies are limited to8MiB, with120 HTTP requests/minute/key. Business calls also use the existing120 API requests/minute/key limit, shared with direct API calls using that key.
 
-Business calls appear in existing API history and financial audit records. Secrets, search terms, request bodies and photo bytes are not logged there. Initial connection/tool listing alone creates no financial API history. App restarts preserve keys; revocation, security changes and restoration invalidate them. Restart Codex if it closed the connection while API access was disabled.
+Revocation, security changes and restoration invalidate keys. App restarts preserve them. Restart Codex if it closed the connection while API access was disabled.
 
 [Official Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)

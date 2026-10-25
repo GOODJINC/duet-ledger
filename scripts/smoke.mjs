@@ -128,7 +128,6 @@ try {
       "api",
       "mcp",
       "troubleshooting",
-      "publishing",
     ]) {
       const result = await fetch(app.url + `/manual/${language}/${page}.html`);
       assert.equal(result.status, 200);
@@ -145,6 +144,8 @@ try {
     "/mcp-help.html",
     "/api-guide.md",
     "/mcp-guide.md",
+    "/manual/ko/publishing.html",
+    "/manual/en/publishing.html",
   ])
     assert.equal((await fetch(app.url + removed)).status, 404);
 

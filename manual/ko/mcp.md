@@ -4,15 +4,15 @@
 
 ## 준비
 
-MCP는 AI 클라이언트가 가계부 기능을 도구로 사용하는 연결 방식입니다. 기존 앱의 **`/mcp`**에 직접 접속하며 별도 컨테이너·포트를 추가하지 않습니다. 현재는 Codex CLI의 Streamable HTTP·수동 Bearer 앱 비밀번호 연결을 지원합니다. OAuth 로그인·모든 클라우드 MCP 서비스와의 호환을 제공하는 것은 아닙니다.
+AI 클라이언트에서 서버의 `/mcp`에 연결합니다. 전송 방식은 **Streamable HTTP**, 인증은 **Bearer 앱 비밀번호**입니다. 추가 컨테이너는 필요하지 않습니다.
 
-먼저 관리자가 API 사용을 허용하고, 사용자가 **계정 설정 → API 앱 비밀번호**에서 계좌·기능·유효기간을 선택해 키를 발급합니다. 기존 API 키도 사용할 수 있습니다. [발급·폐기 조건](api.md#연결과-인증)
+[API 안내](api.md#연결과-인증)에 따라 관리자가 API 사용을 허용하고 앱 비밀번호를 발급합니다. 연결할 계좌와 필요한 권한만 선택하세요. 인터넷 접속에는 HTTPS를 사용합니다.
 
-다른 PC의 CLI에서 홈서버에 접속하려면 같은 네트워크 또는 Tailscale 연결이 필요합니다. 공개 인터넷에서는 HTTPS를 사용하세요. **CLI를 로컬에서 실행해도 클라우드 모델을 사용하면 조회 자료·사진이 그 AI 서비스에 전달될 수 있습니다.** 필요한 계좌만 선택하세요.
+**클라우드 AI를 사용하면 조회 자료와 영수증이 해당 서비스로 전달될 수 있습니다.**
 
 ## Codex CLI 연결
 
-Fedora 등 Linux의 Bash 터미널 예시입니다. `192.168.1.10`을 실제 홈서버 IP·도메인으로 바꿉니다. 서버 자체에서 실행할 때만 `127.0.0.1`을 사용하세요.
+Bash 터미널 예시입니다. `192.168.1.10`을 실제 홈서버 IP·도메인으로 바꿉니다. 서버 자체에서 실행할 때만 `127.0.0.1`을 사용하세요.
 
 ```bash
 codex mcp add duet-ledger \
@@ -43,33 +43,33 @@ bearer_token_env_var = "DUET_LEDGER_APP_PASSWORD"
 
 ## 첫 사용
 
-처음에는 조회 권한만으로 시험하세요.
+연결 후 다음과 같이 요청할 수 있습니다.
 
 - “듀엣 가계부 MCP에서 현재 시간대와 접근 가능한 계좌를 알려줘.”
 - “사용자 시간대 기준 어제 거래와 합계를 알려줘.”
 - “이번 달 식비를 분류별로 확인해줘.”
 
-추가 권한을 부여한 시험용 키라면 “○○ 계좌에 오늘 12시30분 테스트 지출100원을 기록해줘”라고 요청하고 앱에서 확인합니다. **추가·수정은 실제 기록에 즉시 저장됩니다.** Codex 자체의 도구 실행 확인은 해당 클라이언트 설정을 따릅니다.
+추가 권한이 있다면 “○○ 계좌에 오늘 12시30분 점심값12,000원을 기록해줘”라고 요청할 수 있습니다. **추가·수정은 실제 기록에 즉시 저장됩니다.** Codex 자체의 도구 실행 확인은 해당 클라이언트 설정을 따릅니다.
 
 ## 도구와 입력값
 
 허용된 기능만 도구 목록에 표시합니다. 실제 호출 때 키의 선택 계좌와 현재 공유 권한을 다시 검사합니다. 조회자로 공유받은 계좌에는 쓰기 키도 쓸 수 없습니다.
 
-| 도구 | 권한 | 주요 인수 |
-| --- | --- | --- |
-| `get_context` | 유효한 키 | `{}` |
-| `list_accounts` | read | `{}` |
-| `list_categories` | read | `account`, `kind` (`expense`/`income`) |
-| `list_transactions` | read | `from`, `to`, 선택 필터 |
-| `get_statistics` | read | `from`, `to`, 선택 필터 |
-| `get_transaction` | read | 거래 `id` |
-| `get_receipt` | read | 영수증 `id` |
-| `create_transaction` | create | `request_id`, `transaction` |
-| `update_transaction` | update | `id`, `version`, 전체 `transaction` |
-| `delete_transaction` | delete | `id`, `version` |
-| `restore_transaction` | delete | `id`, `version` |
-| `attach_receipt` | receipts | 거래 `id`, `image_base64` |
-| `delete_receipt` | delete + receipts | 영수증 `id` |
+| 도구                  | 권한              | 주요 인수                              |
+| --------------------- | ----------------- | -------------------------------------- |
+| `get_context`         | 유효한 키         | `{}`                                   |
+| `list_accounts`       | read              | `{}`                                   |
+| `list_categories`     | read              | `account`, `kind` (`expense`/`income`) |
+| `list_transactions`   | read              | `from`, `to`, 선택 필터                |
+| `get_statistics`      | read              | `from`, `to`, 선택 필터                |
+| `get_transaction`     | read              | 거래 `id`                              |
+| `get_receipt`         | read              | 영수증 `id`                            |
+| `create_transaction`  | create            | `request_id`, `transaction`            |
+| `update_transaction`  | update            | `id`, `version`, 전체 `transaction`    |
+| `delete_transaction`  | delete            | `id`, `version`                        |
+| `restore_transaction` | delete            | `id`, `version`                        |
+| `attach_receipt`      | receipts          | 거래 `id`, `image_base64`              |
+| `delete_receipt`      | delete + receipts | 영수증 `id`                            |
 
 `get_context`는 사용자·시간대·현재 시각(`current_datetime`)·권한·선택 계좌를 반환합니다. ‘어제’·‘이번 달’은 이 시간대 기준으로 계산해야 합니다. 목록과 통계의 날짜는 모두 포함 범위이며 `YYYY-MM-DD`입니다.
 
@@ -83,14 +83,14 @@ JSON 응답은 `structuredContent`와 텍스트로 제공합니다. 계좌 목�
 
 ```json
 {
-  "request_id": "새로운-고유-요청식별자",
+  "request_id": "expense-20260115-001",
   "transaction": {
     "kind": "expense",
     "account_id": "조회한계좌ID",
-    "date": "2026-10-23",
+    "date": "2026-01-15",
     "time": "12:30",
-    "amount": "100",
-    "title": "MCP 테스트",
+    "amount": "12000",
+    "title": "점심 식사",
     "category": "food"
   }
 }
@@ -110,18 +110,18 @@ JSON 응답은 `structuredContent`와 텍스트로 제공합니다. 계좌 목�
 
 ## 오류와 운영
 
-| 증상 | 확인 |
-| --- | --- |
-| 연결 실패 | 서버·포트·Tailscale·방화벽·주소 끝 `/mcp` |
-| 환경변수가 없다는 안내 | 키 입력·export 후 같은 터미널에서 Codex 재실행 |
-| 401 | 오입력·만료·폐기·보안 설정 변경·복원 |
-| 403 | 관리자 API 차단·권한 부족·현재 공유 역할 |
-| 계좌 없음 | 키에 선택했는지, 지금도 공유 중인지 |
-| 409 또는 도구 충돌 | 최신 거래 조회 후 변경 내용 검토 |
-| 429 | 잠시 대기. 같은 생성 재시도는 동일 `request_id` |
+| 증상                   | 확인                                            |
+| ---------------------- | ----------------------------------------------- |
+| 연결 실패              | 서버·포트·네트워크·방화벽·주소 끝 `/mcp`        |
+| 환경변수가 없다는 안내 | 키 입력·export 후 같은 터미널에서 Codex 재실행  |
+| 401                    | 오입력·만료·폐기·보안 설정 변경·복원            |
+| 403                    | 관리자 API 차단·권한 부족·현재 공유 역할        |
+| 계좌 없음              | 키에 선택했는지, 지금도 공유 중인지             |
+| 409 또는 도구 충돌     | 최신 거래 조회 후 변경 내용 검토                |
+| 429                    | 잠시 대기. 같은 생성 재시도는 동일 `request_id` |
 
 MCP는 HTTP 요청마다 인증하는 상태 없는 방식입니다. POST를 사용하며 GET·DELETE는405입니다. HTTP 본문은8MiB, 키당 분당120회입니다. 업무 호출에는 기존 API의 키당120회/분 제한도 함께 적용하므로 같은 키의 API와 MCP 업무 한도를 공유합니다.
 
-업무 호출은 기존 API 사용 이력과 감사 기록에 남습니다. 키·검색어·입력 본문·이미지 원문은 로그에 남기지 않습니다. 초기 연결·도구 목록만으로는 금융 API 이력이 생기지 않습니다. 재시작해도 키는 유지하지만 키 폐기·보안 변경·백업 복원 시 차단됩니다. 관리자 API 재허용 후 클라이언트가 연결을 종료한 상태라면 Codex를 다시 실행하세요.
+키 폐기·보안 변경·백업 복원 시 접근이 차단됩니다. 서버 재시작은 키를 폐기하지 않습니다. 관리자 API 재허용 후 클라이언트가 연결을 종료한 상태라면 Codex를 다시 실행하세요.
 
 [공식 Codex MCP 설정](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)

@@ -22,7 +22,6 @@ const pages = [
   "api",
   "mcp",
   "troubleshooting",
-  "publishing",
 ];
 const escapeHTML = (value) =>
   value.replace(

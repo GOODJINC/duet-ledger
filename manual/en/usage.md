@@ -4,7 +4,7 @@
 
 ## Ledgers and accounts
 
-One user account can use multiple ledgers. Personal ledgers start private; shared ledgers are accessible to invited and approved members. You can also share selected accounts from a personal ledger. Sharing does not duplicate transactions.
+One user account can use multiple ledgers. Personal ledgers start private; shared ledgers are accessible to invited and approved members. You can also share selected accounts from a personal ledger.
 
 1. Use the ledger picker at the upper left, or at the top on mobile.
 2. Open **Accounts → Create account** to add a bank, cash, card or loan account.
@@ -19,7 +19,7 @@ Open **Quick entry**, select Expense, Income or Transfer, and enter the amount, 
 
 - Income and expenses have separate categories. Ledger owners manage names, order and deletion in **Settings → Manage categories**.
 - Transfers currently require accounts in the same currency. They are excluded from income and expense totals. Switch to All ledgers for transfers across ledgers.
-- Receipts support JPG/PNG up to 5MB and 16 megapixels. Convert HEIC first. Photos are normalized and original metadata may not be preserved.
+- Receipts support JPG/PNG up to 5MB and 16 megapixels. Convert HEIC first.
 - View and download photos in transaction details. Remove attachments in the edit dialog and save the change. **Removing an attachment has no separate restore action.** Restoring a trashed transaction is different.
 - Restore deleted transactions in **Settings → Transaction trash**. Archiving an account keeps records and prevents new entries. Deleting an account moves it to the trash and stops shared access.
 
@@ -42,11 +42,11 @@ Recorded balances use opening balances and saved transactions. They do not synch
 3. The recipient accepts using their own account.
 4. The owner verifies the accepting username and approves access.
 
-| Role | Access |
-| --- | --- |
-| Owner | Manage accounts, members, sharing, ledger settings and financial records |
-| Editor | Read, create, update and delete transactions in allowed accounts |
-| Viewer | Read allowed records |
+| Role   | Access                                                                   |
+| ------ | ------------------------------------------------------------------------ |
+| Owner  | Manage accounts, members, sharing, ledger settings and financial records |
+| Editor | Read, create, update and delete transactions in allowed accounts         |
+| Viewer | Read allowed records                                                     |
 
 Editing or deleting a complete transfer requires edit access to both accounts. Other private accounts and hidden transfer counterparts are not exposed. Shared access includes previous transactions, balances, notes and receipts. Downloaded copies cannot be recalled after sharing ends.
 
@@ -64,6 +64,6 @@ For a USD purchase on a KRW account, the app stores the original amount, applied
 
 The user menu opens Account settings and Settings. Account settings includes your name, password, two-factor authentication and app passwords. Changing password/security settings or signing out all devices also revokes API keys. Store recovery codes separately.
 
-Choose Korean or English. User names, custom categories and notes are not translated. Personal text size (90–150%), colors and brightness apply in the current browser. Only administrators upload shared CSS/WOFF2 files, which apply to all signed-in users.
+Choose Korean or English. Personal text size (90–150%), colors and brightness apply in the current browser. Only administrators upload shared CSS/WOFF2 files, which apply to all signed-in users.
 
 CSV export follows the current filters. JSON export is for moving records across all dates, without photos, login details or sharing permissions. Preview imports before applying. **A complete server restore requires an operational backup and its original `master.key`.** See [Operations](operations.md).

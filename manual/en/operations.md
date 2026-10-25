@@ -4,7 +4,7 @@
 
 ## Routine operation
 
-Run commands in the project folder, or use `docker compose -f /install/path/compose.yaml`.
+Run commands in the folder containing your Compose file, or use `docker compose -f /install/path/compose.yaml`.
 
 ```bash
 docker compose ps
@@ -25,20 +25,13 @@ docker compose ps
 docker compose logs --tail 100 duet-ledger
 ```
 
-In Arcane, change the stack's image version, download the new image and redeploy. Pulling a fixed tag does not switch versions. No Git pull or source build is required.
+In Arcane, change the stack's image version, download the new image and redeploy. Pulling a fixed tag does not switch versions. Publishing an image does not automatically replace a running container.
 
 Keep the volume and environment settings. **An old image alone is not a safe rollback after schema migration.** Use a compatible app and a pre-update data copy. Never delete the production volume during updates.
 
-## Move an existing installation to Arcane
+## Moving Docker installations
 
-On the same Docker server, reuse `duet-ledger-data`. Moving to another server requires backup and restoration below.
-
-1. Save a backup and key, then pull and verify the intended GHCR image.
-2. In the original source folder run `docker compose stop duet-ledger`, then `docker compose rm -f duet-ledger` to remove **only the old app container**. Do not add `-v`.
-3. Preserve `name: duet-ledger-data` and transfer the original bind address, port, PUBLIC_URL and secure-cookie settings to Arcane. Preserve a Tailscale-only binding by setting `DUET_LEDGER_BIND` to that IP.
-4. Deploy and verify existing accounts, records and photos. **Two app instances must never open the same dataset.**
-
-A local `.env` with `DUET_LEDGER_IMAGE=duet-ledger:...` pins a local image. After publishing, replace it with `ghcr.io/goodjinc/duet-ledger:PUBLISHED_VERSION` to use GHCR.
+On the same Docker server, stop the old app and attach the existing `duet-ledger-data` volume and environment settings to the new stack. For a different server, use backup and restoration below. **Never open the same dataset with two app instances.**
 
 ## Backup and restore
 
@@ -59,7 +52,7 @@ Place the downloaded ZIP in this private folder too. CSV/JSON exports are data-t
 
 ### Test a restore into a separate Docker volume
 
-**Leave the production volume untouched.** Replace `BACKUP.zip` with the actual filename and `IMAGE` with your current image, for example `duet-ledger:0.1.0-alpha.12`. Check it with `docker inspect --format '{{.Config.Image}}' duet-ledger`.
+**Leave the production volume untouched.** Replace `BACKUP.zip` with the actual filename and `IMAGE` with an app image compatible with the backup. Check it with `docker inspect --format '{{.Config.Image}}' duet-ledger`.
 
 ```bash
 docker volume create duet-ledger-restore-test
@@ -70,7 +63,7 @@ docker run --rm --user 0 \
   '/duet-ledger restore --archive /backup/BACKUP.zip --key-file /backup/master.key --data-dir /restore/restored && chown -R 10001:10001 /restore/restored'
 ```
 
-The `restored` directory is created afresh; existing data is never overwritten. The original key must match the backup. `:Z` supports SELinux environments such as Fedora; use a dedicated folder containing only restore copies.
+The `restored` directory is created afresh; existing data is never overwritten. The original key must match the backup. `:Z` supports SELinux environments; use a dedicated folder containing only restore copies.
 
 Test on a separate port bound to the server itself:
 
@@ -84,13 +77,6 @@ docker run -d --name duet-ledger-restore-check \
 Open `http://localhost:18089`, sign in again and verify transaction counts, balances, photos and sharing. Restoration invalidates old sessions, pending invitations and app passwords. Existing accounts and sharing relationships remain, so review them before external exposure.
 
 For a production switch, stop the test container, set the original Compose data-volume `name` to `duet-ledger-restore-test`, and set `DUET_LEDGER_DATA_DIR` to `/data/restored`. Recreate the service. **Never let two servers open the same dataset.** Preserve the previous volume until verification is complete.
-
-A directly installed binary uses the same restore command:
-
-```bash
-./duet-ledger restore --archive /backups/BACKUP.zip \
-  --key-file /backups/master.key --data-dir /new/data-directory
-```
 
 ### Recover a sign-in password
 
