@@ -3,7 +3,7 @@ name: duet-ledger
 services:
   duet-ledger:
     container_name: duet-ledger
-    image: ${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.0-alpha.12}
+    image: ${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.0}
     restart: unless-stopped
     ports:
       - "${DUET_LEDGER_BIND:-0.0.0.0}:${DUET_LEDGER_PORT:-18088}:8080"

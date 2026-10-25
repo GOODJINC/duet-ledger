@@ -32,7 +32,7 @@ Also available in the app's user menu → **Help and support**.
 
 ## Data storage
 
-Records are stored in the `duet-ledger-data` volume. **`docker compose down -v` can delete your data.** Keep operational backup ZIPs and the original `master.key` separately. This is prerelease software; back up important records regularly.
+Records are stored in the `duet-ledger-data` volume. **`docker compose down -v` can delete your data.** Keep operational backup ZIPs and the original `master.key` separately. Back up important records regularly.
 
 [Issues and feature requests](https://github.com/GOODJINC/duet-ledger/issues) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 

@@ -32,7 +32,7 @@ docker compose up -d
 
 ## 자료 보관
 
-자료는 `duet-ledger-data` 볼륨에 저장됩니다. **`docker compose down -v`는 자료를 삭제할 수 있습니다.** 운영 백업 ZIP과 원래 `master.key`를 별도로 보관하세요. 현재는 사전 릴리즈이므로 중요한 자료는 정기적으로 백업하세요.
+자료는 `duet-ledger-data` 볼륨에 저장됩니다. **`docker compose down -v`는 자료를 삭제할 수 있습니다.** 운영 백업 ZIP과 원래 `master.key`를 별도로 보관하세요. 중요한 자료는 정기적으로 백업하세요.
 
 [오류·기능 제안](https://github.com/GOODJINC/duet-ledger/issues) · [보안 제보](SECURITY.md) · [기여](CONTRIBUTING.md)
 

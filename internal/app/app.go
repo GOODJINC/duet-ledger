@@ -20,7 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0-alpha.12"
+const Version = "0.1.0"
 
 type Config struct {
 	DataDir, PublicURL string
