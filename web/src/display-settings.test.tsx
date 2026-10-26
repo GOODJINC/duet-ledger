@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
-import { render, screen, cleanup, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  cleanup,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Application, Auth } from "./main";
 import { DisplaySettings } from "./display-settings";
@@ -186,4 +192,31 @@ it("releases the scroll lock when a modal unmounts", () => {
   expect(document.body.style.position).toBe("fixed");
   view.unmount();
   expect(document.body.style.position).toBe("");
+});
+
+it("uses a page header for long dialogs while retaining compact month selection", async () => {
+  const close = vi.fn();
+  const view = render(
+    <Modal title="Long form" onClose={close}>
+      Form
+    </Modal>,
+  );
+  expect(screen.getByRole("dialog").classList.contains("page-dialog")).toBe(
+    true,
+  );
+  fireEvent(
+    screen.getByRole("dialog"),
+    new Event("cancel", { cancelable: true }),
+  );
+  expect(close).toHaveBeenCalledOnce();
+  view.unmount();
+  render(
+    <Modal title="Month" compact onClose={close}>
+      Choices
+    </Modal>,
+  );
+  expect(screen.getByRole("dialog").classList.contains("compact-dialog")).toBe(
+    true,
+  );
+  expect(screen.queryByRole("button", { name: "뒤로가기" })).toBeNull();
 });

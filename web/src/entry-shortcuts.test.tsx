@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EntryDialog, type DialogProps } from "./dialogs";
+import { canLeaveEntry } from "./entry-exit";
 import { AccessReview } from "./access-review";
 import {
   api,
@@ -163,9 +164,7 @@ it("offers recent input without mutating the original and filters the request to
   const actor = userEvent.setup();
   render(<EntryDialog {...props()} />);
   await openShortcuts();
-  await actor.click(
-    screen.getByRole("button", { name: "최근 입력" }),
-  );
+  await actor.click(screen.getByRole("button", { name: "최근 입력" }));
   await actor.click(screen.getByRole("button", { name: /최근 점심.*은행/ }));
   expect((screen.getByLabelText("내용") as HTMLInputElement).value).toBe(
     "최근 점심",
@@ -201,7 +200,10 @@ it("displays the effective role and both independent sharing paths", () => {
 
 it("keeps an unsaved draft when replacement is cancelled", async () => {
   const actor = userEvent.setup();
-  vi.stubGlobal("confirm", vi.fn(() => false));
+  vi.stubGlobal(
+    "confirm",
+    vi.fn(() => false),
+  );
   render(<EntryDialog {...props()} />);
   await actor.type(screen.getByLabelText("내용"), "아직 작성 중");
   await openShortcuts();
@@ -212,4 +214,63 @@ it("keeps an unsaved draft when replacement is cancelled", async () => {
     "아직 작성 중",
   );
   expect(post).not.toHaveBeenCalled();
+});
+
+it("keeps a changed draft when closing is cancelled, and asks before browser Back", async () => {
+  const actor = userEvent.setup();
+  const p = props();
+  const ask = vi.fn(() => false);
+  vi.stubGlobal("confirm", ask);
+  render(<EntryDialog {...p} />);
+  await actor.type(screen.getByLabelText("내용"), "작성 중");
+  await actor.click(screen.getByRole("button", { name: "뒤로가기" }));
+  expect(p.close).not.toHaveBeenCalled();
+  expect((screen.getByLabelText("내용") as HTMLInputElement).value).toBe(
+    "작성 중",
+  );
+  expect(canLeaveEntry()).toBe(false);
+  ask.mockReturnValue(true);
+  await actor.click(screen.getByRole("button", { name: "닫기" }));
+  expect(p.close).toHaveBeenCalledOnce();
+  expect(canLeaveEntry()).toBe(true);
+});
+it("closes an untouched entry without confirmation and protects page reload only after changes", async () => {
+  const actor = userEvent.setup();
+  const p = props();
+  const ask = vi.fn(() => false);
+  vi.stubGlobal("confirm", ask);
+  render(<EntryDialog {...p} />);
+  await actor.click(screen.getByRole("button", { name: "닫기" }));
+  expect(p.close).toHaveBeenCalledOnce();
+  expect(ask).not.toHaveBeenCalled();
+  const clean = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(clean);
+  expect(clean.defaultPrevented).toBe(false);
+  await actor.type(screen.getByLabelText("금액"), "5000");
+  const dirty = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(dirty);
+  expect(dirty.defaultPrevented).toBe(true);
+});
+it("returns after saving without a discard prompt and blocks exit while saving", async () => {
+  const actor = userEvent.setup();
+  const p = props();
+  const ask = vi.fn(() => false);
+  vi.stubGlobal("confirm", ask);
+  let finish!: (value: { id: string }) => void;
+  vi.mocked(post).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  render(<EntryDialog {...p} />);
+  await actor.type(screen.getByLabelText("내용"), "점심");
+  await actor.type(screen.getByLabelText("금액"), "5000");
+  await actor.click(screen.getByRole("button", { name: "기록 저장하기" }));
+  await waitFor(() => expect(post).toHaveBeenCalled());
+  expect(canLeaveEntry()).toBe(false);
+  finish({ id: "new" });
+  await waitFor(() => expect(p.close).toHaveBeenCalledOnce());
+  expect(canLeaveEntry()).toBe(true);
+  expect(ask).not.toHaveBeenCalled();
 });

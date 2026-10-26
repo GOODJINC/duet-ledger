@@ -13,6 +13,7 @@ import {
   manualURL,
 } from "./i18n";
 import { exchangeFactor, convertMinor } from "./exchange";
+import { canLeaveEntry } from "./entry-exit";
 import React, {
   useCallback,
   useEffect,
@@ -641,8 +642,15 @@ export function Application({
   useEffect(() => {
     const initial = routeRef.current.page;
     history.replaceState({ duet: true, overlay: 0 }, "", pageURL(initial));
+    const restoration = history.scrollRestoration;
+    history.scrollRestoration = "manual";
     const pop = (event: PopStateEvent) => {
       const state = routeRef.current;
+      const depth = Number(event.state?.overlay) || 0;
+      if (depth === 0 && state.modal?.kind === "entry" && !canLeaveEntry()) {
+        history.go(1);
+        return;
+      }
       let next = pathPage();
       if (next === "administration" && !user.admin) {
         next = "settings";
@@ -654,7 +662,6 @@ export function Application({
       }
       setPage(next);
       setUserMenu(false);
-      const depth = Number(event.state?.overlay) || 0;
       if (depth < 2 && state.categoryPopup) {
         setCategoryPopup(false);
         setCategoryVersion((v) => v + 1);
@@ -670,7 +677,10 @@ export function Application({
       }
     };
     window.addEventListener("popstate", pop);
-    return () => window.removeEventListener("popstate", pop);
+    return () => {
+      window.removeEventListener("popstate", pop);
+      history.scrollRestoration = restoration;
+    };
   }, [user.id, user.admin]);
   useEffect(() => {
     const depth = categoryPopup ? 2 : modal || monthPicker || invite ? 1 : 0;

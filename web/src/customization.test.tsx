@@ -441,6 +441,8 @@ it("원화 계좌의 외화 결제를 원금액·환율·반영액과 함께 저
   );
 });
 it("페이지 뒤로가기와 팝업 뒤로가기를 별도로 처리한다", async () => {
+  const confirmExit = vi.fn(() => false);
+  vi.stubGlobal("confirm", confirmExit);
   history.replaceState({}, "", "/home");
   const actor = userEvent.setup();
   vi.mocked(api).mockImplementation(async (path) => {
@@ -482,6 +484,13 @@ it("페이지 뒤로가기와 팝업 뒤로가기를 별도로 처리한다", as
   expect(history.state.overlay).toBe(1);
   await actor.type(screen.getByLabelText("내용"), "입력 중");
   expect(screen.queryByRole("button", { name: "분류 관리 열기" })).toBeNull();
+  history.back();
+  await waitFor(() => expect(confirmExit).toHaveBeenCalledOnce());
+  await waitFor(() => expect(history.state.overlay).toBe(1));
+  expect((screen.getByLabelText("내용") as HTMLInputElement).value).toBe(
+    "입력 중",
+  );
+  confirmExit.mockReturnValue(true);
   history.back();
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(location.pathname).toBe("/home");

@@ -2731,3 +2731,86 @@ body {
     display: none;
   }
 }
+
+/* Long dialogs become pages on phones; short choices remain dialogs. */
+.dialog-back {
+  display: none;
+}
+@media (max-width: 760px) {
+  .real-dialog.page-dialog[open] {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: var(--dialog-top, 0px) 0 auto;
+    margin: 0;
+    width: 100vw;
+    max-width: none;
+    height: var(--dialog-height, 100dvh);
+    max-height: none;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+  }
+  .page-dialog .dialog-head {
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    padding: calc(12px + env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right)) 12px
+      max(12px, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .page-dialog .dialog-head > div {
+    min-width: 0;
+    flex: 1;
+  }
+  .real-dialog.page-dialog .dialog-head h2 {
+    font-size: calc(18px * var(--text-scale, 1));
+  }
+  .page-dialog .dialog-back {
+    display: grid;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+  }
+  .page-dialog .dialog-close {
+    display: none;
+  }
+  .real-dialog.page-dialog .dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px max(16px, env(safe-area-inset-right))
+      calc(20px + env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+    scroll-padding-block: 16px 110px;
+  }
+  .real-dialog.compact-dialog {
+    margin: auto;
+    width: calc(100% - 24px);
+    max-width: 440px;
+    max-height: calc(100dvh - 32px);
+    border-radius: 20px;
+  }
+}
+@media (max-width: 760px) and (min-height: 480px) {
+  .page-dialog .entry-save-area {
+    position: sticky;
+    bottom: calc(-20px - env(safe-area-inset-bottom));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    z-index: 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-dialog.short-viewport .entry-save-area {
+    position: static;
+  }
+}

@@ -23,6 +23,8 @@ Open **Quick entry**, select Expense, Income or Transfer, and enter the amount, 
 - View and download photos in transaction details. Remove attachments in the edit dialog and save the change. **Removing an attachment has no separate restore action.** Restoring a trashed transaction is different.
 - Restore deleted transactions in **Settings → Transaction trash**. Archiving an account keeps records and prevents new entries. Deleting an account moves it to the trash and stops shared access.
 
+On mobile, entry, transaction details and management dialogs fill the screen. Use the header Back button or browser Back to return with your filters and scroll position preserved. Month selection remains a small dialog, and desktop dialogs stay centered. Leaving a changed entry or transaction edit asks whether to discard it; cancelling keeps the form. You cannot leave while saving. Reload and tab-close warnings depend on browser support; drafts are not stored automatically.
+
 Close dialogs with Close, Escape or browser Back. Clicking outside does not close them. `Q` opens Quick entry; `/` focuses search. Shortcuts are ignored while typing in fields.
 
 ## Favorites and recent entries

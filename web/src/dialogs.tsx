@@ -1,4 +1,5 @@
 import { EntryShortcuts } from "./entry-shortcuts";
+import { canLeaveEntry, useEntryExit } from "./entry-exit";
 import { useTask } from "./use-task";
 import { msg, monthName } from "./i18n";
 import {
@@ -194,6 +195,29 @@ export function EntryDialog(
       ).join(""),
   );
   const task = useTask();
+  const exit = useEntryExit(
+    JSON.stringify({
+      kind,
+      accountId,
+      target,
+      date,
+      clock,
+      title,
+      amount,
+      inputCurrency,
+      rate,
+      category,
+      note,
+      targetNote,
+      file: file && [file.name, file.size, file.lastModified],
+      photoTarget,
+      removedPhotos,
+    }),
+    task.busy,
+  );
+  function closeEntry() {
+    if (canLeaveEntry()) p.close();
+  }
   const targets = editable.filter(
     (a) =>
       a.id !== accountId &&
@@ -282,6 +306,7 @@ export function EntryDialog(
       )
     )
       return false;
+    exit.touch();
     setKind(input.kind);
     setAccountId(source.id);
     setTarget(input.to_id || "");
@@ -359,15 +384,21 @@ export function EntryDialog(
         await p.refresh();
       }
       p.notify(tx ? msg("기록을 수정했어요.") : msg("기록을 저장했어요."));
+      exit.complete();
       p.close();
     });
   }
   return (
     <Modal
       title={tx ? msg("기록을 다듬어요.") : msg("오늘의 기록을 남겨요.")}
-      onClose={p.close}
+      onClose={closeEntry}
     >
-      <form onSubmit={submit} className="entry-form">
+      <form
+        onSubmit={submit}
+        onChangeCapture={exit.touch}
+        onClickCapture={exit.touch}
+        className="entry-form"
+      >
         <fieldset disabled={task.busy || !!savedId} className="plain-fieldset">
           {!tx && (
             <EntryShortcuts
@@ -805,6 +836,7 @@ export function EntryDialog(
                 });
                 await p.refresh();
                 p.notify(msg("기록을 휴지통으로 옮겼어요."));
+                exit.complete();
                 p.close();
               })
             }
@@ -1561,6 +1593,7 @@ export function MonthDialog({
   return (
     <Modal
       title={msg("년·월 선택")}
+      compact
       subtitle={msg("연도를 입력하고 원하는 월을 선택하세요.")}
       onClose={close}
     >

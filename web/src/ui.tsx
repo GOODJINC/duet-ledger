@@ -155,17 +155,35 @@ export function Modal({
   subtitle,
   onClose,
   children,
+  compact = false,
 }: {
   title: string;
   subtitle?: string;
   onClose: () => void;
   children: ReactNode;
+  compact?: boolean;
 }) {
   const headingId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current!;
     const unlock = lockPageScroll();
+    const viewport = window.visualViewport;
+    const fitViewport = () => {
+      d.classList.toggle(
+        "short-viewport",
+        (viewport?.height ?? window.innerHeight) < 480,
+      );
+      d.style.setProperty(
+        "--dialog-height",
+        `${viewport?.height ?? window.innerHeight}px`,
+      );
+      d.style.setProperty("--dialog-top", `${viewport?.offsetTop ?? 0}px`);
+    };
+    fitViewport();
+    viewport?.addEventListener("resize", fitViewport);
+    viewport?.addEventListener("scroll", fitViewport);
+    window.addEventListener("resize", fitViewport);
     try {
       d.showModal();
     } catch (error) {
@@ -178,6 +196,9 @@ export function Modal({
     };
     d.addEventListener("close", listener);
     return () => {
+      viewport?.removeEventListener("resize", fitViewport);
+      viewport?.removeEventListener("scroll", fitViewport);
+      window.removeEventListener("resize", fitViewport);
       d.removeEventListener("close", listener);
       d.close();
       unlock();
@@ -191,15 +212,24 @@ export function Modal({
         onClose();
       }}
       aria-labelledby={headingId}
-      className="info-dialog real-dialog"
+      className={`info-dialog real-dialog ${compact ? "compact-dialog" : "page-dialog"}`}
     >
       <div className="dialog-head">
+        {!compact && (
+          <button
+            className="icon-button dialog-back"
+            onClick={onClose}
+            aria-label={msg("뒤로가기")}
+          >
+            <Icon name="left" />
+          </button>
+        )}
         <div>
           <h2 id={headingId}>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
         </div>
         <button
-          className="icon-button"
+          className="icon-button dialog-close"
           onClick={onClose}
           aria-label={msg("닫기")}
         >

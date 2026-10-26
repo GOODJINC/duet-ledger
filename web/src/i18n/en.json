@@ -671,5 +671,7 @@
   "환율을 저장했어요. 다른 통화도 추가할 수 있어요.": "Exchange rate saved. You can add another currency.",
   "회원가입": "Sign up",
   "회원가입 설정을 저장했어요.": "Registration settings saved.",
-  "휴지통 내역은 현재 잔액·통계에서 제외됩니다.": "Trashed transactions are excluded from current balances and statistics."
+  "휴지통 내역은 현재 잔액·통계에서 제외됩니다.": "Trashed transactions are excluded from current balances and statistics.",
+  "뒤로가기": "Back",
+  "작성 중인 내용을 버리고 나갈까요?": "Discard your changes and leave?"
 }
