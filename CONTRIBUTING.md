@@ -6,13 +6,24 @@ Report issues with reproduction steps, version and expected/actual behavior. Kee
 
 ## 개발 · Development
 
-Go(`go.mod` 기준), Node.js22, npm과 Docker Compose를 사용합니다. 소스에서 실행할 때는 개발용 Compose를 함께 지정합니다.
+Go(`go.mod` 기준), Node.js22, npm과 Docker Compose를 사용합니다. 소스에서 실행할 때는 독립된 개발용 Compose를 사용합니다.
 
 ```bash
 git clone https://github.com/GOODJINC/duet-ledger.git
 cd duet-ledger
-docker compose -f compose.yaml -f compose.build.yaml up -d --build
+cp .env.dev.example .env.dev
+docker compose --env-file .env.dev -f compose.dev.yaml up -d --build
 ```
+
+개발 컨테이너는 `duet-ledger-dev`, 이미지는 `duet-ledger:dev`, 데이터 볼륨은 `duet-ledger-dev-data`입니다. 기본 접속 주소는 `http://localhost:18088`이며 `.env.dev`에서 변경합니다. 실사용 컨테이너·포트·데이터와 분리됩니다. 처음에는 빈 데이터로 시작합니다.
+
+코드를 수정한 뒤에는 같은 `up -d --build` 명령을 실행합니다. 개발 자료는 유지되고 GitHub 게시 없이 수정 사항이 반영됩니다. 중지할 때는 다음을 사용합니다.
+
+```bash
+docker compose --env-file .env.dev -f compose.dev.yaml down
+```
+
+`down -v`는 개발 자료까지 삭제하므로 주의하세요. 실사용 볼륨을 개발 컨테이너에 연결하지 않습니다.
 
 호스트에서 검사하려면 다음을 실행합니다. 테스트에는 별도 임시 자료를 사용합니다.
 
@@ -28,7 +39,7 @@ node --test scripts/image-metadata.test.mjs
 node scripts/check-compose.mjs
 ```
 
-Use the source-build override for development. Tests use disposable datasets; never attach production data. Run Docker race checks with `docker build --target checks .`.
+Use standalone `compose.dev.yaml` with `.env.dev` for development. It uses a separate container, local image, port and data volume; rebuild after source changes. Production data is never mounted. Tests use disposable datasets; never attach production data. Run Docker race checks with `docker build --target checks .`.
 
 ## 번역·문서 · Translation and documentation
 

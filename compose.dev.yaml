@@ -1,0 +1,30 @@
+# Development only: docker compose --env-file .env.dev -f compose.dev.yaml up -d --build
+name: duet-ledger-dev
+services:
+  duet-ledger:
+    container_name: duet-ledger-dev
+    image: duet-ledger:dev
+    pull_policy: build
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "${DUET_LEDGER_DEV_BIND:-127.0.0.1}:${DUET_LEDGER_DEV_PORT:-18088}:8080"
+    environment:
+      DUET_LEDGER_PUBLIC_URL: ${DUET_LEDGER_DEV_PUBLIC_URL:-}
+      DUET_LEDGER_SECURE_COOKIE: ${DUET_LEDGER_DEV_SECURE_COOKIE:-false}
+      DUET_LEDGER_DATA_DIR: /data
+      DUET_LEDGER_LISTEN: 0.0.0.0:8080
+    volumes:
+      - duet-ledger-dev-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+volumes:
+  duet-ledger-dev-data:
+    name: duet-ledger-dev-data

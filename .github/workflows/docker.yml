@@ -34,7 +34,7 @@ jobs:
           node --test scripts/image-metadata.test.mjs
           node scripts/check-compose.mjs
           docker compose config --quiet
-          docker compose -f compose.yaml -f compose.build.yaml config --quiet
+          docker compose --env-file .env.dev.example -f compose.dev.yaml config --quiet
       - name: Build web, test and verify packaged app
         run: |
           npm --prefix web ci --no-fund --no-audit
