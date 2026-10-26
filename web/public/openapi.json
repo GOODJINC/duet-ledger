@@ -4371,6 +4371,11 @@
           },
           "code": {
             "type": "string"
+          },
+          "remember": {
+            "type": "boolean",
+            "default": false,
+            "description": "Login only: true creates a 30-day persistent session. False uses a browser-session cookie with a server-side lifetime of up to 7 days."
           }
         }
       },

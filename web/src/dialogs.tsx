@@ -1,6 +1,6 @@
 import { EntryShortcuts } from "./entry-shortcuts";
 import { useTask } from "./use-task";
-import { msg, monthName, intlLocale } from "./i18n";
+import { msg, monthName } from "./i18n";
 import {
   exchangeFactor,
   factorDecimal,
@@ -365,7 +365,6 @@ export function EntryDialog(
   return (
     <Modal
       title={tx ? msg("기록을 다듬어요.") : msg("오늘의 기록을 남겨요.")}
-      subtitle={msg("저장 전 계좌와 공개 대상을 확인해 주세요.")}
       onClose={p.close}
     >
       <form onSubmit={submit} className="entry-form">
@@ -431,20 +430,6 @@ export function EntryDialog(
               maxLength={25}
               autoFocus
             />
-          </div>
-          <div className="amount-suggestions">
-            {(inputCurrency === "KRW" ? [5000, 10000, 30000] : [5, 10, 25]).map(
-              (n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setAmount(String(n))}
-                >
-                  {n.toLocaleString(intlLocale())}
-                  {inputCurrency === "KRW" ? msg("원") : " " + inputCurrency}
-                </button>
-              ),
-            )}
           </div>
           {foreign && (
             <div className="entry-fx">
@@ -775,17 +760,15 @@ export function EntryDialog(
                       ? msg("공유된 계좌에 기록하고 있어요.")
                       : msg("나에게만 보이는 기록이에요.")}
                 </strong>
-                <p>
-                  {kind === "transfer"
-                    ? msg(
-                        "각 계좌의 메모·영수증은 해당 계좌의 공개 범위를 따릅니다.",
-                      )
-                    : account.shared
-                      ? msg("거래 내용과 첨부 사진도 공유 대상에게 보입니다.")
-                      : msg(
-                          "이 계좌의 이름·잔액·내역은 다른 사람에게 공개되지 않아요.",
-                        )}
-                </p>
+                {(kind === "transfer" || account.shared) && (
+                  <p>
+                    {kind === "transfer"
+                      ? msg(
+                          "각 계좌의 메모·영수증은 해당 계좌의 공개 범위를 따릅니다.",
+                        )
+                      : msg("거래 내용과 첨부 사진도 공유 대상에게 보입니다.")}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -1358,11 +1341,6 @@ export function AccountDialog(
                       ? msg("이 가계부의 모든 멤버에게 공개됩니다.")
                       : msg("처음에는 나만 볼 수 있어요.")}
                   </strong>
-                  <p>
-                    {msg(
-                      "개인 가계부의 특정 계좌만 나중에 공유할 수도 있어요.",
-                    )}
-                  </p>
                 </div>
               </div>
             </>

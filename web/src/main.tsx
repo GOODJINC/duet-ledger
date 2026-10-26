@@ -1,4 +1,9 @@
 import {
+  DisplaySettings,
+  useDisplayPreferences,
+  useCompactLayout,
+} from "./display-settings";
+import {
   msg,
   getLocale,
   useLocale,
@@ -289,6 +294,7 @@ export function Auth({
   const [setupClosed, setSetupClosed] = useState(false);
   const initialized = initialConfigured || setupClosed;
   const [code, setCode] = useState("");
+  const [remember, setRemember] = useState(false);
   const [needCode, setNeedCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -324,7 +330,12 @@ export function Auth({
                 password: enteredPassword,
                 token: invite,
               }
-            : { username: enteredUsername, password: enteredPassword, code },
+            : {
+                username: enteredUsername,
+                password: enteredPassword,
+                code,
+                remember,
+              },
       );
       onLogin(u, join);
     } catch (e) {
@@ -530,6 +541,16 @@ export function Auth({
                 />
               </>
             )}
+            {initialized && !join && (
+              <label className="remember-login">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                {msg("30일 동안 로그인 유지")}
+              </label>
+            )}
             <ErrorText error={error} />
             <button className="primary-button entry-submit" disabled={busy}>
               <Busy busy={busy}>
@@ -671,6 +692,8 @@ export function Application({
       setMonthPicker(false);
     }
   }
+  const [display] = useDisplayPreferences(user.id);
+  const compactLayout = useCompactLayout();
   useAppearance(user.id);
   useEffect(() => {
     const shortcut = (e: KeyboardEvent) => {
@@ -1114,6 +1137,67 @@ export function Application({
       </section>
     );
   }
+  const accountControls = (
+    <div className="header-right">
+      {loading && <Icon name="loader" className="spin loading-mark" />}
+      <button
+        className="mobile-ledger-picker secondary-button"
+        onClick={() => setModal({ kind: "ledgers" })}
+        aria-label={msg("가계부 선택")}
+      >
+        <Icon name="book" />
+        <span>{selectedLedger?.name || msg("모아 보기")}</span>
+        <Icon name="down" />
+      </button>
+      <div className="user-menu-wrap" ref={userMenuRef}>
+        <button
+          className="profile-button"
+          onClick={() => setUserMenu(!userMenu)}
+          aria-label={msg("사용자 메뉴")}
+          aria-expanded={userMenu}
+          aria-controls="user-dropdown"
+        >
+          <span className="avatar mint">{user.name.slice(0, 1)}</span>
+          <span>{user.name}</span>
+          <Icon name="down" />
+        </button>
+        {userMenu && (
+          <div className="user-dropdown" id="user-dropdown">
+            <button onClick={() => navigate("account-settings")}>
+              <Icon name="user" />
+              {msg("계정 설정")}
+            </button>
+            <button onClick={() => navigate("settings")}>
+              <Icon name="settings" />
+              {msg("설정")}
+            </button>
+            {user.admin && (
+              <button onClick={() => navigate("administration")}>
+                <Icon name="shield" />
+                {msg("관리")}
+              </button>
+            )}
+            <a href={manualURL()} target="_blank" rel="noopener noreferrer">
+              <Icon name="info" />
+              {msg("도움말 및 지원")}
+            </a>
+            <button
+              onClick={() =>
+                post("/logout")
+                  .then(() =>
+                    window.dispatchEvent(new Event("duet-ledger:unauthorized")),
+                  )
+                  .catch((e) => setToast(e.message))
+              }
+            >
+              <Icon name="logout" />
+              {msg("로그아웃")}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
   return (
     <div className="app-frame live-app">
       <div className="app-layout">
@@ -1195,93 +1279,29 @@ export function Application({
           </div>
         </aside>
         <div className="main-shell">
-          <header className="app-header">
-            <div className="header-breadcrumb">
-              <span className="mobile-logo">
-                <Brand compact />
-              </span>
-              <span className="desktop-breadcrumb">
-                {selectedLedger?.name || msg("나의 공간")}
-                <span>/</span>
-                <strong>
-                  {page === "account-settings"
-                    ? msg("계정 설정")
-                    : page === "administration"
-                      ? msg("관리")
-                      : page === "settings"
-                        ? msg("설정")
-                        : msg(
-                            navigation.find((n) => n.id === page)?.label || "",
-                          )}
-                </strong>
-              </span>
-            </div>
-            <div className="header-right">
-              {loading && <Icon name="loader" className="spin loading-mark" />}
-              <button
-                className="mobile-ledger-picker secondary-button"
-                onClick={() => setModal({ kind: "ledgers" })}
-                aria-label={msg("가계부 선택")}
-              >
-                <Icon name="book" />
-                <span>{selectedLedger?.name || msg("모아 보기")}</span>
-                <Icon name="down" />
-              </button>
-              <div className="user-menu-wrap" ref={userMenuRef}>
-                <button
-                  className="profile-button"
-                  onClick={() => setUserMenu(!userMenu)}
-                  aria-label={msg("사용자 메뉴")}
-                  aria-expanded={userMenu}
-                  aria-controls="user-dropdown"
-                >
-                  <span className="avatar mint">{user.name.slice(0, 1)}</span>
-                  <span>{user.name}</span>
-                  <Icon name="down" />
-                </button>
-                {userMenu && (
-                  <div className="user-dropdown" id="user-dropdown">
-                    <button onClick={() => navigate("account-settings")}>
-                      <Icon name="user" />
-                      {msg("계정 설정")}
-                    </button>
-                    <button onClick={() => navigate("settings")}>
-                      <Icon name="settings" />
-                      {msg("설정")}
-                    </button>
-                    {user.admin && (
-                      <button onClick={() => navigate("administration")}>
-                        <Icon name="shield" />
-                        {msg("관리")}
-                      </button>
-                    )}
-                    <a
-                      href={manualURL()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Icon name="info" />
-                      {msg("도움말 및 지원")}
-                    </a>
-                    <button
-                      onClick={() =>
-                        post("/logout")
-                          .then(() =>
-                            window.dispatchEvent(
-                              new Event("duet-ledger:unauthorized"),
-                            ),
-                          )
-                          .catch((e) => setToast(e.message))
-                      }
-                    >
-                      <Icon name="logout" />
-                      {msg("로그아웃")}
-                    </button>
-                  </div>
-                )}
+          {(!compactLayout || isSettings) && (
+            <header className="app-header">
+              <div className="header-breadcrumb">
+                <span className="desktop-breadcrumb">
+                  {selectedLedger?.name || msg("나의 공간")}
+                  <span>/</span>
+                  <strong>
+                    {page === "account-settings"
+                      ? msg("계정 설정")
+                      : page === "administration"
+                        ? msg("관리")
+                        : page === "settings"
+                          ? msg("설정")
+                          : msg(
+                              navigation.find((n) => n.id === page)?.label ||
+                                "",
+                            )}
+                  </strong>
+                </span>
               </div>
-            </div>
-          </header>
+              {accountControls}
+            </header>
+          )}
           <main id="main-content">
             {!online && (
               <div className="inline-warning" role="status">
@@ -1306,8 +1326,14 @@ export function Application({
                 )}
               </div>
             )}
-            <div className="page-heading">
-              <div>
+            <div
+              className={`page-heading ${display.showPageHeadings ? "" : "heading-collapsed"} ${!display.showPageHeadings && (isSettings || (compactLayout && !display.mobileTopEntry && page !== "accounts")) ? "visually-hidden" : ""}`}
+            >
+              <div
+                className={
+                  display.showPageHeadings ? undefined : "visually-hidden"
+                }
+              >
                 <p className="eyebrow">
                   <Icon name="leaf" />
                   {page === "home"
@@ -1326,7 +1352,8 @@ export function Application({
                     <Icon name="plus" />
                     {msg("계좌 만들기")}
                   </button>
-                ) : isSettings ? null : (
+                ) : isSettings ||
+                  (compactLayout && !display.mobileTopEntry) ? null : (
                   <button
                     className="primary-button"
                     onClick={() => openEntry()}
@@ -1339,28 +1366,31 @@ export function Application({
             </div>
             {!isSettings && (
               <div className="view-toolbar">
-                {!ledger && (
-                  <div
-                    className="scope-tabs"
-                    role="group"
-                    aria-label={msg("조회 범위")}
-                  >
-                    {[
-                      ["all", msg("모아 보기"), "wallet"],
-                      ["private", msg("개인"), "lock"],
-                      ["shared", msg("공유"), "people"],
-                    ].map(([id, label, icon]) => (
-                      <button
-                        key={id}
-                        aria-pressed={scope === id}
-                        onClick={() => scopeChange(id)}
-                      >
-                        <Icon name={icon as IconName} />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="scope-controls-row">
+                  {!ledger && (
+                    <div
+                      className="scope-tabs"
+                      role="group"
+                      aria-label={msg("조회 범위")}
+                    >
+                      {[
+                        ["all", msg("모아 보기"), "wallet"],
+                        ["private", msg("개인"), "lock"],
+                        ["shared", msg("공유"), "people"],
+                      ].map(([id, label, icon]) => (
+                        <button
+                          key={id}
+                          aria-pressed={scope === id}
+                          onClick={() => scopeChange(id)}
+                        >
+                          <Icon name={icon as IconName} />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {compactLayout && page === "home" && accountControls}
+                </div>
                 <div className="date-currency-toolbar period-toolbar">
                   {page !== "accounts" && (
                     <div className="month-nav">
@@ -1386,6 +1416,7 @@ export function Application({
                       </button>
                     </div>
                   )}
+                  {compactLayout && page !== "home" && accountControls}
                   {page === "ledger" && (
                     <>
                       <div className="ledger-view-controls">
@@ -1842,9 +1873,9 @@ export function Application({
           </button>
         ))}
       </nav>
-      {!isSettings && (
+      {!isSettings && display.mobileFloatingEntry && (
         <button
-          className="mobile-fab"
+          className={`mobile-fab ${display.floatingSide === "left" ? "mobile-fab-left" : ""}`}
           onClick={() => openEntry()}
           aria-label={msg("빠른 입력")}
         >
@@ -2842,7 +2873,12 @@ export function SettingsView({
           </div>
         </section>
       )}
-      {section === "settings" && <AppearanceSettings userId={user.id} />}
+      {section === "settings" && (
+        <>
+          <DisplaySettings userId={user.id} />
+          <AppearanceSettings userId={user.id} />
+        </>
+      )}
       {section === "administration" && user.admin && (
         <AdminAPISettings user={user} refresh={refresh} />
       )}

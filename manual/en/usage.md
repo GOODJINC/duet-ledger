@@ -79,4 +79,8 @@ The user menu opens Account settings and Settings. Account settings includes you
 
 Choose Korean or English. Personal text size (90–150%), colors and brightness apply in the current browser. Only administrators upload shared CSS/WOFF2 files, which apply to all signed-in users.
 
+In **Settings → Page layout**, choose whether to show page titles/descriptions and the mobile top quick-entry and floating `+` buttons. Choose left or right for the floating button. These preferences belong to this account in the current browser. The default font scale is 100%; existing custom scales are preserved.
+
+Select **Keep me signed in for 30 days** on the sign-in screen for a 30-day session. Otherwise, a browser-session cookie is used with a maximum server lifetime of seven days. Browser session restoration may restore the cookie after windows close. Sign-out, security changes and sign-out on all devices still apply.
+
 CSV export follows the current filters. JSON export is for moving records across all dates, without photos, login details or sharing permissions. Preview imports before applying. **A complete server restore requires an operational backup and its original `master.key`.** See [Operations](operations.md).

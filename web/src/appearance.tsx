@@ -13,7 +13,7 @@ export type Appearance = {
   fontName: string;
 };
 const defaults: Appearance = {
-  scale: 112,
+  scale: 100,
   background: "",
   primary: "",
   css: "",
@@ -40,7 +40,7 @@ function load(id: string): Appearance {
       ...defaults,
       ...JSON.parse(localStorage.getItem(key(id)) || "{}"),
     };
-    value.scale = Math.max(90, Math.min(150, Number(value.scale) || 112));
+    value.scale = Math.max(90, Math.min(150, Number(value.scale) || 100));
     for (const field of ["background", "primary"] as const)
       if (!/^#[\da-f]{6}$/i.test(value[field])) value[field] = "";
     value.css = "";

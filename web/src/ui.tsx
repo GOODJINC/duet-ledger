@@ -1,3 +1,4 @@
+import { lockPageScroll } from "./scroll-lock";
 import { msg } from "./i18n";
 import {
   useEffect,
@@ -164,12 +165,22 @@ export function Modal({
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current!;
-    d.showModal();
-    const listener = () => onClose();
+    const unlock = lockPageScroll();
+    try {
+      d.showModal();
+    } catch (error) {
+      unlock();
+      throw error;
+    }
+    const listener = () => {
+      unlock();
+      onClose();
+    };
     d.addEventListener("close", listener);
     return () => {
       d.removeEventListener("close", listener);
       d.close();
+      unlock();
     };
   }, []);
   return (

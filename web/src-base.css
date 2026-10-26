@@ -25,7 +25,7 @@
   color: var(--ink);
   font-synthesis: none;
   background: #eef0ea;
-  font-size: calc(14px * var(--text-scale, 1.12));
+  font-size: calc(14px * var(--text-scale, 1));
   letter-spacing: -0.025em;
 }
 * {
@@ -105,7 +105,7 @@ h3 {
   font-weight: 650;
 }
 small {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 strong {
   font-weight: 650;
@@ -145,7 +145,7 @@ button.icon-button:hover {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   color: #747e72;
   white-space: nowrap;
 }
@@ -165,7 +165,7 @@ button.icon-button:hover {
   margin: 0 2px;
 }
 .preview-version {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   border: 1px solid #d6ddce;
   border-radius: 4px;
   padding: 1px 4px;
@@ -185,7 +185,7 @@ button.icon-button:hover {
   display: flex;
   gap: 7px;
   align-items: center;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   padding: 5px 17px;
   color: #7a8275;
   border-radius: 6px;
@@ -200,7 +200,7 @@ button.icon-button:hover {
   color: #3f5c43;
 }
 .preview-help {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   display: flex;
   gap: 7px;
   align-items: center;
@@ -241,7 +241,7 @@ button.icon-button:hover {
   align-items: center;
   gap: 9px;
   padding: 0 12px;
-  font-size: calc(23px * var(--text-scale, 1.12));
+  font-size: calc(23px * var(--text-scale, 1));
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.06em;
@@ -273,7 +273,7 @@ button.icon-button:hover {
 }
 .brand-subtitle {
   display: block;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   font-weight: 450;
   letter-spacing: 0.01em;
   color: var(--muted);
@@ -303,11 +303,11 @@ button.icon-button:hover {
 .workspace-button small {
   display: block;
   color: var(--muted);
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   margin-bottom: 5px;
 }
 .workspace-button strong {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 600;
   white-space: nowrap;
 }
@@ -320,7 +320,7 @@ button.icon-button:hover {
   height: 13px;
 }
 .nav-label {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   letter-spacing: 0.13em;
   color: #a2aa9d;
   margin: 0 14px 12px;
@@ -332,7 +332,7 @@ nav .nav-item {
   border-radius: 9px;
   padding: 13px 15px;
   margin-bottom: 5px;
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
   color: #838c80;
   position: relative;
 }
@@ -380,11 +380,11 @@ nav .nav-item {
   height: 17px;
 }
 .sidebar-together > strong {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .sidebar-together > p {
   color: var(--muted);
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   line-height: 1.8;
   margin: 9px 0 12px;
 }
@@ -393,7 +393,7 @@ nav .nav-item {
   display: inline-flex;
   gap: 5px;
   align-items: center;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--green);
   font-weight: 550;
 }
@@ -413,7 +413,7 @@ nav .nav-item {
   width: 29px;
   height: 29px;
   border-radius: 50%;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   font-weight: 650;
   flex-shrink: 0;
 }
@@ -430,7 +430,7 @@ nav .nav-item {
   border: 2px solid #f8faf5;
 }
 .avatar-stack small {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   margin-left: 8px;
   color: #91988a;
 }
@@ -438,7 +438,7 @@ nav .nav-item {
   margin-top: auto;
   border-top: 1px solid var(--line);
   padding: 20px 6px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #8b9585;
   display: flex;
   align-items: center;
@@ -471,7 +471,7 @@ nav .nav-item {
   background: var(--bg);
 }
 .header-breadcrumb {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: #989f95;
 }
 .desktop-breadcrumb {
@@ -492,7 +492,7 @@ nav .nav-item {
   gap: 17px;
 }
 .sample-tag {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   background: #eef1e8;
   border: 1px solid #e2e7d9;
   border-radius: 5px;
@@ -512,7 +512,7 @@ nav .nav-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
 }
 .profile-button > span:last-child svg {
   width: 12px;
@@ -536,7 +536,7 @@ main {
   margin-bottom: 26px;
 }
 .eyebrow {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   font-weight: 550;
   color: #8a9980;
   margin-bottom: 9px;
@@ -549,13 +549,13 @@ main {
   height: 13px;
 }
 .page-heading h1 {
-  font-size: calc(26px * var(--text-scale, 1.12));
+  font-size: calc(26px * var(--text-scale, 1));
   letter-spacing: -0.06em;
   font-weight: 650;
   line-height: 1.35;
 }
 .page-subtitle {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--muted);
   margin-top: 9px;
   line-height: 1.8;
@@ -569,7 +569,7 @@ main {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 550;
   white-space: nowrap;
 }
@@ -589,7 +589,7 @@ main {
   border-radius: 8px;
   padding: 9px 12px;
   background: var(--paper);
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   white-space: nowrap;
   color: #687660;
 }
@@ -617,7 +617,7 @@ main {
   gap: 3px;
 }
 .scope-tabs button {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   display: flex;
   align-items: center;
   gap: 6px;
@@ -656,7 +656,7 @@ main {
   width: 15px;
 }
 .month-label {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 600;
   min-width: 88px;
   text-align: center;
@@ -694,7 +694,7 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: #78846c;
 }
 .card-topline .summary-icon {
@@ -715,7 +715,7 @@ main {
   height: 15px;
 }
 .summary-card .amount {
-  font-size: calc(31px * var(--text-scale, 1.12));
+  font-size: calc(31px * var(--text-scale, 1));
   letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -728,7 +728,7 @@ main {
   z-index: 1;
 }
 .summary-card .amount .won {
-  font-size: calc(15px * var(--text-scale, 1.12));
+  font-size: calc(15px * var(--text-scale, 1));
   font-weight: 400;
   opacity: 0.65;
   letter-spacing: 0;
@@ -743,7 +743,7 @@ main {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #8c9781;
   margin-top: 8px;
   position: relative;
@@ -805,27 +805,27 @@ main {
   margin-bottom: 19px;
 }
 .panel-heading h2 {
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
   display: flex;
   align-items: center;
   gap: 7px;
   letter-spacing: -0.035em;
 }
 .panel-subtitle {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #949e89;
   margin-top: 7px;
   line-height: 1.7;
 }
 .panel-title-small {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
 }
 .subtle-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   background: var(--mint-soft);
   color: #7c906f;
   border-radius: 5px;
@@ -840,14 +840,14 @@ main {
   gap: 15px;
 }
 .chart-total {
-  font-size: calc(22px * var(--text-scale, 1.12));
+  font-size: calc(22px * var(--text-scale, 1));
   font-weight: 600;
   letter-spacing: -0.04em;
   margin-top: 8px;
   line-height: 1.4;
 }
 .chart-total small {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: #99a18f;
   font-weight: 400;
   margin-left: 4px;
@@ -856,7 +856,7 @@ main {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #9ba38f;
   white-space: nowrap;
   margin-top: 3px;
@@ -884,14 +884,14 @@ main {
 }
 .chart-axis {
   fill: var(--faint);
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   font-family: inherit;
 }
 .chart-note {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #9aa58d;
   padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -918,14 +918,14 @@ main {
   border-top: 1px solid #f1f3ed;
   border-bottom: 1px solid #f1f3ed;
   color: #9ba58f;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .transaction-header span:last-child {
   text-align: right;
 }
 .transaction-day-heading {
   padding: 16px 23px 5px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #8e9983;
   display: flex;
   align-items: center;
@@ -935,7 +935,7 @@ main {
   font-weight: 550;
 }
 .transaction-day-heading > span {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 .transaction-row {
@@ -1012,7 +1012,7 @@ main {
   color: #86a397;
 }
 .transaction-title {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   font-weight: 550;
   color: var(--ink);
   white-space: nowrap;
@@ -1021,7 +1021,7 @@ main {
   max-width: 220px;
 }
 .transaction-meta {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #9ca38f;
   margin-top: 5px;
   display: flex;
@@ -1034,7 +1034,7 @@ main {
   height: 10px;
 }
 .transaction-account {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #8e9884;
   line-height: 1.6;
 }
@@ -1042,7 +1042,7 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   border-radius: 5px;
   padding: 4px 6px;
   white-space: nowrap;
@@ -1060,7 +1060,7 @@ main {
 }
 .transaction-amount {
   text-align: right;
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 550;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -1081,7 +1081,7 @@ main {
 }
 .transaction-panel-footer button {
   color: #8d9c80;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .account-mini {
   display: flex;
@@ -1122,30 +1122,30 @@ main {
   color: #92986f;
 }
 .account-mini-title {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   font-weight: 550;
 }
 .account-mini-title + small {
   display: block;
   margin-top: 5px;
-  font-size: calc(8px * var(--text-scale, 1.12));
+  font-size: calc(8px * var(--text-scale, 1));
   color: #a1a78f;
 }
 .account-mini-amount {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   font-weight: 550;
   margin-left: auto;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .account-mini-amount small {
-  font-size: calc(8px * var(--text-scale, 1.12));
+  font-size: calc(8px * var(--text-scale, 1));
   font-weight: 400;
   margin-left: 2px;
   color: #9ba68c;
 }
 .account-list-note {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #a1aa94;
   margin-top: 15px;
   display: flex;
@@ -1174,12 +1174,12 @@ main {
   text-align: center;
 }
 .donut-center small {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #9aa68b;
 }
 .donut-center strong {
   display: block;
-  font-size: calc(18px * var(--text-scale, 1.12));
+  font-size: calc(18px * var(--text-scale, 1));
   margin-top: 5px;
   letter-spacing: -0.04em;
 }
@@ -1192,7 +1192,7 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #8a967b;
 }
 .legend-dot {
@@ -1202,14 +1202,14 @@ main {
   flex-shrink: 0;
 }
 .legend-row strong {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: #67795b;
   margin-left: auto;
 }
 .legend-row small {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #a4ad99;
   min-width: 26px;
   text-align: right;
@@ -1224,12 +1224,12 @@ main {
   overflow: hidden;
 }
 .shared-note h3 {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   margin-bottom: 8px;
   font-weight: 600;
 }
 .shared-note p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   line-height: 1.9;
   color: #90a080;
   position: relative;
@@ -1249,7 +1249,7 @@ main {
 }
 .shared-note .text-link {
   margin-top: 13px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .app-footer {
   display: flex;
@@ -1258,7 +1258,7 @@ main {
   max-width: 1420px;
   margin: 0 auto;
   padding: 25px 42px 28px;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #a6ae9c;
 }
 .footer-dot {
@@ -1297,13 +1297,13 @@ main {
   height: 33px;
 }
 .empty-state h3 {
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
   color: #788b6e;
   font-weight: 550;
   margin-bottom: 8px;
 }
 .empty-state p {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   line-height: 1.8;
 }
 .scope-explanation {
@@ -1314,7 +1314,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 12px 14px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #8a9a7c;
   margin-bottom: 19px;
   line-height: 1.7;
@@ -1353,7 +1353,7 @@ main {
   outline: none;
   background: transparent;
   border: 0;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--ink);
   width: 100%;
 }
@@ -1374,7 +1374,7 @@ main {
   gap: 2px;
 }
 .segment-control button {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #919d84;
   padding: 6px 12px;
   border-radius: 5px;
@@ -1401,7 +1401,7 @@ main {
 }
 .calendar-weekday {
   text-align: center;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #9aa58f;
   padding: 15px 0;
   border-bottom: 1px solid var(--line);
@@ -1431,7 +1431,7 @@ main {
   opacity: 0.35;
 }
 .calendar-date {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   font-variant-numeric: tabular-nums;
   width: 23px;
   height: 23px;
@@ -1449,7 +1449,7 @@ main {
 }
 .calendar-expense,
 .calendar-income {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   line-height: 1.5;
   white-space: nowrap;
   color: #c08b73;
@@ -1459,7 +1459,7 @@ main {
   color: #7d9d6d;
 }
 .calendar-records {
-  font-size: calc(8px * var(--text-scale, 1.12));
+  font-size: calc(8px * var(--text-scale, 1));
   color: #b1b9a6;
   margin-top: auto;
 }
@@ -1467,7 +1467,7 @@ main {
   padding: 18px 0 0;
 }
 .calendar-detail h3 {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   margin: 0 23px 12px;
 }
 .accounts-grid {
@@ -1496,11 +1496,11 @@ main {
   border-radius: 12px;
 }
 .account-card h2 {
-  font-size: calc(15px * var(--text-scale, 1.12));
+  font-size: calc(15px * var(--text-scale, 1));
   margin-bottom: 7px;
 }
 .account-card p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   line-height: 1.7;
 }
@@ -1512,18 +1512,18 @@ main {
   padding-top: 18px;
 }
 .account-card-bottom strong {
-  font-size: calc(24px * var(--text-scale, 1.12));
+  font-size: calc(24px * var(--text-scale, 1));
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
 .account-card-bottom strong small {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 400;
   margin-left: 4px;
   color: var(--muted);
 }
 .account-card-bottom > span {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #9ba98e;
   display: flex;
   gap: 5px;
@@ -1559,7 +1559,7 @@ main {
   gap: 15px;
   padding: 15px 23px;
   border-top: 1px solid var(--line);
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   align-items: center;
 }
 .stats-category-line > span {
@@ -1575,7 +1575,7 @@ main {
 .stats-category-line > small {
   text-align: right;
   color: var(--muted);
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .settings-layout {
   display: grid;
@@ -1589,7 +1589,7 @@ main {
   border-top: 1px solid var(--line);
 }
 .setting-group h2 {
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
   margin-bottom: 18px;
 }
 .setting-row {
@@ -1600,22 +1600,22 @@ main {
   padding: 13px 0;
 }
 .setting-row > div > strong {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   font-weight: 550;
 }
 .setting-row > div > p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   line-height: 1.8;
   margin-top: 5px;
 }
 .setting-value {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: #8b9b7e;
   white-space: nowrap;
 }
 .setting-explainer {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--muted);
   line-height: 1.9;
   margin-top: 12px;
@@ -1628,18 +1628,18 @@ main {
 .settings-demo-person .avatar {
   width: 43px;
   height: 43px;
-  font-size: calc(14px * var(--text-scale, 1.12));
+  font-size: calc(14px * var(--text-scale, 1));
 }
 .settings-demo-person h3 {
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
 }
 .settings-demo-person p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   margin-top: 5px;
 }
 .settings-demo-note {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   line-height: 1.9;
   margin-top: 17px;
@@ -1655,7 +1655,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px 10px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   background: var(--paper);
   color: var(--muted);
 }
@@ -1692,12 +1692,12 @@ dialog::backdrop {
   gap: 15px;
 }
 .dialog-head h2 {
-  font-size: calc(20px * var(--text-scale, 1.12));
+  font-size: calc(20px * var(--text-scale, 1));
   font-weight: 650;
   letter-spacing: -0.05em;
 }
 .dialog-head p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   margin-top: 7px;
   line-height: 1.8;
@@ -1717,7 +1717,7 @@ dialog::backdrop {
   flex: 1;
   padding: 10px;
   border-radius: 7px;
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   color: #9ba68e;
 }
 .entry-types button[aria-pressed="true"] {
@@ -1741,14 +1741,14 @@ dialog::backdrop {
   margin-bottom: 11px;
 }
 .entry-amount-wrap span {
-  font-size: calc(20px * var(--text-scale, 1.12));
+  font-size: calc(20px * var(--text-scale, 1));
   color: #9aab8d;
 }
 .entry-amount-wrap input {
   border: 0;
   background: transparent;
   outline: none;
-  font-size: calc(38px * var(--text-scale, 1.12));
+  font-size: calc(38px * var(--text-scale, 1));
   letter-spacing: -0.06em;
   color: var(--ink);
   width: 100%;
@@ -1768,12 +1768,12 @@ dialog::backdrop {
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 5px 10px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #98a28c;
 }
 .form-label {
   display: block;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #89987c;
   margin: 17px 0 8px;
 }
@@ -1784,7 +1784,7 @@ dialog::backdrop {
   border-radius: 9px;
   background: var(--paper);
   color: #5f7253;
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   padding: 12px 11px;
   min-height: 42px;
 }
@@ -1807,7 +1807,7 @@ dialog::backdrop {
   padding: 10px 3px;
   border: 1px solid var(--line);
   color: #969f8c;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   background: var(--paper);
 }
 .category-choice svg {
@@ -1836,12 +1836,12 @@ dialog::backdrop {
   margin-top: 1px;
 }
 .privacy-notice strong {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   font-weight: 600;
   display: block;
 }
 .privacy-notice p {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   line-height: 1.8;
   color: #95a389;
   margin-top: 4px;
@@ -1857,7 +1857,7 @@ dialog::backdrop {
   border: 1px dashed #dce4d2;
   border-radius: 9px;
   color: #9aa78c;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .receipt-button svg {
   width: 14px;
@@ -1868,7 +1868,7 @@ dialog::backdrop {
   align-items: center;
   gap: 10px;
   margin-top: 12px;
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
 }
 .receipt-preview img {
@@ -1891,19 +1891,19 @@ dialog::backdrop {
 }
 .entry-hint {
   text-align: center;
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: #a3ad99;
   margin-top: 11px;
   line-height: 1.7;
 }
 .form-error {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #b77761;
   margin-top: 12px;
   min-height: 0;
 }
 .info-body {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
   line-height: 1.9;
   color: #7d8d6e;
 }
@@ -1938,10 +1938,10 @@ dialog::backdrop {
   color: var(--green);
 }
 .modal-feature > div strong {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
 }
 .modal-feature > div p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   margin-top: 4px;
   line-height: 1.7;
@@ -1949,7 +1949,7 @@ dialog::backdrop {
 .modal-note {
   padding: 13px;
   background: var(--mint-soft);
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   line-height: 1.9;
   border-radius: 9px;
   margin-top: 17px;
@@ -1973,10 +1973,10 @@ dialog::backdrop {
   flex: 1;
 }
 .profile-choice strong {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .profile-choice p {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   line-height: 1.7;
   margin-top: 4px;
@@ -1998,11 +1998,11 @@ dialog::backdrop {
   border-radius: 14px;
 }
 .detail-hero h3 {
-  font-size: calc(14px * var(--text-scale, 1.12));
+  font-size: calc(14px * var(--text-scale, 1));
   margin-bottom: 8px;
 }
 .detail-hero strong {
-  font-size: calc(24px * var(--text-scale, 1.12));
+  font-size: calc(24px * var(--text-scale, 1));
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
@@ -2013,7 +2013,7 @@ dialog::backdrop {
   gap: 18px;
   padding: 12px 0;
   border-top: 1px solid var(--line);
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
 }
 .detail-line > span {
   color: var(--muted);
@@ -2040,15 +2040,15 @@ dialog::backdrop {
   flex: 1;
 }
 .member-line strong {
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
 }
 .member-line p {
-  font-size: calc(9px * var(--text-scale, 1.12));
+  font-size: calc(9px * var(--text-scale, 1));
   color: var(--muted);
   margin-top: 4px;
 }
 .member-role {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   background: var(--bg);
   border-radius: 6px;
@@ -2065,7 +2065,7 @@ dialog::backdrop {
   border: 1px solid #688761;
   border-radius: 11px;
   box-shadow: 0 8px 35px #1b352621;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   z-index: 30;
   opacity: 0;
   pointer-events: none;
@@ -2082,7 +2082,7 @@ dialog::backdrop {
 }
 .filter-stack label {
   display: block;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--muted);
   margin: 15px 0 7px;
 }
@@ -2103,7 +2103,7 @@ dialog::backdrop {
   flex: 1;
 }
 .inline-warning {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: #b68c6a;
   background: #faf2e7;
   padding: 12px;
@@ -2120,7 +2120,7 @@ dialog::backdrop {
 .bar-label {
   display: flex;
   justify-content: space-between;
-  font-size: calc(11px * var(--text-scale, 1.12));
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--muted);
   margin-bottom: 9px;
 }
@@ -2136,7 +2136,7 @@ dialog::backdrop {
   border-radius: 4px;
 }
 .single-scope-note {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   line-height: 1.9;
   margin: 13px 0;
@@ -2300,7 +2300,7 @@ body[data-theme="dark"] .app-header {
     padding-right: 14px;
   }
   .brand {
-    font-size: calc(22px * var(--text-scale, 1.12));
+    font-size: calc(22px * var(--text-scale, 1));
     padding: 0 9px;
   }
   .sidebar-together {
@@ -2330,7 +2330,7 @@ body[data-theme="dark"] .app-header {
     min-height: 145px;
   }
   .summary-card .amount {
-    font-size: calc(26px * var(--text-scale, 1.12));
+    font-size: calc(26px * var(--text-scale, 1));
   }
   .panel-pad {
     padding: 20px;
@@ -2343,23 +2343,23 @@ body[data-theme="dark"] .app-header {
     grid-template-columns: 1.7fr 0.9fr 0.8fr 0.9fr;
   }
   .transaction-account {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .transaction-title {
     max-width: 155px;
   }
   .transaction-amount {
-    font-size: calc(11px * var(--text-scale, 1.12));
+    font-size: calc(11px * var(--text-scale, 1));
   }
   .privacy-badge {
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     padding: 3px 5px;
   }
   .app-footer {
     padding: 23px 27px;
   }
   .page-heading h1 {
-    font-size: calc(24px * var(--text-scale, 1.12));
+    font-size: calc(24px * var(--text-scale, 1));
   }
   .settings-layout {
     grid-template-columns: minmax(0, 1fr) 250px;
@@ -2383,13 +2383,13 @@ body[data-theme="dark"] .app-header {
     grid-column: 1/-1;
   }
   .summary-card .amount {
-    font-size: calc(23px * var(--text-scale, 1.12));
+    font-size: calc(23px * var(--text-scale, 1));
   }
   .summary-card {
     padding: 17px;
   }
   .card-topline {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   .summary-grid {
     gap: 10px;
@@ -2398,10 +2398,10 @@ body[data-theme="dark"] .app-header {
     min-height: 140px;
   }
   .card-footnote {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .summary-card .amount .won {
-    font-size: calc(12px * var(--text-scale, 1.12));
+    font-size: calc(12px * var(--text-scale, 1));
   }
   .stats-layout {
     grid-template-columns: 1fr 1fr;
@@ -2439,7 +2439,7 @@ body[data-theme="dark"] .app-header {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: calc(19px * var(--text-scale, 1.12));
+    font-size: calc(19px * var(--text-scale, 1));
     letter-spacing: -0.07em;
     font-weight: 750;
     color: var(--ink);
@@ -2464,7 +2464,7 @@ body[data-theme="dark"] .app-header {
     display: none;
   }
   .sample-tag {
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     padding: 3px 6px;
   }
   .profile-button {
@@ -2479,7 +2479,7 @@ body[data-theme="dark"] .app-header {
   .profile-button .avatar {
     width: 27px;
     height: 27px;
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   main {
     padding: 17px 20px 20px;
@@ -2490,16 +2490,16 @@ body[data-theme="dark"] .app-header {
     align-items: flex-start;
   }
   .page-heading h1 {
-    font-size: calc(24px * var(--text-scale, 1.12));
+    font-size: calc(24px * var(--text-scale, 1));
     letter-spacing: -0.06em;
   }
   .page-subtitle {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
     line-height: 1.8;
     margin-top: 8px;
   }
   .eyebrow {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     margin-bottom: 9px;
   }
   .page-heading .primary-button {
@@ -2516,7 +2516,7 @@ body[data-theme="dark"] .app-header {
     gap: 1px;
   }
   .scope-tabs button {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
     padding: 7px 10px;
     gap: 4px;
   }
@@ -2528,7 +2528,7 @@ body[data-theme="dark"] .app-header {
     gap: 2px;
   }
   .month-label {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
     min-width: 75px;
     gap: 4px;
   }
@@ -2559,26 +2559,26 @@ body[data-theme="dark"] .app-header {
     padding: 21px;
   }
   .summary-card.total .card-topline {
-    font-size: calc(11px * var(--text-scale, 1.12));
+    font-size: calc(11px * var(--text-scale, 1));
   }
   .summary-card.total .amount {
-    font-size: calc(34px * var(--text-scale, 1.12));
+    font-size: calc(34px * var(--text-scale, 1));
     margin-top: 9px;
   }
   .summary-card .amount {
-    font-size: calc(24px * var(--text-scale, 1.12));
+    font-size: calc(24px * var(--text-scale, 1));
     gap: 4px;
     margin-top: 9px;
   }
   .summary-card .amount .won {
-    font-size: calc(12px * var(--text-scale, 1.12));
+    font-size: calc(12px * var(--text-scale, 1));
   }
   .summary-card .card-footnote {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     margin-top: 6px;
   }
   .summary-card .card-topline {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   .summary-card .summary-icon {
     height: 23px;
@@ -2634,20 +2634,20 @@ body[data-theme="dark"] .app-header {
     margin-bottom: 17px;
   }
   .panel-heading h2 {
-    font-size: calc(12px * var(--text-scale, 1.12));
+    font-size: calc(12px * var(--text-scale, 1));
   }
   .chart-total {
-    font-size: calc(23px * var(--text-scale, 1.12));
+    font-size: calc(23px * var(--text-scale, 1));
   }
   .chart-key {
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
   }
   .line-chart {
     height: 156px;
     margin-top: 14px;
   }
   .chart-note {
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     gap: 10px;
   }
   .chart-note svg {
@@ -2677,18 +2677,18 @@ body[data-theme="dark"] .app-header {
     padding-right: 78px;
   }
   .transaction-title {
-    font-size: calc(11px * var(--text-scale, 1.12));
+    font-size: calc(11px * var(--text-scale, 1));
     max-width: 180px;
   }
   .transaction-meta {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     margin-top: 6px;
   }
   .transaction-account {
     position: absolute;
     left: 62px;
     bottom: 12px;
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     line-height: 1.4;
   }
   .transaction-row .transaction-main {
@@ -2699,14 +2699,14 @@ body[data-theme="dark"] .app-header {
     position: absolute;
     right: 18px;
     bottom: 12px;
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     padding: 3px 5px;
   }
   .transaction-amount {
     position: absolute;
     right: 18px;
     top: 18px;
-    font-size: calc(12px * var(--text-scale, 1.12));
+    font-size: calc(12px * var(--text-scale, 1));
   }
   .transaction-row .category-icon {
     width: 34px;
@@ -2715,10 +2715,10 @@ body[data-theme="dark"] .app-header {
   }
   .transaction-day-heading {
     padding: 15px 18px 2px;
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .transaction-day-heading > span {
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
   }
   .transaction-panel-footer {
     padding: 13px 18px;
@@ -2727,19 +2727,19 @@ body[data-theme="dark"] .app-header {
     padding: 13px 0;
   }
   .account-mini-title {
-    font-size: calc(11px * var(--text-scale, 1.12));
+    font-size: calc(11px * var(--text-scale, 1));
   }
   .account-mini-title + small {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .account-mini-amount {
-    font-size: calc(13px * var(--text-scale, 1.12));
+    font-size: calc(13px * var(--text-scale, 1));
   }
   .account-mini-amount small {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .account-list-note {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .donut-panel .donut-layout {
     display: grid;
@@ -2760,33 +2760,33 @@ body[data-theme="dark"] .app-header {
     gap: 13px;
   }
   .legend-row {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     gap: 7px;
   }
   .legend-row strong {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   .legend-row small {
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     min-width: 24px;
   }
   .donut-center strong {
-    font-size: calc(17px * var(--text-scale, 1.12));
+    font-size: calc(17px * var(--text-scale, 1));
   }
   .shared-note {
     padding: 19px 20px;
   }
   .shared-note h3 {
-    font-size: calc(12px * var(--text-scale, 1.12));
+    font-size: calc(12px * var(--text-scale, 1));
   }
   .shared-note p {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   .app-footer {
     padding: 8px 20px 98px;
     display: block;
     line-height: 2.5;
-    font-size: calc(8px * var(--text-scale, 1.12));
+    font-size: calc(8px * var(--text-scale, 1));
     text-align: center;
   }
   .app-footer > span {
@@ -2816,7 +2816,7 @@ body[data-theme="dark"] .app-header {
     padding: 4px 5px;
     margin: 0;
     border-radius: 9px;
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .mobile-nav .nav-item svg {
     width: 19px;
@@ -2876,7 +2876,7 @@ body[data-theme="dark"] .app-header {
     height: 16px;
   }
   .scope-explanation {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     align-items: flex-start;
     padding: 11px 12px;
   }
@@ -2891,24 +2891,24 @@ body[data-theme="dark"] .app-header {
     gap: 3px;
   }
   .calendar-date {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
     width: 21px;
     height: 21px;
   }
   .calendar-weekday {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     padding: 12px 0;
   }
   .calendar-expense,
   .calendar-income {
-    font-size: calc(7px * var(--text-scale, 1.12));
+    font-size: calc(7px * var(--text-scale, 1));
     letter-spacing: -0.05em;
   }
   .calendar-records {
-    font-size: calc(7px * var(--text-scale, 1.12));
+    font-size: calc(7px * var(--text-scale, 1));
   }
   .calendar-detail h3 {
-    font-size: calc(11px * var(--text-scale, 1.12));
+    font-size: calc(11px * var(--text-scale, 1));
     margin-left: 18px;
   }
   .accounts-grid {
@@ -2919,10 +2919,10 @@ body[data-theme="dark"] .app-header {
     padding: 21px;
   }
   .account-card h2 {
-    font-size: calc(14px * var(--text-scale, 1.12));
+    font-size: calc(14px * var(--text-scale, 1));
   }
   .account-card-bottom strong {
-    font-size: calc(25px * var(--text-scale, 1.12));
+    font-size: calc(25px * var(--text-scale, 1));
   }
   .stats-layout {
     display: flex;
@@ -2949,10 +2949,10 @@ body[data-theme="dark"] .app-header {
   }
   .stats-category-line {
     padding: 14px 18px;
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   .stats-category-line > small {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .settings-layout {
     display: flex;
@@ -2969,17 +2969,17 @@ body[data-theme="dark"] .app-header {
     gap: 9px;
   }
   .setting-row > div > strong {
-    font-size: calc(11px * var(--text-scale, 1.12));
+    font-size: calc(11px * var(--text-scale, 1));
   }
   .setting-row > div > p {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .theme-buttons {
     gap: 4px;
   }
   .theme-buttons button {
     padding: 7px;
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
   }
   .mobile-only {
     display: initial;
@@ -2988,7 +2988,7 @@ body[data-theme="dark"] .app-header {
     display: none;
   }
   .secondary-button {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
     padding: 9px 10px;
   }
   .segment-control button {
@@ -3008,7 +3008,7 @@ body[data-theme="dark"] .app-header {
     gap: 6px;
   }
   .preview-title {
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
     gap: 6px;
   }
   .preview-title .preview-divider,
@@ -3016,7 +3016,7 @@ body[data-theme="dark"] .app-header {
     display: none;
   }
   .preview-help {
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     gap: 5px;
   }
   .preview-help span:last-child {
@@ -3035,7 +3035,7 @@ body[data-theme="dark"] .app-header {
   }
   .device-switch button {
     padding: 5px 9px;
-    font-size: calc(9px * var(--text-scale, 1.12));
+    font-size: calc(9px * var(--text-scale, 1));
     gap: 4px;
   }
   .device-switch svg {
@@ -3068,11 +3068,11 @@ body[data-theme="dark"] .app-header {
     max-height: 95dvh;
   }
   .entry-amount-wrap input {
-    font-size: calc(35px * var(--text-scale, 1.12));
+    font-size: calc(35px * var(--text-scale, 1));
   }
   .toast {
     bottom: 90px;
-    font-size: calc(10px * var(--text-scale, 1.12));
+    font-size: calc(10px * var(--text-scale, 1));
   }
   .app-frame {
     min-height: calc(100dvh - 49px);
@@ -3082,32 +3082,32 @@ body[data-theme="dark"] .app-header {
   display: none !important;
 }
 .panel-heading h2 {
-  font-size: calc(14px * var(--text-scale, 1.12));
+  font-size: calc(14px * var(--text-scale, 1));
 }
 .transaction-title {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .transaction-amount {
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
 }
 .transaction-meta,
 .transaction-account {
-  font-size: calc(10px * var(--text-scale, 1.12));
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .account-mini-title {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .account-mini-amount {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .page-subtitle {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .scope-tabs button {
-  font-size: calc(12px * var(--text-scale, 1.12));
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .primary-button {
-  font-size: calc(13px * var(--text-scale, 1.12));
+  font-size: calc(13px * var(--text-scale, 1));
 }
 .search-field:focus-within {
   outline: 2px solid #aac6ac;

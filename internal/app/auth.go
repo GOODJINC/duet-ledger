@@ -17,6 +17,7 @@ import (
 var usernamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{2,31}$`)
 
 type credentials struct {
+	Remember bool   `json:"remember"`
 	Username string `json:"username"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
@@ -143,7 +144,11 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, u *User) error {
 			return &apiError{401, "totp_invalid", "인증 코드가 맞지 않거나 이미 사용되었어요."}
 		}
 	}
-	return a.issueSession(w, id, 200)
+	duration := 7 * 24 * time.Hour
+	if c.Remember {
+		duration = 30 * 24 * time.Hour
+	}
+	return a.issueSessionFor(w, id, 200, duration, c.Remember)
 }
 func (a *App) user(id string) (*User, error) {
 	u := &User{}
@@ -157,16 +162,23 @@ func (a *App) user(id string) (*User, error) {
 	return u, err
 }
 func (a *App) issueSession(w http.ResponseWriter, id string, status int, pending ...bool) error {
+	return a.issueSessionFor(w, id, status, 7*24*time.Hour, true, pending...)
+}
+func (a *App) issueSessionFor(w http.ResponseWriter, id string, status int, duration time.Duration, persistent bool, pending ...bool) error {
 	token := encode64(random(32))
 	csrf := encode64(random(32))
 	t := time.Now()
 	if _, err := a.DB.Exec("DELETE FROM sessions WHERE expires_at < ?", t.Unix()); err != nil {
 		return err
 	}
-	if _, err := a.DB.Exec("INSERT INTO sessions VALUES(?,?,?,?,?)", tokenHash(token), id, csrf, t.Add(7*24*time.Hour).Unix(), t.Unix()); err != nil {
+	if _, err := a.DB.Exec("INSERT INTO sessions VALUES(?,?,?,?,?)", tokenHash(token), id, csrf, t.Add(duration).Unix(), t.Unix()); err != nil {
 		return err
 	}
-	a.setCookie(w, token, int((7 * 24 * time.Hour).Seconds()))
+	maxAge := 0
+	if persistent {
+		maxAge = int(duration.Seconds())
+	}
+	a.setCookie(w, token, maxAge)
 	u, err := a.user(id)
 	if err != nil {
 		return err
