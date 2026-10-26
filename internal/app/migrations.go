@@ -8,11 +8,25 @@ func (a *App) migrate() error {
 	if err := a.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 6 {
+	if version > 7 {
 		return fmt.Errorf("unsupported database version: %d", version)
 	}
-	if version == 6 {
+	if version == 7 {
 		return nil
+	}
+	if version == 6 {
+		tx, err := a.DB.Begin()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if _, err = tx.Exec(`CREATE TABLE IF NOT EXISTS entry_presets(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),payload TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS entry_presets_user ON entry_presets(user_id,created_at);
+CREATE INDEX IF NOT EXISTS events_creator_recent ON events(creator_id,created_at DESC) WHERE deleted_at IS NULL;
+INSERT INTO schema_version VALUES(7);`); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if version == 5 {
 		tx, err := a.DB.Begin()
@@ -28,7 +42,10 @@ INSERT INTO server_settings VALUES('api_enabled','false');
 INSERT INTO schema_version VALUES(6);`); err != nil {
 			return err
 		}
-		return tx.Commit()
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return a.migrate()
 	}
 	if version == 4 {
 		tx, err := a.DB.Begin()

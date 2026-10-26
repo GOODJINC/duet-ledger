@@ -1,3 +1,4 @@
+import { AccessReview } from "./access-review";
 import { useTask } from "./use-task";
 import { msg, intlLocale } from "./i18n";
 import { copyText } from "./clipboard";
@@ -243,6 +244,7 @@ export function SharingDialog(p: DialogProps) {
           </p>
         </div>
       </div>
+      <AccessReview accounts={p.accounts} />
       <form
         onSubmit={(e) => {
           e.preventDefault();

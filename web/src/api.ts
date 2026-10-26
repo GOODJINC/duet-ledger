@@ -25,6 +25,10 @@ export type Ledger = {
   tagline?: string;
 };
 export type Account = {
+  access_paths?: {
+    type: "owner" | "ledger" | "account";
+    role: "owner" | "editor" | "viewer";
+  }[];
   id: string;
   ledger_id?: string;
   ledger_name: string;
@@ -306,3 +310,18 @@ export function displayCategory(code: string, name?: string) {
     ? categoryName(code)
     : name || code;
 }
+
+export type EntryPresetInput = {
+  kind: string;
+  account_id: string;
+  to_id?: string;
+  amount: string;
+  title: string;
+  category: string;
+  note?: string;
+  target_note?: string;
+  original_currency?: string;
+  original_amount?: string;
+  exchange_rate?: string;
+};
+export type EntryPreset = { id: string; input: EntryPresetInput };

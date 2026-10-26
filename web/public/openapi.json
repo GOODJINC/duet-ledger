@@ -615,9 +615,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "confirm_name"
-                ],
+                "required": ["confirm_name"],
                 "properties": {
                   "confirm_name": {
                     "type": "string"
@@ -901,10 +899,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "confirm_name",
-                  "version"
-                ],
+                "required": ["confirm_name", "version"],
                 "properties": {
                   "confirm_name": {
                     "type": "string"
@@ -1013,11 +1008,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "all",
-                "private",
-                "shared"
-              ]
+              "enum": ["all", "private", "shared"]
             }
           },
           {
@@ -1346,9 +1337,7 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "file"
-                ],
+                "required": ["file"],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -1820,11 +1809,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "all",
-                "private",
-                "shared"
-              ]
+              "enum": ["all", "private", "shared"]
             }
           },
           {
@@ -1892,10 +1877,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "csv",
-                "json"
-              ]
+              "enum": ["csv", "json"]
             }
           }
         ]
@@ -2200,10 +2182,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "enum": [
-                "income",
-                "expense"
-              ]
+              "enum": ["income", "expense"]
             }
           },
           {
@@ -2484,9 +2463,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "ids"
-                ],
+                "required": ["ids"],
                 "properties": {
                   "ids": {
                     "type": "array",
@@ -2549,17 +2526,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "kind",
-                  "codes"
-                ],
+                "required": ["kind", "codes"],
                 "properties": {
                   "kind": {
                     "type": "string",
-                    "enum": [
-                      "income",
-                      "expense"
-                    ]
+                    "enum": ["income", "expense"]
                   },
                   "codes": {
                     "type": "array",
@@ -2696,10 +2667,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "expense",
-                "income"
-              ]
+              "enum": ["expense", "income"]
             }
           }
         ],
@@ -2742,10 +2710,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "from",
-                  "to"
-                ],
+                "required": ["from", "to"],
                 "properties": {
                   "from": {
                     "type": "string"
@@ -2799,10 +2764,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "from",
-                  "to"
-                ],
+                "required": ["from", "to"],
                 "properties": {
                   "from": {
                     "type": "string"
@@ -2969,10 +2931,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "css",
-                "font"
-              ]
+              "enum": ["css", "font"]
             }
           }
         ],
@@ -3024,10 +2983,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "css",
-                "font"
-              ]
+              "enum": ["css", "font"]
             }
           }
         ],
@@ -3051,9 +3007,7 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "file"
-                ],
+                "required": ["file"],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -3081,10 +3035,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "css",
-                "font"
-              ]
+              "enum": ["css", "font"]
             }
           }
         ],
@@ -3374,9 +3325,7 @@
                     "type": "boolean"
                   }
                 },
-                "required": [
-                  "enabled"
-                ]
+                "required": ["enabled"]
               }
             }
           }
@@ -3539,10 +3488,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "expense",
-                "income"
-              ]
+              "enum": ["expense", "income"]
             }
           }
         ],
@@ -3602,11 +3548,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "all",
-                "private",
-                "shared"
-              ]
+              "enum": ["all", "private", "shared"]
             }
           },
           {
@@ -4031,11 +3973,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "all",
-                "private",
-                "shared"
-              ]
+              "enum": ["all", "private", "shared"]
             }
           },
           {
@@ -4146,9 +4084,7 @@
                     "format": "binary"
                   }
                 },
-                "required": [
-                  "file"
-                ]
+                "required": ["file"]
               }
             }
           }
@@ -4247,6 +4183,138 @@
         "description": "Bearer app password only. Current user rights AND selected accounts are enforced on every request. New accounts are not auto-included. Keys are limited to 120 requests/minute. Cookie authentication, key management, sharing and administrator operations are unavailable here.",
         "operationId": "delete_api_v1_receipts_id"
       }
+    },
+    "/api/me/entry-presets": {
+      "get": {
+        "summary": "Private favorites and own recent reusable inputs; current writable-account scope is rechecked",
+        "operationId": "get_api_me_entry_presets",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ledger",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Restrict every account in the input to this accessible ledger."
+          }
+        ]
+      },
+      "post": {
+        "summary": "Save a private entry favorite without creating a transaction",
+        "operationId": "post_api_me_entry_presets",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "200": {
+            "description": "An identical favorite already exists; its ID is returned.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryPresetInput"
+              }
+            }
+          }
+        },
+        "description": "Only expense, income and transfer. Date/time/version are not saved. Up to 100 favorites per user; current account write permission required."
+      }
+    },
+    "/api/me/entry-presets/{id}": {
+      "delete": {
+        "summary": "Delete own entry favorite; transactions are kept",
+        "operationId": "delete_api_me_entry_presets_id",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -4282,10 +4350,7 @@
       },
       "Credentials": {
         "type": "object",
-        "required": [
-          "username",
-          "password"
-        ],
+        "required": ["username", "password"],
         "properties": {
           "username": {
             "type": "string",
@@ -4311,20 +4376,14 @@
       },
       "LedgerInput": {
         "type": "object",
-        "required": [
-          "name",
-          "kind"
-        ],
+        "required": ["name", "kind"],
         "properties": {
           "name": {
             "type": "string",
             "maxLength": 60
           },
           "kind": {
-            "enum": [
-              "personal",
-              "shared"
-            ]
+            "enum": ["personal", "shared"]
           },
           "timezone": {
             "type": "string",
@@ -4339,13 +4398,7 @@
       },
       "AccountInput": {
         "type": "object",
-        "required": [
-          "ledger_id",
-          "name",
-          "kind",
-          "currency",
-          "scale"
-        ],
+        "required": ["ledger_id", "name", "kind", "currency", "scale"],
         "properties": {
           "ledger_id": {
             "type": "string"
@@ -4355,12 +4408,7 @@
             "maxLength": 60
           },
           "kind": {
-            "enum": [
-              "cash",
-              "bank",
-              "card",
-              "loan"
-            ]
+            "enum": ["cash", "bank", "card", "loan"]
           },
           "currency": {
             "enum": [
@@ -4399,13 +4447,7 @@
         ],
         "properties": {
           "kind": {
-            "enum": [
-              "income",
-              "expense",
-              "transfer",
-              "adjustment",
-              "refund"
-            ]
+            "enum": ["income", "expense", "transfer", "adjustment", "refund"]
           },
           "date": {
             "type": "string",
@@ -4470,9 +4512,7 @@
       },
       "Version": {
         "type": "object",
-        "required": [
-          "version"
-        ],
+        "required": ["version"],
         "properties": {
           "version": {
             "type": "integer",
@@ -4482,21 +4522,14 @@
       },
       "Profile": {
         "type": "object",
-        "required": [
-          "name",
-          "locale",
-          "timezone"
-        ],
+        "required": ["name", "locale", "timezone"],
         "properties": {
           "name": {
             "type": "string",
             "maxLength": 40
           },
           "locale": {
-            "enum": [
-              "ko",
-              "en"
-            ]
+            "enum": ["ko", "en"]
           },
           "timezone": {
             "type": "string"
@@ -4527,11 +4560,7 @@
       },
       "AccountUpdate": {
         "type": "object",
-        "required": [
-          "name",
-          "archived",
-          "version"
-        ],
+        "required": ["name", "archived", "version"],
         "properties": {
           "name": {
             "type": "string",
@@ -4548,48 +4577,31 @@
       },
       "InvitationInput": {
         "type": "object",
-        "required": [
-          "target_type",
-          "target_id",
-          "role"
-        ],
+        "required": ["target_type", "target_id", "role"],
         "properties": {
           "target_type": {
-            "enum": [
-              "ledger",
-              "account"
-            ]
+            "enum": ["ledger", "account"]
           },
           "target_id": {
             "type": "string"
           },
           "role": {
-            "enum": [
-              "viewer",
-              "editor"
-            ]
+            "enum": ["viewer", "editor"]
           }
         }
       },
       "Role": {
         "type": "object",
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "properties": {
           "role": {
-            "enum": [
-              "viewer",
-              "editor"
-            ]
+            "enum": ["viewer", "editor"]
           }
         }
       },
       "Token": {
         "type": "object",
-        "required": [
-          "token"
-        ],
+        "required": ["token"],
         "properties": {
           "token": {
             "type": "string"
@@ -4610,10 +4622,7 @@
       },
       "Password": {
         "type": "object",
-        "required": [
-          "current",
-          "password"
-        ],
+        "required": ["current", "password"],
         "properties": {
           "current": {
             "type": "string",
@@ -4631,10 +4640,7 @@
       },
       "OwnerTransfer": {
         "type": "object",
-        "required": [
-          "user_id",
-          "password"
-        ],
+        "required": ["user_id", "password"],
         "properties": {
           "user_id": {
             "type": "string"
@@ -4650,11 +4656,7 @@
       },
       "CSVImport": {
         "type": "object",
-        "required": [
-          "account_id",
-          "content",
-          "dry_run"
-        ],
+        "required": ["account_id", "content", "dry_run"],
         "properties": {
           "account_id": {
             "type": "string"
@@ -4670,10 +4672,7 @@
       },
       "JSONImport": {
         "type": "object",
-        "required": [
-          "data",
-          "dry_run"
-        ],
+        "required": ["data", "dry_run"],
         "properties": {
           "data": {
             "type": "object",
@@ -4686,10 +4685,7 @@
       },
       "LedgerUpdate": {
         "type": "object",
-        "required": [
-          "name",
-          "timezone"
-        ],
+        "required": ["name", "timezone"],
         "properties": {
           "name": {
             "type": "string",
@@ -4707,9 +4703,7 @@
       },
       "OTPCode": {
         "type": "object",
-        "required": [
-          "code"
-        ],
+        "required": ["code"],
         "properties": {
           "code": {
             "type": "string",
@@ -4719,11 +4713,7 @@
       },
       "Setup": {
         "type": "object",
-        "required": [
-          "username",
-          "name",
-          "password"
-        ],
+        "required": ["username", "name", "password"],
         "properties": {
           "username": {
             "type": "string",
@@ -4744,10 +4734,7 @@
       },
       "Category": {
         "type": "object",
-        "required": [
-          "name",
-          "kind"
-        ],
+        "required": ["name", "kind"],
         "properties": {
           "code": {
             "type": "string",
@@ -4759,10 +4746,7 @@
             "maxLength": 60
           },
           "kind": {
-            "enum": [
-              "income",
-              "expense"
-            ]
+            "enum": ["income", "expense"]
           },
           "hidden": {
             "type": "boolean",
@@ -4773,9 +4757,7 @@
       },
       "RegistrationSettings": {
         "type": "object",
-        "required": [
-          "registration_open"
-        ],
+        "required": ["registration_open"],
         "properties": {
           "registration_open": {
             "type": "boolean"
@@ -4784,13 +4766,7 @@
       },
       "APIPermission": {
         "type": "string",
-        "enum": [
-          "read",
-          "create",
-          "update",
-          "delete",
-          "receipts"
-        ]
+        "enum": ["read", "create", "update", "delete", "receipts"]
       },
       "AppPasswordInput": {
         "type": "object",
@@ -4818,12 +4794,7 @@
           },
           "lifetime": {
             "type": "string",
-            "enum": [
-              "30d",
-              "90d",
-              "1y",
-              "never"
-            ],
+            "enum": ["30d", "90d", "1y", "never"],
             "description": "1y is 365 days. never has expires_at=0."
           },
           "password": {
@@ -4896,11 +4867,7 @@
             "format": "int64"
           }
         },
-        "required": [
-          "id",
-          "app_password",
-          "expires_at"
-        ]
+        "required": ["id", "app_password", "expires_at"]
       },
       "APIAccount": {
         "type": "object",
@@ -5151,10 +5118,7 @@
             }
           },
           "missing_currencies": {
-            "type": [
-              "array",
-              "null"
-            ],
+            "type": ["array", "null"],
             "items": {
               "type": "string"
             }
@@ -5186,10 +5150,7 @@
             }
           },
           "missing_currencies": {
-            "type": [
-              "array",
-              "null"
-            ],
+            "type": ["array", "null"],
             "items": {
               "type": "string"
             }
@@ -5221,11 +5182,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "income",
-              "expense",
-              "transfer"
-            ]
+            "enum": ["income", "expense", "transfer"]
           },
           "date": {
             "type": "string",
@@ -5301,13 +5258,7 @@
         ],
         "properties": {
           "kind": {
-            "enum": [
-              "income",
-              "expense",
-              "transfer",
-              "adjustment",
-              "refund"
-            ]
+            "enum": ["income", "expense", "transfer", "adjustment", "refund"]
           },
           "date": {
             "type": "string",
@@ -5369,6 +5320,75 @@
             "description": "Account currency units per 1 original currency unit. Positive decimal, up to 12 fraction digits."
           }
         }
+      },
+      "EntryPresetInput": {
+        "type": "object",
+        "required": ["kind", "amount", "account_id", "title", "category"],
+        "properties": {
+          "kind": {
+            "enum": ["income", "expense", "transfer", "adjustment", "refund"]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$",
+            "description": "Minimum currency units; signed only for adjustment."
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "to_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "target_note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "time": {
+            "type": "string",
+            "description": "Optional local clock time HH:mm; empty preserves unknown legacy time."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA time zone for the entered date/time."
+          },
+          "ledger_id": {
+            "type": "string",
+            "description": "Optional entry context; source and transfer target must belong to this ledger."
+          },
+          "original_currency": {
+            "type": "string",
+            "description": "Optional original charge currency, different from account currency."
+          },
+          "original_amount": {
+            "type": "string",
+            "description": "Positive original amount as a minor-unit integer string."
+          },
+          "exchange_rate": {
+            "type": "string",
+            "description": "Account currency units per 1 original currency unit. Positive decimal, up to 12 fraction digits."
+          }
+        },
+        "description": "Private favorite input. Only income/expense/transfer; dates, time, timezone, ledger constraint and version are not saved."
       }
     }
   }

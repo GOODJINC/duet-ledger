@@ -218,6 +218,25 @@ try {
     },
     201,
   );
+  const preset = await c.request(
+    "POST",
+    "/me/entry-presets",
+    {
+      account_id: account.id,
+      kind: "expense",
+      amount: "28000",
+      title: "Reusable foreign subscription",
+      category: "food",
+      original_currency: "USD",
+      original_amount: "2000",
+      exchange_rate: "1400",
+    },
+    201,
+  );
+  assert.equal(
+    (await c.request("GET", "/me/entry-presets")).favorites[0].id,
+    preset.id,
+  );
   const profile = await c.request("GET", "/me");
   const design = new FormData();
   design.append(
@@ -383,6 +402,12 @@ try {
     (await restoredClient.request("GET", "/accounts"))[0].balance,
     "59863",
   );
+  const restoredPresets = await restoredClient.request(
+    "GET",
+    "/me/entry-presets",
+  );
+  assert.equal(restoredPresets.favorites[0].id, preset.id);
+  assert.equal(restoredPresets.favorites[0].input.original_amount, "2000");
   const restoredReport = await restoredClient.request(
     "GET",
     "/transactions?from=1900-01-01&to=2100-12-31&display_currency=KRW",

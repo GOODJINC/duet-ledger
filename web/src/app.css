@@ -2484,8 +2484,104 @@ body {
   text-underline-offset: 3px;
 }
 
-.auth-language { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 0.9rem; color: var(--muted); }
-.auth-language select { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--paper); color: var(--ink); font: inherit; }
-.user-dropdown > a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: inherit; text-decoration: none; border-radius: 8px; }
-.user-dropdown > a:hover { background: var(--bg); }
-.help-wrap .help-tip.help-floating { width: max-content; max-width: min(290px, calc(100vw - 24px)); }
+.auth-language {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.auth-language select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+.user-dropdown > a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+}
+.user-dropdown > a:hover {
+  background: var(--bg);
+}
+.help-wrap .help-tip.help-floating {
+  width: max-content;
+  max-width: min(290px, calc(100vw - 24px));
+}
+
+/* Compact reusable entry choices and per-account access review. */
+.entry-shortcuts,
+.access-review {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+}
+.entry-shortcuts summary,
+.access-review summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.shortcut-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.shortcut-toolbar .entry-types {
+  margin: 0;
+}
+.shortcut-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.shortcut-row,
+.access-review-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding: 9px 0;
+}
+.shortcut-select {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  cursor: pointer;
+}
+.shortcut-select strong,
+.shortcut-select span,
+.access-review-row span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.shortcut-select span,
+.access-review-row span,
+.access-review-row li {
+  color: var(--muted);
+  font-size: 0.9em;
+}
+.access-review-row ul {
+  padding-left: 18px;
+  margin: 5px 0 0;
+}
+
+.entry-shortcuts {
+  grid-column: 1 / -1;
+}

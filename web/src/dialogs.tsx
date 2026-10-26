@@ -1,3 +1,4 @@
+import { EntryShortcuts } from "./entry-shortcuts";
 import { useTask } from "./use-task";
 import { msg, monthName, intlLocale } from "./i18n";
 import {
@@ -18,6 +19,7 @@ import {
   displayCategory,
   kindNames,
   currencyScales,
+  type EntryPresetInput,
   type Category,
   type User,
   type Ledger,
@@ -175,6 +177,7 @@ export function EntryDialog(
         f,
       );
   } catch {}
+  const [presetRevision, setPresetRevision] = useState(0);
   const [category, setCategory] = useState(first?.category || "food");
   const [note, setNote] = useState(first?.note || "");
   const [targetNote, setTargetNote] = useState(
@@ -222,7 +225,9 @@ export function EntryDialog(
             ? old
             : tx && first?.category === old
               ? old
-              : list[0]?.code || "",
+              : presetRevision > 0
+                ? ""
+                : list[0]?.code || "",
         );
       })
       .catch((e) => {
@@ -231,7 +236,89 @@ export function EntryDialog(
     return () => {
       active = false;
     };
-  }, [accountId, categoryKind, p.categoryVersion]);
+  }, [accountId, categoryKind, p.categoryVersion, presetRevision]);
+  function buildInput() {
+    if (!account || !editable.some((a) => a.id === accountId))
+      throw new Error(msg("선택한 가계부의 계좌를 선택해 주세요."));
+    if (kind !== "transfer" && !category)
+      throw new Error(msg("분류를 먼저 설정해 주세요."));
+    return {
+      kind,
+      date,
+      time: clock,
+      timezone: tx?.timezone || p.user.timezone,
+      ledger_id: p.selectedLedger || "",
+      amount: foreign ? converted || "" : toMinor(amount, account.scale),
+      ...(foreign
+        ? {
+            original_currency: inputCurrency,
+            original_amount: toMinor(amount, currencyScales[inputCurrency]),
+            exchange_rate: rate,
+          }
+        : {}),
+      account_id: accountId,
+      to_id: kind === "transfer" ? target : "",
+      title,
+      category: kind === "transfer" ? "transfer" : category,
+      note,
+      target_note: kind === "transfer" ? targetNote : "",
+      version: tx?.version || 0,
+    };
+  }
+  function applyPreset(input: EntryPresetInput) {
+    const source = editable.find((a) => a.id === input.account_id);
+    const destination =
+      input.kind === "transfer"
+        ? editable.find((a) => a.id === input.to_id)
+        : undefined;
+    if (!source || (input.kind === "transfer" && !destination)) {
+      task.setError(msg("이 입력에 필요한 계좌 권한을 다시 확인해 주세요."));
+      return false;
+    }
+    if (
+      (title || amount || note || targetNote || file) &&
+      !confirm(
+        msg("작성 중인 내용을 바꾸고 불러올까요? 선택한 사진도 초기화돼요."),
+      )
+    )
+      return false;
+    setKind(input.kind);
+    setAccountId(source.id);
+    setTarget(input.to_id || "");
+    setTitle(input.title);
+    setCategory(input.category);
+    setNote(input.note || "");
+    setTargetNote(input.target_note || "");
+    setInputCurrency(input.original_currency || source.currency);
+    setAmount(
+      toDecimal(
+        input.original_amount || input.amount,
+        input.original_currency
+          ? currencyScales[input.original_currency]
+          : source.scale,
+      ),
+    );
+    const factor = exchangeFactor(
+      p.user.exchange_rates || [],
+      input.original_currency || source.currency,
+      source.currency,
+      p.user.default_currency || "KRW",
+    );
+    setRate(factor ? factorDecimal(factor) : "");
+    setDate(today(p.user.timezone));
+    setClock(
+      new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+        timeZone: p.user.timezone,
+      }).format(new Date()),
+    );
+    setFile(null);
+    setPresetRevision((v) => v + 1);
+    task.setError("");
+    return true;
+  }
   async function submit(e: FormEvent) {
     e.preventDefault();
     await task.run(async () => {
@@ -242,28 +329,7 @@ export function EntryDialog(
       let id = savedId;
       let photoId = savedPhotoId;
       if (!id) {
-        const payload = {
-          kind,
-          date,
-          time: clock,
-          timezone: tx?.timezone || p.user.timezone,
-          ledger_id: p.selectedLedger || "",
-          amount: foreign ? converted || "" : toMinor(amount, account.scale),
-          ...(foreign
-            ? {
-                original_currency: inputCurrency,
-                original_amount: toMinor(amount, currencyScales[inputCurrency]),
-                exchange_rate: rate,
-              }
-            : {}),
-          account_id: accountId,
-          to_id: kind === "transfer" ? target : "",
-          title,
-          category: kind === "transfer" ? "transfer" : category,
-          note,
-          target_note: kind === "transfer" ? targetNote : "",
-          version: tx?.version || 0,
-        };
+        const payload = buildInput();
         const result = await post<{
           id: string;
           posting_ids?: Record<string, string>;
@@ -304,6 +370,14 @@ export function EntryDialog(
     >
       <form onSubmit={submit} className="entry-form">
         <fieldset disabled={task.busy || !!savedId} className="plain-fieldset">
+          {!tx && (
+            <EntryShortcuts
+              ledger={p.selectedLedger}
+              accounts={editable}
+              select={applyPreset}
+              current={buildInput}
+            />
+          )}
           <div className="entry-types">
             {[
               ["expense", msg("지출")],
@@ -338,7 +412,7 @@ export function EntryDialog(
                     r.from,
                     r.to,
                   ]),
-                  ...(tx ? [inputCurrency] : []),
+                  ...(tx || presetRevision > 0 ? [inputCurrency] : []),
                   ...(kind === "transfer" && account ? [account.currency] : []),
                 ]),
               ].map((code) => (

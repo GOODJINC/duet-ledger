@@ -25,6 +25,17 @@ Open **Quick entry**, select Expense, Income or Transfer, and enter the amount, 
 
 Close dialogs with Close, Escape or browser Back. Clicking outside does not close them. `Q` opens Quick entry; `/` focuses search. Shortcuts are ignored while typing in fields.
 
+## Favorites and recent entries
+
+Expand **Favorites and recent entries** in Quick entry to reuse common input.
+
+- Fill in the amount, description, account, category and notes, then choose **Save current entry as favorite**. Favorites belong to your account, with up to 100 entries. This does not create a transaction.
+- **Recent entries** shows up to 20 of your own latest transactions that you can currently enter again. Use the adjacent add button to save one as a favorite.
+- Loading input sets the date and time to now. Foreign amounts use your current configured exchange rate; review the result. Receipts are not copied.
+- Loading does not save a transaction. Review the draft, then choose **Save record** to create a new transaction.
+- The selected ledger limits the available accounts. Transfers require write access to both accounts. Archived, deleted or no-longer-writable accounts are hidden.
+- Removing a favorite keeps transaction records. Favorites are included in server backups, but not CSV/JSON data exports.
+
 ## Search and statistics
 
 Choose day/week/month/year and list/calendar views. Click the month heading to jump to another year/month, or select This month.
@@ -51,6 +62,8 @@ Recorded balances use opening balances and saved transactions. They do not synch
 Editing or deleting a complete transfer requires edit access to both accounts. Other private accounts and hidden transfer counterparts are not exposed. Shared access includes previous transactions, balances, notes and receipts. Downloaded copies cannot be recalled after sharing ends.
 
 A user may have access through both direct account sharing and ledger membership. Removing one grant leaves other grants effective. Transfer ownership or leave sharing in Settings without deleting original records.
+
+Open **Settings → Sharing → Review my account access** to see your effective role and access paths for each account. Whole-ledger and direct-account grants combine using the highest permission. Removing one path leaves access through other remaining paths.
 
 ## Currencies and exchange rates
 

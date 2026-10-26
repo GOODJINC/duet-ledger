@@ -19,21 +19,26 @@ type Ledger struct {
 	Timezone string `json:"timezone"`
 	Tagline  string `json:"tagline"`
 }
+type AccountAccess struct {
+	Type string `json:"type"`
+	Role string `json:"role"`
+}
 type Account struct {
-	ID         string `json:"id"`
-	LedgerID   string `json:"ledger_id,omitempty"`
-	LedgerName string `json:"ledger_name"`
-	Name       string `json:"name"`
-	Kind       string `json:"kind"`
-	Currency   string `json:"currency"`
-	Scale      int    `json:"scale"`
-	Opening    string `json:"opening"`
-	Balance    string `json:"balance"`
-	Archived   bool   `json:"archived"`
-	Version    int    `json:"version"`
-	Role       string `json:"role"`
-	Shared     bool   `json:"shared"`
-	OwnerName  string `json:"owner_name"`
+	AccessPaths []AccountAccess `json:"access_paths"`
+	ID          string          `json:"id"`
+	LedgerID    string          `json:"ledger_id,omitempty"`
+	LedgerName  string          `json:"ledger_name"`
+	Name        string          `json:"name"`
+	Kind        string          `json:"kind"`
+	Currency    string          `json:"currency"`
+	Scale       int             `json:"scale"`
+	Opening     string          `json:"opening"`
+	Balance     string          `json:"balance"`
+	Archived    bool            `json:"archived"`
+	Version     int             `json:"version"`
+	Role        string          `json:"role"`
+	Shared      bool            `json:"shared"`
+	OwnerName   string          `json:"owner_name"`
 }
 
 func validName(s string, max int) bool {
@@ -90,13 +95,23 @@ func (a *App) accounts(q queryer, u *User) ([]Account, error) {
 		}
 		v.Opening = strconv.FormatInt(opening, 10)
 		v.Shared = kind == "shared" || direct
+		v.AccessPaths = []AccountAccess{}
 		v.Role = "viewer"
 		if owner == u.ID {
 			v.Role = "owner"
-		} else if mrole == "editor" || grole == "editor" {
-			v.Role = "editor"
+			v.AccessPaths = append(v.AccessPaths, AccountAccess{"owner", "owner"})
+		} else {
+			if kind == "shared" && mrole != "" {
+				v.AccessPaths = append(v.AccessPaths, AccountAccess{"ledger", mrole})
+			}
+			if grole != "" {
+				v.AccessPaths = append(v.AccessPaths, AccountAccess{"account", grole})
+			}
+			if kind == "shared" && mrole == "editor" || grole == "editor" {
+				v.Role = "editor"
+			}
 		}
-		if owner != u.ID && mrole == "" {
+		if owner != u.ID && (kind != "shared" || mrole == "") {
 			v.LedgerID = ""
 			v.LedgerName = "공유받은 계좌"
 		}
