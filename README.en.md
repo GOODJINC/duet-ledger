@@ -11,9 +11,7 @@ A Docker-based personal and shared finance app. Manage multiple ledgers with one
 
 ## Installation
 
-**Arcane:** paste [compose.arcane.yaml](compose.arcane.yaml) into a new stack, deploy and open `http://SERVER_IP:18088`.
-
-**Docker Compose:** run on the server and open `http://localhost:18088`:
+Run on the server and open `http://localhost:18088`:
 
 ```bash
 mkdir -p duet-ledger
@@ -21,6 +19,8 @@ cd duet-ledger
 curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
 docker compose up -d
 ```
+
+Compose resolves `${…}` settings when it runs. Use `.env` to change the port and listen address.
 
 **The first account becomes the administrator.** Create it on a trusted network before public exposure. See [Installation](manual/en/installation.md) for remote access, ports and HTTPS.
 

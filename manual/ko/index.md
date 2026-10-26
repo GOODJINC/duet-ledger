@@ -2,7 +2,7 @@
 
 | 안내                            | 내용                                       |
 | ------------------------------- | ------------------------------------------ |
-| [설치](installation.md)         | Docker·Arcane, 접속 주소·포트, HTTPS·PWA   |
+| [설치](installation.md)         | Docker Compose, 접속 주소·포트, HTTPS·PWA  |
 | [사용법](usage.md)              | 가계부·계좌·거래·공유·통계·환율            |
 | [운영](operations.md)           | 업데이트·백업·복원·로그인 복구             |
 | [API](api.md)                   | 앱 비밀번호, Postman, 거래·통계·영수증 API |

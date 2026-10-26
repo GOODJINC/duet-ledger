@@ -4,15 +4,7 @@
 
 ## Requirements
 
-Use Docker Engine with the Compose plugin, or Arcane. Images support AMD64 and ARM64; Docker selects the correct architecture.
-
-## Arcane
-
-1. Paste [compose.arcane.yaml](https://github.com/GOODJINC/duet-ledger/blob/main/compose.arcane.yaml) into a new stack.
-2. Adjust the image version and host port if needed, then deploy.
-3. Open `http://SERVER_IP:18088` and create an account. **The first account becomes the administrator.**
-
-This preset exposes the port on all server interfaces (`0.0.0.0`). Create the first account on a trusted network.
+Use Docker Engine with the Compose plugin. Images support AMD64 and ARM64; Docker selects the correct architecture.
 
 ## Docker Compose
 
@@ -30,7 +22,7 @@ Open `http://localhost:18088` to create the first account. This preset allows ac
 
 ## Address and port
 
-Set variables in an optional `.env` beside the Compose file, or in Arcane:
+Create an optional `.env` file beside the Compose file. You can choose any installation directory.
 
 | Variable                    | Purpose                                            |
 | --------------------------- | -------------------------------------------------- |
@@ -47,7 +39,19 @@ DUET_LEDGER_BIND=0.0.0.0
 DUET_LEDGER_PORT=18888
 ```
 
-Apply with `docker compose up -d` or redeploy in Arcane, then open `http://SERVER_IP:18888`. Allow the port in your firewall. To restrict access to one network, bind to that server IP. Keep the internal container port 8080.
+Apply with `docker compose up -d`, then open `http://SERVER_IP:18888`. Allow the port in your firewall. To restrict access to one network, bind to that server IP. Keep the internal container port 8080.
+
+## `${…}` and defaults
+
+`curl` saves the Compose file unchanged. `${VARIABLE:-default}` is standard Docker Compose syntax. Compose substitutes the value when it runs, using the default after `:-` when no non-empty value is provided. It does not rewrite the downloaded file.
+
+For example, `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.0}` defaults to `ghcr.io/goodjinc/duet-ledger:0.1.0`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
+
+```bash
+docker compose config
+```
+
+This displays the resolved image, ports and environment. Seeing `${…}` in an editor is normal. Web-based Docker management tools can use the same Compose file and environment variables.
 
 ## HTTPS and PWA
 
@@ -64,4 +68,4 @@ Install the PWA using the browser's install-app menu at the trusted HTTPS addres
 
 ## Storage
 
-Data is stored in `duet-ledger-data` and survives container replacement. **Deleting the volume can lose your records.** Follow [Operations](operations.md) for updates, backups and restoration.
+The installation directory holds Compose and `.env`; application data is stored in the Docker volume `duet-ledger-data` and survives container replacement. **Deleting the volume can lose your records.** Follow [Operations](operations.md) for updates, backups and restoration.

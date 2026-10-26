@@ -25,7 +25,7 @@ go vet ./...
 go build -o bin/duet-ledger ./cmd/duet-ledger
 node scripts/smoke.mjs
 node --test scripts/image-metadata.test.mjs
-node scripts/sync-compose.mjs --check
+node scripts/check-compose.mjs
 ```
 
 Use the source-build override for development. Tests use disposable datasets; never attach production data. Run Docker race checks with `docker build --target checks .`.
@@ -47,7 +47,7 @@ npm --prefix web run docs:check
 
 ## 릴리즈 · Releases
 
-1. 앱·화면·OpenAPI 버전과 Compose 태그, 변경 기록을 갱신합니다. Compose 수정 후 `node scripts/sync-compose.mjs`를 실행합니다.
+1. 앱·화면·OpenAPI 버전과 Compose 태그, 변경 기록을 갱신합니다. 버전 일치는 `node scripts/check-compose.mjs`로 확인합니다.
 2. 일치하는 `vVERSION` 태그로 GitHub Release를 발행합니다. 알파·베타·RC는 사전 릴리즈로 표시합니다.
 3. Actions가 검사 후 GHCR에 AMD64·ARM64 이미지를 게시합니다. 최초 게시 후 패키지는 Public으로 설정합니다.
 

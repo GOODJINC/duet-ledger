@@ -2,7 +2,7 @@
 
 | Guide                                 | Contents                                                       |
 | ------------------------------------- | -------------------------------------------------------------- |
-| [Installation](installation.md)       | Docker/Arcane, addresses, ports, HTTPS and PWA                 |
+| [Installation](installation.md)       | Docker Compose, addresses, ports, HTTPS and PWA                |
 | [Usage](usage.md)                     | Ledgers, accounts, transactions, sharing, statistics and rates |
 | [Operations](operations.md)           | Updates, backups, restoration and sign-in recovery             |
 | [API](api.md)                         | App passwords, Postman, transactions, statistics and receipts  |

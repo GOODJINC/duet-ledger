@@ -11,9 +11,7 @@ Docker로 운영하는 개인·공유 가계부입니다. 계정 하나로 여�
 
 ## 설치
 
-**Arcane:** [compose.arcane.yaml](compose.arcane.yaml)을 새 스택에 붙여넣어 배포하고 `http://서버IP:18088`로 접속합니다.
-
-**Docker Compose:** 다음 명령을 서버에서 실행하고 `http://localhost:18088`로 접속합니다.
+서버에서 다음 명령을 실행하고 `http://localhost:18088`로 접속합니다.
 
 ```bash
 mkdir -p duet-ledger
@@ -21,6 +19,8 @@ cd duet-ledger
 curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
 docker compose up -d
 ```
+
+Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와 접속 주소는 `.env`로 바꿀 수 있습니다.
 
 **첫 계정이 관리자**가 됩니다. 신뢰하는 네트워크에서 계정을 만든 뒤 외부에 공개하세요. 다른 PC 접속·포트·HTTPS 설정은 [설치 안내](manual/ko/installation.md)를 참고하세요.
 

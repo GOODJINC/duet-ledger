@@ -4,7 +4,7 @@
 
 | Problem                                           | Check first                                                                                                                     |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Cannot connect from another computer              | Compose defaults to `127.0.0.1`; the Arcane preset uses `0.0.0.0`. Check address, port and firewall, then redeploy              |
+| Cannot connect from another computer              | The default bind address is `127.0.0.1`. Check `DUET_LEDGER_BIND`, port and firewall, then recreate the container               |
 | `no configuration file provided`                  | Run from the Compose folder or specify `-f /actual/path/compose.yaml`                                                           |
 | First-time setup appears again                    | Before creating an account, verify the original data volume and `DUET_LEDGER_DATA_DIR`; you may have connected an empty dataset |
 | Port already in use                               | Change the host port and recreate                                                                                               |

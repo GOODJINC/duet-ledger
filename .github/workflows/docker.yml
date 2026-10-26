@@ -29,12 +29,11 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
-      - name: Validate publishing rules and Compose templates
+      - name: Validate publishing rules and Compose configuration
         run: |
           node --test scripts/image-metadata.test.mjs
-          node scripts/sync-compose.mjs --check
+          node scripts/check-compose.mjs
           docker compose config --quiet
-          docker compose -f compose.arcane.yaml config --quiet
           docker compose -f compose.yaml -f compose.build.yaml config --quiet
       - name: Build web, test and verify packaged app
         run: |

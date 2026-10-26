@@ -25,7 +25,7 @@ docker compose ps
 docker compose logs --tail 100 duet-ledger
 ```
 
-In Arcane, change the stack's image version, download the new image and redeploy. Pulling a fixed tag does not switch versions. Publishing an image does not automatically replace a running container.
+Pulling a fixed tag does not switch versions. Publishing an image does not automatically replace a running container.
 
 Keep the volume and environment settings. **An old image alone is not a safe rollback after schema migration.** Use a compatible app and a pre-update data copy. Never delete the production volume during updates.
 
