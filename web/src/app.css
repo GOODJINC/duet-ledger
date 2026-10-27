@@ -2900,4 +2900,5 @@ body {
 
 .accounts-summary {
   font-size: calc(13px * var(--text-scale, 1));
+  color: var(--ink);
 }
