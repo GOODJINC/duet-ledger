@@ -1447,17 +1447,6 @@ export function Application({
                   {page === "ledger" && (
                     <>
                       <div className="ledger-view-controls">
-                        {trash && (
-                          <button
-                            className="secondary-button trash-return"
-                            onClick={() => {
-                              setTrash(false);
-                              setPageNumber(1);
-                            }}
-                          >
-                            {msg("일반 내역으로 돌아가기")}
-                          </button>
-                        )}
                         <div className="filter-buttons">
                           <div
                             className="segment-control"

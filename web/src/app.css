@@ -2846,9 +2846,6 @@ body {
 .month-grid {
   gap: 8px;
 }
-.ledger-view-controls .trash-return {
-  margin-bottom: 8px;
-}
 @media (max-width: 760px) {
   .mobile-account-create {
     margin-left: auto;

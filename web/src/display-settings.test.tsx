@@ -252,9 +252,10 @@ it("identifies trash in the breadcrumb and headings without the old banner", asy
     document.querySelector(".desktop-breadcrumb strong")?.textContent,
   ).toBe("휴지통");
   expect(document.querySelector(".trash-mode")).toBeNull();
-  await actor.click(
-    screen.getByRole("button", { name: "일반 내역으로 돌아가기" }),
-  );
+  expect(
+    screen.queryByRole("button", { name: "일반 내역으로 돌아가기" }),
+  ).toBeNull();
+  await actor.click(screen.getAllByRole("button", { name: "가계부" })[0]);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
     "하루하루, 차곡차곡.",
   );
