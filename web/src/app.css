@@ -2072,7 +2072,7 @@ body {
 /* alpha.8: shared metrics for text, select, date and time. */
 .real-dialog .entry-form {
   --entry-control-size: calc(13px * var(--text-scale, 1));
-  --entry-control-height: 44px;
+  --entry-control-height: 40px;
 }
 .real-dialog .entry-form .field-input:not(textarea),
 .real-dialog .entry-form .field-select {
@@ -2733,7 +2733,7 @@ body {
 }
 
 /* Long dialogs become pages on phones; short choices remain dialogs. */
-.dialog-back {
+.dialog-head .dialog-back {
   display: none;
 }
 @media (max-width: 760px) {
@@ -2801,7 +2801,7 @@ body {
 @media (max-width: 760px) and (min-height: 480px) {
   .page-dialog .entry-save-area {
     position: sticky;
-    bottom: calc(-20px - env(safe-area-inset-bottom));
+    bottom: 0;
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
     background: var(--paper);
     border-top: 1px solid var(--line);
@@ -2812,5 +2812,77 @@ body {
 @media (max-width: 760px) {
   .page-dialog.short-viewport .entry-save-area {
     position: static;
+  }
+}
+
+/* Compact controls and consistent spacing in management screens. */
+.categories-dialog #category-ledger {
+  margin-bottom: 12px;
+}
+.categories-dialog .subform {
+  padding-top: 10px;
+}
+.categories-dialog .subform > .form-label {
+  margin-top: 0;
+}
+.sharing-dialog .privacy-notice + .access-review {
+  margin-top: 12px;
+}
+.real-dialog .month-toolbar .year-picker .field-input {
+  width: 68px;
+  height: 36px;
+  min-height: 36px;
+  padding: 4px;
+  font-size: calc(14px * var(--text-scale, 1));
+}
+.real-dialog .month-grid .secondary-button {
+  min-height: 38px;
+  padding: 7px 6px;
+  font-size: calc(14px * var(--text-scale, 1));
+}
+.month-toolbar {
+  margin-bottom: 14px;
+}
+.month-grid {
+  gap: 8px;
+}
+.ledger-view-controls .trash-return {
+  margin-bottom: 8px;
+}
+@media (max-width: 760px) {
+  .mobile-account-create {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 9px 10px;
+    font-size: calc(12px * var(--text-scale, 1));
+    white-space: nowrap;
+  }
+  .real-dialog.categories-dialog .field-input,
+  .real-dialog.categories-dialog .field-select {
+    height: 38px;
+    min-height: 38px;
+    padding: 6px 9px;
+    font-size: calc(14px * var(--text-scale, 1));
+  }
+  .real-dialog.sharing-dialog .field-select {
+    height: 40px;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: calc(14px * var(--text-scale, 1));
+  }
+  .real-dialog.entry-dialog.page-dialog .dialog-content {
+    padding-bottom: 0;
+    overscroll-behavior-y: none;
+  }
+  .entry-dialog.page-dialog .entry-form {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .entry-dialog.page-dialog .entry-form > * {
+    flex-shrink: 0;
+  }
+  .entry-dialog.page-dialog .entry-save-area {
+    margin-top: auto;
   }
 }

@@ -257,6 +257,7 @@
     "/api/logout-all": {
       "post": {
         "summary": "Revoke all sessions",
+        "description": "End all web sessions for the current user, including this session. API app passwords remain valid and must be revoked separately.",
         "operationId": "post_api_logout-all",
         "security": [
           {

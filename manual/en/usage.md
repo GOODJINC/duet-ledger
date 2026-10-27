@@ -77,7 +77,7 @@ For a USD purchase on a KRW account, the app stores the original amount, applied
 
 ## Account, appearance and data transfer
 
-The user menu opens Account settings and Settings. Account settings includes your name, password, two-factor authentication and app passwords. Changing password/security settings or signing out all devices also revokes API keys. Store recovery codes separately.
+The user menu opens Account settings and Settings. Account settings includes your name, password, two-factor authentication and app passwords. Signing out all devices ends web sessions only. Revoke API keys separately on the App passwords screen. Changing password/security settings still revokes API keys. Store recovery codes separately.
 
 Choose Korean or English. Personal text size (90–150%), colors and brightness apply in the current browser. Only administrators upload shared CSS/WOFF2 files, which apply to all signed-in users.
 

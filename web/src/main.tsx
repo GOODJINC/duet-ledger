@@ -964,10 +964,15 @@ export function Application({
       selectedLedger?.tagline ||
         msg("나의 기록도, 함께 쓰는 생활비도. 한곳에서 편하게."),
     ],
-    ledger: [
-      msg("하루하루, 차곡차곡."),
-      msg("작은 기록이 모여 우리 일상의 흐름이 돼요."),
-    ],
+    ledger: trash
+      ? [
+          msg("삭제한 기록을 살펴봐요."),
+          msg("삭제한 기록을 확인하고, 필요한 기록은 다시 복구하세요."),
+        ]
+      : [
+          msg("하루하루, 차곡차곡."),
+          msg("작은 기록이 모여 우리 일상의 흐름이 돼요."),
+        ],
     stats: [
       msg("기록 속에서 찾는 패턴."),
       msg("어디에 쓰고, 얼마나 모았는지. 숫자를 조금 더 가까이."),
@@ -1296,16 +1301,18 @@ export function Application({
                   {selectedLedger?.name || msg("나의 공간")}
                   <span>/</span>
                   <strong>
-                    {page === "account-settings"
-                      ? msg("계정 설정")
-                      : page === "administration"
-                        ? msg("관리")
-                        : page === "settings"
-                          ? msg("설정")
-                          : msg(
-                              navigation.find((n) => n.id === page)?.label ||
-                                "",
-                            )}
+                    {page === "ledger" && trash
+                      ? msg("휴지통")
+                      : page === "account-settings"
+                        ? msg("계정 설정")
+                        : page === "administration"
+                          ? msg("관리")
+                          : page === "settings"
+                            ? msg("설정")
+                            : msg(
+                                navigation.find((n) => n.id === page)?.label ||
+                                  "",
+                              )}
                   </strong>
                 </span>
               </div>
@@ -1337,7 +1344,7 @@ export function Application({
               </div>
             )}
             <div
-              className={`page-heading ${display.showPageHeadings ? "" : "heading-collapsed"} ${!display.showPageHeadings && (isSettings || (compactLayout && !display.mobileTopEntry && page !== "accounts")) ? "visually-hidden" : ""}`}
+              className={`page-heading ${display.showPageHeadings ? "" : "heading-collapsed"} ${!display.showPageHeadings && (isSettings || (compactLayout && (page === "accounts" || !display.mobileTopEntry))) ? "visually-hidden" : ""}`}
             >
               <div
                 className={
@@ -1355,13 +1362,15 @@ export function Application({
               </div>
               <div className="heading-actions">
                 {page === "accounts" ? (
-                  <button
-                    className="primary-button"
-                    onClick={() => setModal({ kind: "account" })}
-                  >
-                    <Icon name="plus" />
-                    {msg("계좌 만들기")}
-                  </button>
+                  !compactLayout && (
+                    <button
+                      className="primary-button"
+                      onClick={() => setModal({ kind: "account" })}
+                    >
+                      <Icon name="plus" />
+                      {msg("계좌 만들기")}
+                    </button>
+                  )
                 ) : isSettings ||
                   (compactLayout && !display.mobileTopEntry) ? null : (
                   <button
@@ -1399,7 +1408,15 @@ export function Application({
                       ))}
                     </div>
                   )}
-                  {compactLayout && page === "home" && accountControls}
+                  {compactLayout && page === "accounts" && (
+                    <button
+                      className="primary-button mobile-account-create"
+                      onClick={() => setModal({ kind: "account" })}
+                    >
+                      <Icon name="plus" />
+                      {msg("계좌 만들기")}
+                    </button>
+                  )}
                 </div>
                 <div className="date-currency-toolbar period-toolbar">
                   {page !== "accounts" && (
@@ -1426,10 +1443,21 @@ export function Application({
                       </button>
                     </div>
                   )}
-                  {compactLayout && page !== "home" && accountControls}
+                  {compactLayout && accountControls}
                   {page === "ledger" && (
                     <>
                       <div className="ledger-view-controls">
+                        {trash && (
+                          <button
+                            className="secondary-button trash-return"
+                            onClick={() => {
+                              setTrash(false);
+                              setPageNumber(1);
+                            }}
+                          >
+                            {msg("일반 내역으로 돌아가기")}
+                          </button>
+                        )}
                         <div className="filter-buttons">
                           <div
                             className="segment-control"
@@ -1530,22 +1558,6 @@ export function Application({
             )}
             {page === "ledger" && (
               <>
-                {trash && (
-                  <div className="inline-warning trash-mode">
-                    <span>
-                      {msg("기록 휴지통 · 삭제한 기록을 보고 있어요.")}
-                    </span>
-                    <button
-                      className="secondary-button"
-                      onClick={() => {
-                        setTrash(false);
-                        setPageNumber(1);
-                      }}
-                    >
-                      {msg("일반 내역으로 돌아가기")}
-                    </button>
-                  </div>
-                )}
                 <div className="search-filter-bar">
                   <label className="search-field">
                     <Icon name="search" />

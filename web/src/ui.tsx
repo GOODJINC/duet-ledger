@@ -156,12 +156,14 @@ export function Modal({
   onClose,
   children,
   compact = false,
+  className = "",
 }: {
   title: string;
   subtitle?: string;
   onClose: () => void;
   children: ReactNode;
   compact?: boolean;
+  className?: string;
 }) {
   const headingId = useId();
   const ref = useRef<HTMLDialogElement>(null);
@@ -212,7 +214,7 @@ export function Modal({
         onClose();
       }}
       aria-labelledby={headingId}
-      className={`info-dialog real-dialog ${compact ? "compact-dialog" : "page-dialog"}`}
+      className={`info-dialog real-dialog ${compact ? "compact-dialog" : "page-dialog"} ${className}`}
     >
       <div className="dialog-head">
         {!compact && (

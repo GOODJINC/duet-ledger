@@ -327,8 +327,8 @@ func TestAppPasswordValidationAndViewerIntersection(t *testing.T) {
 		t.Fatal("token issue accepted without CSRF")
 	}
 }
-func TestPasswordChangeAndLogoutAllRevokeAppPasswords(t *testing.T) {
-	_, _, c := newTestApp(t)
+func TestPasswordChangeRevokesKeysButLogoutAllOnlyEndsSessions(t *testing.T) {
+	_, server, c := newTestApp(t)
 	one := c.account(c.personalLedger(), "통장", "bank", "KRW", "0")
 	c.send("PATCH", "/admin/api-settings", map[string]bool{"enabled": true}, 200, nil)
 	_, key := c.appPassword([]string{one}, []string{"read"}, "never")
@@ -337,6 +337,16 @@ func TestPasswordChangeAndLogoutAllRevokeAppPasswords(t *testing.T) {
 	c.external(key, "GET", "/accounts", nil, 401, nil)
 	var result map[string]any
 	c.send("POST", "/me/app-passwords", map[string]any{"name": "new", "account_ids": []string{one}, "permissions": []string{"read"}, "lifetime": "never", "password": "new-account-password"}, 201, &result)
+	otherDevice := newTestClient(t, server)
+	otherDevice.send("POST", "/login", credentials{Username: c.user.Username, Password: "new-account-password", Remember: true}, 200, &otherDevice.user)
+	otherDevice.csrf = otherDevice.user.CSRF
 	c.send("POST", "/logout-all", nil, 200, nil)
+	c.send("GET", "/me", nil, 401, nil)
+	otherDevice.send("GET", "/me", nil, 401, nil)
+	c.external(result["app_password"].(string), "GET", "/accounts", nil, 200, nil)
+	otherDevice.send("POST", "/login", credentials{Username: c.user.Username, Password: "new-account-password"}, 200, &otherDevice.user)
+	otherDevice.csrf = otherDevice.user.CSRF
+	otherDevice.send("DELETE", "/me/app-passwords/"+result["id"].(string), nil, 200, nil)
 	c.external(result["app_password"].(string), "GET", "/accounts", nil, 401, nil)
+	otherDevice.send("GET", "/me", nil, 200, nil)
 }

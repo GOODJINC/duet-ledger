@@ -227,9 +227,6 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request, u *User) error {
 	return nil
 }
 func (a *App) logoutAll(w http.ResponseWriter, r *http.Request, u *User) error {
-	if err := revokeAppPasswords(a.DB, u.ID); err != nil {
-		return err
-	}
 	if _, err := a.DB.Exec("DELETE FROM sessions WHERE user_id=?", u.ID); err != nil {
 		return err
 	}

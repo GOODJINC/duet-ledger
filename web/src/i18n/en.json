@@ -285,7 +285,6 @@
   "모든 가계부 모아 보기": "All ledgers",
   "모든 거래": "All transactions",
   "모든 계좌": "All accounts",
-  "모든 기기 로그아웃·API 키 폐기": "Sign out all devices and revoke API keys",
   "모든 사용자에게 적용했어요.": "Applied to all users.",
   "모든 사용자의 공통 ": "Remove the shared ",
   "모든 사용자의 자료와 사진이 포함됩니다. 관리자 전용.": "Includes all users' data and photos. Administrators only.",
@@ -450,7 +449,6 @@
   "연": "Year",
   "연결 이름": "Connection name",
   "연결하지 못했어요.": "Could not connect.",
-  "연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키 폐기·비밀번호 변경·모든 기기 로그아웃 시 접근이 차단됩니다.": "Use Authorization: Bearer APP_PASSWORD to connect. Access is blocked when sharing is removed, the key is revoked, the password changes, or all sessions are signed out.",
   "연도": "Year",
   "연도를 입력하고 원하는 월을 선택하세요.": "Enter a year and choose a month.",
   "열기": "Open",
@@ -673,5 +671,10 @@
   "회원가입 설정을 저장했어요.": "Registration settings saved.",
   "휴지통 내역은 현재 잔액·통계에서 제외됩니다.": "Trashed transactions are excluded from current balances and statistics.",
   "뒤로가기": "Back",
-  "작성 중인 내용을 버리고 나갈까요?": "Discard your changes and leave?"
+  "작성 중인 내용을 버리고 나갈까요?": "Discard your changes and leave?",
+  "모든 기기 로그아웃": "Sign out all devices",
+  "연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키 폐기·비밀번호 변경 시 접근이 차단됩니다. 모든 기기 로그아웃은 API 키에 영향을 주지 않아요.": "Use Authorization: Bearer APP_PASSWORD to connect. Access is blocked when sharing is removed, a key is revoked or your password changes. Signing out all devices does not affect API keys.",
+  "삭제한 기록을 살펴봐요.": "Review deleted records.",
+  "삭제한 기록을 확인하고, 필요한 기록은 다시 복구하세요.": "Review deleted records and restore the ones you need.",
+  "휴지통": "Trash"
 }

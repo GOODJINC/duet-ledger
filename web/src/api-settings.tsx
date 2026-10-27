@@ -474,7 +474,7 @@ export function AppPasswordsDialog(p: DialogProps) {
           )}
           <p className="entry-hint">
             {msg(
-              "연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키 폐기·비밀번호 변경·모든 기기 로그아웃 시 접근이 차단됩니다.",
+              "연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키 폐기·비밀번호 변경 시 접근이 차단됩니다. 모든 기기 로그아웃은 API 키에 영향을 주지 않아요.",
             )}
           </p>
         </>

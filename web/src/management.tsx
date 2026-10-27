@@ -230,6 +230,7 @@ export function SharingDialog(p: DialogProps) {
   return (
     <Modal
       title={msg("필요한 만큼, 함께.")}
+      className="sharing-dialog"
       subtitle={msg("공유하지 않아도 개인 가계부로 완전하게 사용할 수 있어요.")}
       onClose={p.close}
     >
@@ -1009,7 +1010,7 @@ export function SecurityDialog(p: DialogProps) {
           }
         >
           <Icon name="logout" />
-          {msg("모든 기기 로그아웃·API 키 폐기")}
+          {msg("모든 기기 로그아웃")}
         </button>
       </div>
     </Modal>

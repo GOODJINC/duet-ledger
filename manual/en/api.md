@@ -227,6 +227,6 @@ Branch on `error` codes, not translated `message` text. Use `Accept-Language: en
 
 Business API calls allow 120 requests per minute per valid key. Ordinary request bodies are limited to 22MiB; receipt limits apply separately. Queries support up to 40,000 account postings; narrow dates/accounts if exceeded. Request history does not store secrets, bodies or search text.
 
-Disabling API access pauses existing keys; valid keys work again after re-enabling. Revocation, password/security changes, signing out all devices and backup restoration invalidate keys. Ordinary sign-out and app restarts do not revoke them.
+Disabling API access pauses existing keys; valid keys work again after re-enabling. Revocation, password/security changes and backup restoration invalidate keys. Ordinary sign-out, signing out all devices and app restarts do not revoke them. Revoke individual keys on the App passwords screen.
 
 Import the server's `/openapi.json` into Postman if desired. It also contains internal web routes; external integrations must use the `/api/v1` paths above. Public cross-origin browser access, OAuth login and automatic bank connections are not supported.

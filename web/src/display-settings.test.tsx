@@ -105,7 +105,7 @@ it("saves browser-specific layout choices and updates the mobile screen immediat
   );
   await waitFor(() =>
     expect(
-      document.querySelector(".scope-controls-row .header-right"),
+      document.querySelector(".period-toolbar .header-right"),
     ).not.toBeNull(),
   );
   expect(document.querySelector("header.app-header")).toBeNull();
@@ -219,4 +219,43 @@ it("uses a page header for long dialogs while retaining compact month selection"
     true,
   );
   expect(screen.queryByRole("button", { name: "뒤로가기" })).toBeNull();
+});
+
+it("keeps account creation beside scope tabs on mobile", async () => {
+  compact = true;
+  history.replaceState({}, "", "/accounts");
+  const actor = userEvent.setup();
+  render(<Application {...appProps()} />);
+  const create = document.querySelector<HTMLButtonElement>(
+    ".mobile-account-create",
+  )!;
+  expect(create.closest(".scope-controls-row")).not.toBeNull();
+  expect(
+    document.querySelector(".scope-controls-row .scope-tabs"),
+  ).not.toBeNull();
+  await actor.click(create);
+  expect(await screen.findByRole("dialog")).toBeTruthy();
+});
+it("identifies trash in the breadcrumb and headings without the old banner", async () => {
+  const actor = userEvent.setup();
+  render(<Application {...appProps()} />);
+  await actor.click(screen.getByRole("button", { name: "사용자 메뉴" }));
+  await actor.click(screen.getByRole("button", { name: "설정" }));
+  const row = screen
+    .getByText("기록 휴지통", { exact: true })
+    .closest(".setting-row")!;
+  await actor.click(row.querySelector(".secondary-button")!);
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+    "삭제한 기록을 살펴봐요.",
+  );
+  expect(
+    document.querySelector(".desktop-breadcrumb strong")?.textContent,
+  ).toBe("휴지통");
+  expect(document.querySelector(".trash-mode")).toBeNull();
+  await actor.click(
+    screen.getByRole("button", { name: "일반 내역으로 돌아가기" }),
+  );
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+    "하루하루, 차곡차곡.",
+  );
 });

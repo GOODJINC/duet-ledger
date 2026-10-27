@@ -106,6 +106,7 @@ export function CategoriesDialog(p: DialogProps) {
   return (
     <Modal
       title={msg("가계부 분류 관리")}
+      className="categories-dialog"
       subtitle={msg(
         "삭제한 분류는 복구할 수 없어요. 과거 거래의 분류명과 금액은 유지됩니다.",
       )}

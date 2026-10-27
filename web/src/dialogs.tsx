@@ -391,6 +391,7 @@ export function EntryDialog(
   return (
     <Modal
       title={tx ? msg("기록을 다듬어요.") : msg("오늘의 기록을 남겨요.")}
+      className="entry-dialog"
       onClose={closeEntry}
     >
       <form
