@@ -96,7 +96,7 @@ These are arguments to `create_transaction`, not a direct HTTP API body. Put inp
 }
 ```
 
-Specify `kind`, `date`, `time`, `amount`, `account_id`, `title`. Optional fields are `timezone`, `to_id`, `category`, `note`, `target_note`, `original_currency`, `original_amount`, `exchange_rate`. Amounts are minor-unit integer strings: **USD 10 is `"1000"`**. See [API conventions](api.md#amounts-and-dates).
+For creation and updates, `transaction` requires `kind`, `date`, `time`, `amount`, `account_id`, `title` and `category`. Use a code returned by `list_categories`, or `transfer` for transfers. Optional fields are `timezone`, `to_id`, `note`, `target_note`, `original_currency`, `original_amount` and `exchange_rate`. Transfers also require `to_id`. Amounts are minor-unit integer strings: **USD 10 is `"1000"`**. See [API conventions](api.md#amounts-and-dates).
 
 Create a unique `request_id` per new transaction and reuse it for retries. Retrying an uncertain outcome with a new ID may duplicate a transaction. Fetch the latest `version` with `get_transaction` before updating, deleting or restoring. After a conflict, review the newest data instead of guessing the version.
 
@@ -119,8 +119,11 @@ The connected AI, rather than a built-in OCR model, extracts receipt contents an
 | Account missing              | Account selected for key and still shared                              |
 | 409 / tool conflict          | Fetch latest transaction and review changes                            |
 | 429                          | Wait; creation retries must reuse the same `request_id`                |
+| 503 or `busy`                | Temporary processing capacity reached; wait before retrying            |
 
 MCP is stateless and authenticates each HTTP request. Use POST; GET and DELETE return405. Request bodies are limited to8MiB, with120 HTTP requests/minute/key. Business calls also use the existing120 API requests/minute/key limit, shared with direct API calls using that key.
+
+Requests that reach the API count toward its limit and appear in request history even when input or receipt validation fails. Calls rejected by MCP input-schema validation do not reach the business API. If a save result is uncertain, retry with the same `request_id` and input.
 
 Revocation, security changes and restoration invalidate keys. App restarts preserve them. Restart Codex if it closed the connection while API access was disabled.
 

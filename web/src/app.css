@@ -1896,7 +1896,7 @@ body {
   font-size: calc(14px * var(--text-scale, 1));
 }
 
-/* alpha.7: compact controls without clipping native date/time fields. */
+/* Compact controls without clipping native date/time fields. */
 .real-dialog .entry-form #entry-title {
   font-size: calc(13px * var(--text-scale, 1));
 }
@@ -2069,7 +2069,7 @@ body {
     display: none;
   }
 }
-/* alpha.8: shared metrics for text, select, date and time. */
+/* Shared metrics for text, select, date and time. */
 .real-dialog .entry-form {
   --entry-control-size: calc(13px * var(--text-scale, 1));
   --entry-control-height: 40px;
@@ -2311,7 +2311,7 @@ body {
     grid-column: 1/-1;
   }
 }
-/* alpha.9: fit the requested mobile rows and float help in the top layer. */
+/* Mobile rows and help in the top layer. */
 .entry-form .plain-fieldset > .entry-date-fields {
   grid-column: 2;
 }

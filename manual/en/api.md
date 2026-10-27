@@ -226,8 +226,13 @@ Branch on `error` codes, not translated `message` text. Use `Accept-Language: en
 | 409         | Version conflict or changed input with the same creation key            |
 | 429         | Rate limit; respect `Retry-After`                                       |
 | 500         | Server status; retry creation with identical input and key              |
+| 503         | Temporary file-processing capacity reached; wait before retrying        |
 
-Business API calls allow 120 requests per minute per valid key. Ordinary request bodies are limited to 22MiB; receipt limits apply separately. Queries support up to 40,000 account postings; narrow dates/accounts if exceeded. Request history does not store secrets, bodies or search text.
+Business API calls allow 120 requests per minute per valid key. Calls are counted before receiving the body, including failed input and receipt validation. Once the limit is reached, the body is not processed; the response is `429` with `Retry-After`.
+
+Ordinary request bodies are limited to 22MiB; receipt limits apply separately. Temporary files for ordinary requests and responses share a server-wide 32MiB budget. Concurrent processing may return `503` with `error: busy`; wait before retrying. If a creation result is uncertain, reuse the same input and `Idempotency-Key`.
+
+Queries support up to 40,000 account postings; narrow dates/accounts if exceeded. Request history displays the latest 100 calls and retains up to 1,000 per user on the server. Authenticated failures are included, but secrets, bodies and search text are not stored.
 
 Disabling API access pauses existing keys; valid keys work again after re-enabling. Revocation, password/security changes and backup restoration invalidate keys. Ordinary sign-out, signing out all devices and app restarts do not revoke them. Revoke individual keys on the App passwords screen.
 

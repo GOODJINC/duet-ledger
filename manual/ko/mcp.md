@@ -96,7 +96,7 @@ JSON 응답은 `structuredContent`와 텍스트로 제공합니다. 계좌 목�
 }
 ```
 
-`kind`, `date`, `time`, `amount`, `account_id`, `title`을 지정합니다. 선택 입력은 `timezone`, `to_id`, `category`, `note`, `target_note`, `original_currency`, `original_amount`, `exchange_rate`입니다. 금액은 최소 단위 정수 문자열입니다. **USD 10달러는 `"1000"`**입니다. 상세 규칙은 [API 금액 안내](api.md#금액과-날짜-규칙)를 따릅니다.
+생성·수정의 `transaction`에는 `kind`, `date`, `time`, `amount`, `account_id`, `title`, `category`가 필수입니다. `list_categories`에서 받은 분류 코드를 사용하고 이체는 `transfer`를 지정합니다. 선택 입력은 `timezone`, `to_id`, `note`, `target_note`, `original_currency`, `original_amount`, `exchange_rate`입니다. 이체는 `to_id`도 필요합니다. 금액은 최소 단위 정수 문자열입니다. **USD 10달러는 `"1000"`**입니다. 상세 규칙은 [API 금액 안내](api.md#금액과-날짜-규칙)를 따릅니다.
 
 `request_id`는 새 거래마다 고유하게 만들고 통신 재시도에는 같은 값을 재사용합니다. 결과가 불확실하다고 새 ID로 다시 입력하면 중복될 수 있습니다. 수정·삭제·복구 전 `get_transaction`으로 최신 `version`을 확인하세요. 충돌 시 다시 조회·검토하고 버전을 임의로 바꾸지 않습니다.
 
@@ -119,8 +119,11 @@ JSON 응답은 `structuredContent`와 텍스트로 제공합니다. 계좌 목�
 | 계좌 없음              | 키에 선택했는지, 지금도 공유 중인지             |
 | 409 또는 도구 충돌     | 최신 거래 조회 후 변경 내용 검토                |
 | 429                    | 잠시 대기. 같은 생성 재시도는 동일 `request_id` |
+| 503 또는 `busy`        | 동시 자료 처리 한도. 잠시 기다린 뒤 재시도      |
 
 MCP는 HTTP 요청마다 인증하는 상태 없는 방식입니다. POST를 사용하며 GET·DELETE는405입니다. HTTP 본문은8MiB, 키당 분당120회입니다. 업무 호출에는 기존 API의 키당120회/분 제한도 함께 적용하므로 같은 키의 API와 MCP 업무 한도를 공유합니다.
+
+API까지 전달된 요청은 입력·영수증 오류로 실패해도 API 호출 횟수와 사용 기록에 포함됩니다. MCP의 입력 정의 검사에서 먼저 거부된 호출은 업무 API까지 전달되지 않습니다. 저장 결과가 불확실하면 같은 `request_id`와 내용으로 재시도하세요.
 
 키 폐기·보안 변경·백업 복원 시 접근이 차단됩니다. 서버 재시작은 키를 폐기하지 않습니다. 관리자 API 재허용 후 클라이언트가 연결을 종료한 상태라면 Codex를 다시 실행하세요.
 

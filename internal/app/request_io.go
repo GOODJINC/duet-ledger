@@ -2,21 +2,60 @@ package app
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"os"
 	"strings"
-	"time"
+	"sync"
 )
+
+const publicBodyLimit = 64 << 10
+
+// Ordinary request/response files share a bounded part of the default 64MiB
+// tmpfs. Administrator assets keep their separate, serialized upload policy.
+const spoolLimit = 32 << 20
+
+type spoolBudget struct {
+	mu   sync.Mutex
+	used int64
+}
+
+func (s *spoolBudget) reserve(n int64) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if n > spoolLimit-s.used {
+		return false
+	}
+	s.used += n
+	return true
+}
+func (s *spoolBudget) release(n int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.used -= n
+}
 
 // Keep small requests/responses in memory; spill larger ones to a private temp
 // file. Neither slow clients nor socket writes may hold the database mutex.
 type requestBuffer struct {
-	memory bytes.Buffer
-	file   *os.File
+	memory   bytes.Buffer
+	file     *os.File
+	budget   *spoolBudget
+	reserved int64
 }
 
 func (b *requestBuffer) Write(p []byte) (int, error) {
+	if b.budget != nil && (b.file != nil || b.memory.Len()+len(p) > 128<<10) {
+		n := int64(len(p))
+		if b.file == nil {
+			n += int64(b.memory.Len())
+		}
+		if !b.budget.reserve(n) {
+			return 0, &apiError{503, "busy", "잠시 후 다시 시도해 주세요."}
+		}
+		b.reserved += n
+	}
 	if b.file == nil && b.memory.Len()+len(p) > 128<<10 {
 		f, err := os.CreateTemp("", "duet-http-*")
 		if err != nil {
@@ -40,10 +79,17 @@ func (b *requestBuffer) reader() (io.Reader, error) {
 	return bytes.NewReader(b.memory.Bytes()), nil
 }
 func (b *requestBuffer) Close() error {
+	if b.reserved != 0 {
+		defer func() {
+			b.budget.release(b.reserved)
+			b.reserved = 0
+		}()
+	}
 	if b.file != nil {
 		name := b.file.Name()
 		err := b.file.Close()
 		_ = os.Remove(name)
+		b.file = nil
 		return err
 	}
 	return nil
@@ -57,8 +103,8 @@ type bufferedResponse struct {
 	err    error
 }
 
-func newBufferedResponse(header http.Header) *bufferedResponse {
-	return &bufferedResponse{header: header.Clone()}
+func newBufferedResponse(header http.Header, budget *spoolBudget) *bufferedResponse {
+	return &bufferedResponse{header: header.Clone(), body: requestBuffer{budget: budget}}
 }
 func (b *bufferedResponse) Header() http.Header { return b.header }
 func (b *bufferedResponse) WriteHeader(status int) {
@@ -73,6 +119,19 @@ func (b *bufferedResponse) Write(p []byte) (int, error) {
 		b.err = err
 	}
 	return n, err
+}
+func (b *bufferedResponse) responseStatus() int {
+	if b.err != nil {
+		var problem *apiError
+		if errors.As(b.err, &problem) {
+			return problem.Status
+		}
+		return http.StatusInternalServerError
+	}
+	if b.status == 0 {
+		return http.StatusOK
+	}
+	return b.status
 }
 func (b *bufferedResponse) send(w http.ResponseWriter, r *http.Request) {
 	defer b.body.Close()
@@ -95,10 +154,7 @@ func (b *bufferedResponse) send(w http.ResponseWriter, r *http.Request) {
 	for key, values := range b.header {
 		w.Header()[key] = values
 	}
-	if b.status == 0 {
-		b.status = http.StatusOK
-	}
-	w.WriteHeader(b.status)
+	w.WriteHeader(b.responseStatus())
 	_, _ = io.Copy(w, reader)
 }
 
@@ -144,9 +200,6 @@ func (a *App) receiveRequest(w http.ResponseWriter, r *http.Request, identity fu
 	if identity != nil {
 		a.mu.Lock()
 		u, err := identity(r)
-		if err == nil && u.API != nil && !a.rateAvailable("api-key:"+u.API.ID, 120, time.Minute) {
-			err = &apiError{429, "rate_limit", "앱 비밀번호당 1분에 120회까지 요청할 수 있어요."}
-		}
 		if err == nil && appearance && !u.Admin {
 			err = forbidden()
 		}
@@ -173,10 +226,25 @@ func (a *App) receiveRequest(w http.ResponseWriter, r *http.Request, identity fu
 		withAppearanceUpload(r, upload)
 		return a.appearanceMu.Unlock, nil
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 22<<20)
-	var body requestBuffer
+	limit := int64(22 << 20)
+	if identity == nil {
+		limit = publicBodyLimit
+		if r.ContentLength > limit {
+			return nil, &apiError{413, "request_too_large", "요청이 너무 커요."}
+		}
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
+	body := requestBuffer{budget: &a.spool}
 	if _, err := io.Copy(&body, r.Body); err != nil {
 		body.Close()
+		var tooLarge *http.MaxBytesError
+		if identity == nil && errors.As(err, &tooLarge) {
+			return nil, &apiError{413, "request_too_large", "요청이 너무 커요."}
+		}
+		var problem *apiError
+		if errors.As(err, &problem) {
+			return nil, err
+		}
 		return nil, bad("입력 형식을 확인해 주세요.")
 	}
 	reader, err := body.reader()

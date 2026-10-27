@@ -24,13 +24,14 @@ Open `http://localhost:18088` to create the first account. This preset allows ac
 
 Create an optional `.env` file beside the Compose file. You can choose any installation directory.
 
-| Variable                    | Purpose                                            |
-| --------------------------- | -------------------------------------------------- |
-| `DUET_LEDGER_IMAGE`         | Image and version; defaults to the Compose version |
-| `DUET_LEDGER_BIND`          | Server address to listen on                        |
-| `DUET_LEDGER_PORT`          | Host port; default 18088                           |
-| `DUET_LEDGER_PUBLIC_URL`    | HTTPS origin                                       |
-| `DUET_LEDGER_SECURE_COOKIE` | Set to `true` for HTTPS                            |
+| Variable                      | Purpose                                            |
+| ----------------------------- | -------------------------------------------------- |
+| `DUET_LEDGER_IMAGE`           | Image and version; defaults to the Compose version |
+| `DUET_LEDGER_BIND`            | Server address to listen on                        |
+| `DUET_LEDGER_PORT`            | Host port; default 18088                           |
+| `DUET_LEDGER_PUBLIC_URL`      | HTTPS origin                                       |
+| `DUET_LEDGER_SECURE_COOKIE`   | Set to `true` for HTTPS                            |
+| `DUET_LEDGER_TRUSTED_PROXIES` | Trusted proxy IPs/CIDRs; leave empty by default    |
 
 Example for remote access on port 18888:
 
@@ -45,13 +46,13 @@ Apply with `docker compose up -d`, then open `http://SERVER_IP:18888`. Allow the
 
 `curl` saves the Compose file unchanged. `${VARIABLE:-default}` is standard Docker Compose syntax. Compose substitutes the value when it runs, using the default after `:-` when no non-empty value is provided. It does not rewrite the downloaded file.
 
-For example, `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.0}` defaults to `ghcr.io/goodjinc/duet-ledger:0.1.0`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
+For example, `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.1}` defaults to `ghcr.io/goodjinc/duet-ledger:0.1.1`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
 
 ```bash
 docker compose config
 ```
 
-This displays the resolved image, ports and environment. Seeing `${…}` in an editor is normal. Web-based Docker management tools can use the same Compose file and environment variables.
+This displays the resolved image, ports and environment. Seeing `${…}` in an editor is normal. In a Docker management interface, paste the same Compose content and set the environment variables there. Cloning the Git repository or building from source is not required.
 
 ## HTTPS and PWA
 

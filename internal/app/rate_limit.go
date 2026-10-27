@@ -82,14 +82,6 @@ func (a *App) pruneAttempts(t time.Time) bool {
 	return len(a.attempts) <= 10000
 }
 
-// A preliminary check avoids receiving/decoding a large upload for an already
-// exhausted key. The final locked API handler still consumes the actual slot.
-func (a *App) rateAvailable(key string, limit int, window time.Duration) bool {
-	a.rateMu.Lock()
-	defer a.rateMu.Unlock()
-	v := a.attempts[key]
-	return time.Since(v.Since) >= window || v.Count < limit
-}
 func (a *App) takeRate(key string, limit int, window time.Duration) bool {
 	a.rateMu.Lock()
 	defer a.rateMu.Unlock()

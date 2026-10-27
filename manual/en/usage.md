@@ -61,7 +61,7 @@ Recorded balances use opening balances and saved transactions. They do not synch
 | Editor | Read, create, update and delete transactions in allowed accounts         |
 | Viewer | Read allowed records                                                     |
 
-Editing or deleting a complete transfer requires edit access to both accounts. Other private accounts and hidden transfer counterparts are not exposed. Shared access includes previous transactions, balances, notes and receipts. Downloaded copies cannot be recalled after sharing ends.
+Editing or deleting a complete transfer requires edit access to both accounts. Other private accounts and hidden transfer counterparts are not exposed. Shared access includes previous transactions, balances, notes and receipts. Downloaded copies cannot be recalled after sharing ends. The app does not provide end-to-end encryption against an operator who can directly access the server files and database.
 
 A user may have access through both direct account sharing and ledger membership. Removing one grant leaves other grants effective. Transfer ownership or leave sharing in Settings without deleting original records.
 
@@ -85,7 +85,7 @@ Choose Korean or English. Personal text size (90–150%), colors and brightness 
 
 In **Settings → Page layout**, choose whether to show page titles/descriptions and the mobile top quick-entry and floating `+` buttons. Choose left or right for the floating button. These preferences belong to this account in the current browser. The default font scale is 100%; existing custom scales are preserved.
 
-Select **Keep me signed in for 30 days** on the sign-in screen for a 30-day session. Otherwise, a browser-session cookie is used with a maximum server lifetime of seven days. Browser session restoration may restore the cookie after windows close. Sign-out, security changes and sign-out on all devices still apply.
+Select **Keep me signed in for 30 days** on the sign-in screen for a 30-day session. Otherwise, a browser-session cookie is used with a maximum server lifetime of seven days. Browser session restoration may restore the cookie after windows close. Sign-out, security changes and sign-out on all devices still apply. Password and two-factor changes preserve your selected persistence policy. Sessions carried over from 0.1.0 lack that choice; sign in again once to record it.
 
 CSV export follows the current filters. JSON export is for moving records across all dates, without photos, login details or sharing permissions. Preview imports before applying. **A complete server restore requires an operational backup and its original `master.key`.** See [Operations](operations.md).
 

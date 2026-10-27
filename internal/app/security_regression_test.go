@@ -172,13 +172,12 @@ func TestSlowResponseDoesNotBlockAPI(t *testing.T) {
 	assertResponsive(t, a.Routes())
 }
 func TestRequestSpoolCleanupAndLimit(t *testing.T) {
-	a, _, _ := newTestApp(t)
+	a, _, c := newTestApp(t)
 	dir := t.TempDir()
 	t.Setenv("TMPDIR", dir)
 	for _, size := range []int{256 << 10, 23 << 20} {
 		source := strings.NewReader(strings.Repeat("x", size))
-		req := httptest.NewRequest("POST", "/api/login", source)
-		req.Header.Set("Content-Type", "application/json")
+		req := browserTestRequest(c, "POST", "/api/transactions", source)
 		w := httptest.NewRecorder()
 		a.Routes().ServeHTTP(w, req)
 		want := 400

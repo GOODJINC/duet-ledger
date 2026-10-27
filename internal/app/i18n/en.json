@@ -31,6 +31,7 @@
   "분류 종류를 확인해 주세요.": "Check the category type.",
   "관리자가 API 사용을 허용해야 해요.": "The administrator must enable API access.",
   "잠시 후 다시 시도해 주세요.": "Please try again later.",
+  "요청이 너무 커요.": "The request is too large.",
   "이름·계좌·권한을 확인해 주세요.": "Check the name, accounts and permissions.",
   "권한을 확인해 주세요.": "Check the permissions.",
   "유효기간은 30일·90일·1년·만료 없음 중 선택해 주세요.": "Choose an expiration of 30 days, 90 days, 1 year or never.",

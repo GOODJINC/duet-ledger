@@ -24,13 +24,14 @@ docker compose ps
 
 Compose 파일과 같은 폴더에 `.env` 파일을 만들고 필요한 값을 설정합니다. 설치 폴더는 원하는 위치를 사용하면 됩니다.
 
-| 변수                        | 용도                                        |
-| --------------------------- | ------------------------------------------- |
-| `DUET_LEDGER_IMAGE`         | 이미지와 버전. 기본값은 Compose의 지정 버전 |
-| `DUET_LEDGER_BIND`          | 접속을 받을 서버 주소                       |
-| `DUET_LEDGER_PORT`          | 호스트 포트. 기본 18088                     |
-| `DUET_LEDGER_PUBLIC_URL`    | HTTPS 접속 주소                             |
-| `DUET_LEDGER_SECURE_COOKIE` | HTTPS 운영 시 `true`                        |
+| 변수                          | 용도                                        |
+| ----------------------------- | ------------------------------------------- |
+| `DUET_LEDGER_IMAGE`           | 이미지와 버전. 기본값은 Compose의 지정 버전 |
+| `DUET_LEDGER_BIND`            | 접속을 받을 서버 주소                       |
+| `DUET_LEDGER_PORT`            | 호스트 포트. 기본 18088                     |
+| `DUET_LEDGER_PUBLIC_URL`      | HTTPS 접속 주소                             |
+| `DUET_LEDGER_SECURE_COOKIE`   | HTTPS 운영 시 `true`                        |
+| `DUET_LEDGER_TRUSTED_PROXIES` | 신뢰할 프록시 IP·CIDR. 기본값은 비워 둠     |
 
 다른 PC에서 포트 18888로 접속하는 예시:
 
@@ -45,13 +46,13 @@ DUET_LEDGER_PORT=18888
 
 `curl`은 Compose 파일을 그대로 저장합니다. 파일의 `${변수:-기본값}`은 오류가 아니라 Docker Compose의 설정 문법입니다. `.env`나 실행 환경에 값이 없으면 `:-` 뒤의 기본값을 사용합니다. 파일을 다시 써서 값을 치환하는 방식은 아닙니다.
 
-예를 들어 `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.0}`은 기본 이미지 `ghcr.io/goodjinc/duet-ledger:0.1.0`을 사용합니다. `DUET_LEDGER_BIND`의 기본값은 `127.0.0.1`, `DUET_LEDGER_PORT`는 `18088`입니다. 같은 이름의 터미널 환경변수가 있으면 `.env`보다 우선합니다.
+예를 들어 `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.1.1}`은 기본 이미지 `ghcr.io/goodjinc/duet-ledger:0.1.1`을 사용합니다. `DUET_LEDGER_BIND`의 기본값은 `127.0.0.1`, `DUET_LEDGER_PORT`는 `18088`입니다. 같은 이름의 터미널 환경변수가 있으면 `.env`보다 우선합니다.
 
 ```bash
 docker compose config
 ```
 
-이 명령은 실제 적용되는 이미지·포트·환경변수를 출력합니다. 파일 편집기에는 `${…}`가 그대로 보여도 정상입니다. 웹 기반 Docker 관리 화면에서도 같은 Compose 파일과 환경변수를 사용할 수 있습니다.
+이 명령은 실제 적용되는 이미지·포트·환경변수를 출력합니다. 파일 편집기에는 `${…}`가 그대로 보여도 정상입니다. Docker 관리 화면을 사용한다면 같은 Compose 내용을 붙여 넣고 해당 화면에서 환경변수를 설정해도 됩니다. Git 저장소 복제나 소스 빌드는 필요하지 않습니다.
 
 ## HTTPS와 PWA
 

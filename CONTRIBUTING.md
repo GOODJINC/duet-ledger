@@ -72,9 +72,10 @@ npm --prefix web run docs:check
 
 ## 릴리즈 · Releases
 
-1. 앱·화면·OpenAPI 버전과 Compose 태그, 변경 기록을 갱신합니다. 버전 일치는 `node scripts/check-compose.mjs`로 확인합니다.
-2. 일치하는 `vVERSION` 태그로 GitHub Release를 발행합니다. 알파·베타·RC는 사전 릴리즈로 표시합니다.
-3. Actions가 검사 후 GHCR에 AMD64·ARM64 이미지를 게시합니다. 최초 게시 후 패키지는 Public으로 설정합니다.
+1. 앱·화면·npm 패키지·OpenAPI·라이선스 고지·Compose·환경 예제의 버전을 맞춥니다. `node scripts/check-compose.mjs`로 확인하고 한·영 매뉴얼과 변경 기록(`CHANGELOG.md`, `CHANGELOG.en.md`)을 갱신합니다. 릴리즈할 때는 변경 기록의 ‘배포 준비 중’을 실제 릴리즈 날짜로 바꿉니다.
+2. 전체 검사를 통과한 변경 사항을 커밋·푸시합니다. **main 푸시는 검사만 실행하며 이미지를 게시하지 않습니다.**
+3. 일치하는 `vVERSION` 태그로 GitHub Release를 발행합니다. 예: `v0.1.1`. 정식 버전은 사전 릴리즈로 표시하지 않습니다. 알파·베타·RC만 사전 릴리즈로 표시합니다.
+4. Actions의 GHCR AMD64·ARM64 이미지 게시 완료를 확인합니다. 최초 게시 후 패키지는 Public으로 설정합니다. 사용자는 이미지가 게시된 뒤 업데이트합니다.
 
 Push/PR runs checks. A published Release or manual default-branch workflow publishes images. Version tags cannot be overwritten; only stable releases update `latest`. Publishing uses the workflow's `GITHUB_TOKEN` with `packages: write`.
 

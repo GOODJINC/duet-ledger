@@ -1,6 +1,6 @@
 # Duet Ledger
 
-[한국어](README.md) · [Manual](manual/en/index.md) · [Changelog](CHANGELOG.md)
+[한국어](README.md) · [Manual](manual/en/index.md) · [Changelog](CHANGELOG.en.md)
 
 A Docker-based personal and shared finance app. Manage multiple ledgers with one account and share entire ledgers or selected accounts.
 
@@ -8,6 +8,8 @@ A Docker-based personal and shared finance app. Manage multiple ledgers with one
 - Viewer/editor permissions, multiple currencies, Korean and English
 - Mobile web, PWA, REST API and MCP
 - One container with SQLite, server backup and restore
+
+For personal use, no sharing setup is needed. To share, invite each person using their own account. Automatic bank connections and offline transaction entry are not supported.
 
 ## Installation
 
@@ -23,6 +25,8 @@ docker compose up -d
 Compose resolves `${…}` settings when it runs. Use `.env` to change the port and listen address.
 
 **The first account becomes the administrator.** Create it on a trusted network before public exposure. See [Installation](manual/en/installation.md) for remote access, ports and HTTPS.
+
+For an existing installation, follow [Updating](manual/en/operations.md#updating): back up your data, then change the image version. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) for published versions.
 
 ## Manuals
 

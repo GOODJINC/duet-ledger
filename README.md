@@ -9,6 +9,8 @@ Docker로 운영하는 개인·공유 가계부입니다. 계정 하나로 여�
 - 모바일 웹·PWA, REST API·MCP
 - 컨테이너 하나와 SQLite, 서버 백업·복원
 
+혼자 사용할 때는 공유 설정이 필요하지 않습니다. 공유를 시작할 때는 각자 계정을 만들고 초대합니다. 은행 자동 연동과 오프라인 거래 입력은 지원하지 않습니다.
+
 ## 설치
 
 서버에서 다음 명령을 실행하고 `http://localhost:18088`로 접속합니다.
@@ -23,6 +25,8 @@ docker compose up -d
 Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와 접속 주소는 `.env`로 바꿀 수 있습니다.
 
 **첫 계정이 관리자**가 됩니다. 신뢰하는 네트워크에서 계정을 만든 뒤 외부에 공개하세요. 다른 PC 접속·포트·HTTPS 설정은 [설치 안내](manual/ko/installation.md)를 참고하세요.
+
+기존 설치는 [업데이트 안내](manual/ko/operations.md#업데이트)에 따라 백업 후 이미지 버전을 변경하세요. 게시된 버전은 [Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 확인할 수 있습니다.
 
 ## 매뉴얼
 

@@ -82,54 +82,72 @@ func (a *App) externalAPI(permission string, h handler) http.HandlerFunc {
 			writeRequestError(original, r, nil, forbidden(), true)
 			return
 		}
-		cleanup, err := a.receiveRequest(original, r, a.authenticateApp)
-		if err != nil {
-			writeRequestError(original, r, nil, err, true)
-			return
-		}
-		defer cleanup()
-		response := newBufferedResponse(original.Header())
+		response := newBufferedResponse(original.Header(), &a.spool)
 		defer response.send(original, r)
 		w := &apiStatusWriter{ResponseWriter: response}
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Referrer-Policy", "no-referrer")
+		// Reserve exactly one call before receiving or decoding any body. Invalid
+		// uploads consume the same budget as successful calls, including concurrency.
 		a.mu.Lock()
-		defer a.mu.Unlock()
-		var u *User
-		if !a.sameOrigin(r) {
-			err = forbidden()
-		} else {
-			u, err = a.authenticateApp(r)
-		}
+		u, err := a.authenticateApp(r)
 		if err == nil {
-			defer func() {
-				status := w.status
-				if status == 0 {
-					status = 200
-				}
-				path := strings.TrimPrefix(r.Pattern, r.Method+" ")
-				if path == "" {
-					path = "/api/v1/"
-				}
-				// No query strings, bodies, app passwords or user-supplied path values are logged.
-				_, _ = a.DB.Exec("INSERT INTO api_requests VALUES(?,?,?,?,?,?,?)", newID(), u.API.ID, u.ID, r.Method, path, status, now())
-				_, _ = a.DB.Exec("UPDATE api_credentials SET last_used_at=? WHERE id=?", now(), u.API.ID)
-				_, _ = a.DB.Exec("DELETE FROM api_requests WHERE user_id=? AND id NOT IN (SELECT id FROM api_requests WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 1000)", u.ID, u.ID)
-			}()
 			if !a.apiRate("api-key:"+u.API.ID, 120) {
 				w.Header().Set("Retry-After", "60")
 				err = &apiError{429, "rate_limit", "앱 비밀번호당 1분에 120회까지 요청할 수 있어요."}
 			} else if permission != "" && !u.API.Permissions[permission] {
 				err = &apiError{403, "insufficient_permission", "이 앱 비밀번호에 허용되지 않은 기능이에요."}
+			}
+		}
+		a.mu.Unlock()
+		if u != nil {
+			defer func() { a.recordAPIRequest(r, u, response.responseStatus()) }()
+		}
+		if err != nil {
+			writeRequestError(w, r, u, err, true)
+			return
+		}
+		cleanup, err := a.receiveRequest(w, r, a.authenticateApp)
+		if err != nil {
+			writeRequestError(w, r, u, err, true)
+			return
+		}
+		defer cleanup()
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		// Revocation and permission changes during reception must still take effect.
+		var current *User
+		if !a.sameOrigin(r) {
+			err = forbidden()
+		} else {
+			current, err = a.authenticateApp(r)
+		}
+		if err == nil {
+			if permission != "" && !current.API.Permissions[permission] {
+				err = &apiError{403, "insufficient_permission", "이 앱 비밀번호에 허용되지 않은 기능이에요."}
 			} else {
-				err = h(w, r, u)
+				err = h(w, r, current)
 			}
 		}
 		if err != nil {
 			writeRequestError(w, r, u, err, true)
 		}
 	}
+}
+
+// Called after releasing the handler lock, before sending the buffered response.
+// Only authenticated identity and the route pattern are retained, never input.
+func (a *App) recordAPIRequest(r *http.Request, u *User, status int) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if status == 0 {
+		status = 200
+	}
+	path := strings.TrimPrefix(r.Pattern, r.Method+" ")
+	if path == "" {
+		path = "/api/v1/"
+	}
+	_, _ = a.DB.Exec("INSERT INTO api_requests VALUES(?,?,?,?,?,?,?)", newID(), u.API.ID, u.ID, r.Method, path, status, now())
+	_, _ = a.DB.Exec("UPDATE api_credentials SET last_used_at=? WHERE id=?", now(), u.API.ID)
+	_, _ = a.DB.Exec("DELETE FROM api_requests WHERE user_id=? AND id NOT IN (SELECT id FROM api_requests WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 1000)", u.ID, u.ID)
 }
 func (a *App) getAPITransaction(w http.ResponseWriter, r *http.Request, u *User) error {
 	var aid, date, event string

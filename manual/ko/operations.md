@@ -16,7 +16,15 @@ docker compose restart duet-ledger
 
 ## 업데이트
 
-먼저 변경 기록을 읽고 운영 백업과 `master.key`를 별도로 보관합니다. Compose의 `image` 태그 또는 `DUET_LEDGER_IMAGE`를 게시된 새 버전으로 바꿉니다. 알파·베타는 `latest`로 제공하지 않으므로 정확한 버전을 권장합니다.
+먼저 [변경 기록](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md)을 읽고 운영 백업과 `master.key`를 별도로 보관합니다. [Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 대상 버전의 이미지 게시 완료를 확인합니다.
+
+Compose와 같은 폴더의 `.env`에서 버전을 지정합니다. 예를 들어 0.1.1로 업데이트하려면 다음 값을 사용합니다.
+
+```dotenv
+DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.1.1
+```
+
+Docker 관리 화면을 사용한다면 해당 화면의 환경변수 또는 `image` 태그를 바꿉니다. `.env`나 실행 환경에 `DUET_LEDGER_IMAGE`가 있으면 Compose 파일의 기본 이미지보다 우선합니다. 업데이트 시점을 직접 선택하려면 `latest` 대신 정확한 버전을 사용하세요.
 
 ```bash
 docker compose pull duet-ledger

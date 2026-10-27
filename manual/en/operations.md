@@ -16,7 +16,15 @@ The restart policy starts the container after reboots when Docker is running. `/
 
 ## Updating
 
-Read the changelog and save a backup with its original `master.key`. Change the Compose `image` tag or `DUET_LEDGER_IMAGE` to a published version. Prefer exact versions; prereleases never publish `latest`.
+Read the [changelog](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.en.md) and save a backup with its original `master.key`. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) to confirm that the target image has been published.
+
+Set the version in `.env` beside your Compose file. For example, to update to 0.1.1:
+
+```dotenv
+DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.1.1
+```
+
+In a Docker management interface, change its environment variable or `image` tag. A `DUET_LEDGER_IMAGE` value in `.env` or the shell overrides the Compose default. Prefer an exact version over `latest` to control when you update.
 
 ```bash
 docker compose pull duet-ledger

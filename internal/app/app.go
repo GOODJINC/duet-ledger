@@ -19,7 +19,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.0"
+const Version = "0.1.1"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -34,6 +34,7 @@ type App struct {
 	rateMu         sync.Mutex
 	appearanceMu   sync.Mutex
 	receiptMu      sync.Mutex
+	spool          spoolBudget
 	master         []byte
 	lockFile       *os.File
 	attempts       map[string]attempt
@@ -203,7 +204,7 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 			}
 			return
 		}
-		response := newBufferedResponse(original.Header())
+		response := newBufferedResponse(original.Header(), &a.spool)
 		defer response.send(original, r)
 		a.mu.Lock()
 		defer a.mu.Unlock()

@@ -25,12 +25,12 @@ body[data-theme="light"] {
 }
 ```
 
-| Setting | What it changes |
-| --- | --- |
-| `--green` | Primary buttons and accents |
-| `--mint` | Selected-item backgrounds |
-| `--mint-soft` | Subtle accent backgrounds |
-| `.panel` → `border-radius` | Card corners |
+| Setting                    | What it changes             |
+| -------------------------- | --------------------------- |
+| `--green`                  | Primary buttons and accents |
+| `--mint`                   | Selected-item backgrounds   |
+| `--mint-soft`              | Subtle accent backgrounds   |
+| `.panel` → `border-radius` | Card corners                |
 
 Personal browser colors may take precedence over shared colors. To try the sample with the default personal design, use **Settings → Display settings for this browser → Reset personal appearance**. This does not remove shared CSS.
 
@@ -62,6 +62,6 @@ The app does not retain earlier files for undo. Keep the original CSS and font f
 
 Shared CSS and fonts are stored with the server data and included in operational backups and restores. They remain after container updates when you keep the data volume.
 
-The app does not limit file size. Server storage and reverse-proxy upload limits can still apply. Large font files can take longer to load.
+Administrator CSS/font uploads have no application file-size cap, but receiving uses temporary storage and saving/loading uses memory. The default Compose `/tmp` is 64MiB, so files larger than its available space may fail. Check server resources and proxy limits, and prefer a small WOFF2 file containing only the characters you need. These uploads are separate from the ordinary API's 22MiB body limit and 32MiB temporary-file budget.
 
 [Settings guide](usage.md) · [Backup and restore](operations.md) · [한국어](../ko/appearance.md)

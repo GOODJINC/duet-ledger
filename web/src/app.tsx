@@ -1266,7 +1266,7 @@ export function Application({
           <footer className="app-footer">
             <span>{msg("기록이 쌓이면, 일상이 보이니까.")}</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.0
+              Duet Ledger <span className="footer-dot">·</span> 0.1.1
             </span>
           </footer>
         </div>
