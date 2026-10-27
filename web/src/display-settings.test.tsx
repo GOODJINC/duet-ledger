@@ -224,6 +224,10 @@ it("uses a page header for long dialogs while retaining compact month selection"
 it("keeps account creation beside scope tabs on mobile", async () => {
   compact = true;
   history.replaceState({}, "", "/accounts");
+  localStorage.setItem(
+    `duet-ledger-display-${user.id}`,
+    JSON.stringify({ showPageHeadings: false }),
+  );
   const actor = userEvent.setup();
   render(<Application {...appProps()} />);
   const create = document.querySelector<HTMLButtonElement>(
@@ -259,4 +263,14 @@ it("identifies trash in the breadcrumb and headings without the old banner", asy
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
     "하루하루, 차곡차곡.",
   );
+});
+
+it("places mobile account creation in the page heading when titles are visible", async () => {
+  compact = true;
+  history.replaceState({}, "", "/accounts");
+  render(<Application {...appProps()} />);
+  expect(document.querySelector(".heading-actions button")?.textContent).toBe(
+    "계좌 만들기",
+  );
+  expect(document.querySelector(".mobile-account-create")).toBeNull();
 });

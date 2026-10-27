@@ -1362,7 +1362,7 @@ export function Application({
               </div>
               <div className="heading-actions">
                 {page === "accounts" ? (
-                  !compactLayout && (
+                  (!compactLayout || display.showPageHeadings) && (
                     <button
                       className="primary-button"
                       onClick={() => setModal({ kind: "account" })}
@@ -1408,15 +1408,17 @@ export function Application({
                       ))}
                     </div>
                   )}
-                  {compactLayout && page === "accounts" && (
-                    <button
-                      className="primary-button mobile-account-create"
-                      onClick={() => setModal({ kind: "account" })}
-                    >
-                      <Icon name="plus" />
-                      {msg("계좌 만들기")}
-                    </button>
-                  )}
+                  {compactLayout &&
+                    page === "accounts" &&
+                    !display.showPageHeadings && (
+                      <button
+                        className="primary-button mobile-account-create"
+                        onClick={() => setModal({ kind: "account" })}
+                      >
+                        <Icon name="plus" />
+                        {msg("계좌 만들기")}
+                      </button>
+                    )}
                 </div>
                 <div className="date-currency-toolbar period-toolbar">
                   {page !== "accounts" && (

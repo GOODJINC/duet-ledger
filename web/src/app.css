@@ -2883,3 +2883,17 @@ body {
     margin-top: auto;
   }
 }
+
+@media (max-width: 760px) {
+  .heading-actions .primary-button {
+    min-width: calc(96px * var(--text-scale, 1));
+    min-height: calc(34px * var(--text-scale, 1));
+    font-size: calc(10px * var(--text-scale, 1));
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+  .heading-actions .primary-button svg {
+    width: 13px;
+    height: 13px;
+  }
+}
