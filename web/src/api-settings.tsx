@@ -223,7 +223,7 @@ export function AppPasswordsDialog(p: DialogProps) {
       ) : (
         <>
           {!data.enabled && (
-            <p className="inline-warning">
+            <p className="inline-warning api-access-warning">
               {msg(
                 "관리자가 API 사용을 차단한 상태예요. 기존 키도 사용할 수 없으며 폐기는 가능해요.",
               )}

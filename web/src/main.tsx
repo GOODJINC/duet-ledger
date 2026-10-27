@@ -1152,6 +1152,24 @@ export function Application({
       </section>
     );
   }
+  const actionInScope = !compactLayout && !ledger && !isSettings;
+  const actionInMobileToolbar =
+    compactLayout && page === "accounts" && !display.showPageHeadings;
+  const primaryAction =
+    page === "accounts" ? (
+      <button
+        className={`primary-button ${actionInMobileToolbar ? "mobile-account-create" : ""}`}
+        onClick={() => setModal({ kind: "account" })}
+      >
+        <Icon name="plus" />
+        {msg("계좌 만들기")}
+      </button>
+    ) : isSettings || (compactLayout && !display.mobileTopEntry) ? null : (
+      <button className="primary-button" onClick={() => openEntry()}>
+        <Icon name="plus" />
+        {msg("빠른 입력")}
+      </button>
+    );
   const accountControls = (
     <div className="header-right">
       {loading && <Icon name="loader" className="spin loading-mark" />}
@@ -1344,7 +1362,7 @@ export function Application({
               </div>
             )}
             <div
-              className={`page-heading ${display.showPageHeadings ? "" : "heading-collapsed"} ${!display.showPageHeadings && (isSettings || (compactLayout && (page === "accounts" || !display.mobileTopEntry))) ? "visually-hidden" : ""}`}
+              className={`page-heading ${display.showPageHeadings ? "" : "heading-collapsed"} ${!display.showPageHeadings && (isSettings || actionInScope || actionInMobileToolbar || (compactLayout && !display.mobileTopEntry)) ? "visually-hidden" : ""}`}
             >
               <div
                 className={
@@ -1361,26 +1379,7 @@ export function Application({
                 <p className="page-subtitle">{headingTitles[page][1]}</p>
               </div>
               <div className="heading-actions">
-                {page === "accounts" ? (
-                  (!compactLayout || display.showPageHeadings) && (
-                    <button
-                      className="primary-button"
-                      onClick={() => setModal({ kind: "account" })}
-                    >
-                      <Icon name="plus" />
-                      {msg("계좌 만들기")}
-                    </button>
-                  )
-                ) : isSettings ||
-                  (compactLayout && !display.mobileTopEntry) ? null : (
-                  <button
-                    className="primary-button"
-                    onClick={() => openEntry()}
-                  >
-                    <Icon name="plus" />
-                    {msg("빠른 입력")}
-                  </button>
-                )}
+                {!actionInScope && !actionInMobileToolbar && primaryAction}
               </div>
             </div>
             {!isSettings && (
@@ -1408,19 +1407,10 @@ export function Application({
                       ))}
                     </div>
                   )}
+                  {actionInScope && primaryAction}
                 </div>
                 <div className="date-currency-toolbar period-toolbar">
-                  {compactLayout &&
-                    page === "accounts" &&
-                    !display.showPageHeadings && (
-                      <button
-                        className="primary-button mobile-account-create"
-                        onClick={() => setModal({ kind: "account" })}
-                      >
-                        <Icon name="plus" />
-                        {msg("계좌 만들기")}
-                      </button>
-                    )}
+                  {actionInMobileToolbar && primaryAction}
                   {page !== "accounts" && (
                     <div className="month-nav">
                       <button
@@ -2624,55 +2614,12 @@ export function SettingsView({
       )}
       {section === "settings" && (
         <>
-          <section className="panel">
+          <section className="panel" data-settings-scope="account">
             <div className="setting-group">
-              <h2>{msg("화면과 표시")}</h2>
-              <div className="setting-row appearance-row">
-                <div>
-                  <strong>{msg("화면 밝기")}</strong>
-                  <p>{msg("이 브라우저에 적용해요.")}</p>
-                </div>
-                <div className="theme-buttons">
-                  {[
-                    ["light", msg("밝게"), "sun"],
-                    ["dark", msg("어둡게"), "moon"],
-                  ].map(([id, label, icon]) => (
-                    <button
-                      key={id}
-                      className={theme === id ? "active" : ""}
-                      aria-pressed={theme === id}
-                      onClick={() => setTheme(id)}
-                    >
-                      <Icon name={icon as IconName} />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="setting-row appearance-row">
-                <div>
-                  <strong>{msg("테마 색상")}</strong>
-                  <Help>{msg("이 계정의 현재 브라우저에 적용해요.")}</Help>
-                </div>
-                <div className="accent-options">
-                  {[
-                    ["green", msg("그린")],
-                    ["rose", msg("로즈")],
-                    ["blue", msg("블루")],
-                    ["violet", msg("바이올렛")],
-                  ].map(([id, label]) => (
-                    <button
-                      key={id}
-                      className={`accent-choice ${id}`}
-                      aria-pressed={accent === id}
-                      onClick={() => setAccent(id)}
-                    >
-                      <i />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <h2>{msg("계정 전체 설정")}</h2>
+              <p className="setting-explainer">
+                {msg("이 계정으로 로그인한 모든 기기에 적용해요.")}
+              </p>
               <form onSubmit={save} className="inline-settings-form">
                 <div className="form-two-cols">
                   <div>
@@ -2796,16 +2743,68 @@ export function SettingsView({
                   {msg("설정 저장")}
                 </button>
               </form>
-            </div>
-          </section>
-          <section className="panel">
-            <div className="setting-group">
               {row(
                 msg("보조 통화와 환율"),
                 msg("필요한 통화를 추가하고 환율을 설정해요."),
                 () => setExchangeOpen(true),
               )}
             </div>
+          </section>
+          <section className="panel" data-settings-scope="browser">
+            <div className="setting-group">
+              <h2>{msg("브라우저별 화면 설정")}</h2>
+              <p className="setting-explainer">
+                {msg(
+                  "밝기·색상·글씨 크기·화면 배치는 현재 브라우저에만 적용해요.",
+                )}
+              </p>
+              <div className="setting-row appearance-row">
+                <div>
+                  <strong>{msg("화면 밝기")}</strong>
+                </div>
+                <div className="theme-buttons">
+                  {[
+                    ["light", msg("밝게"), "sun"],
+                    ["dark", msg("어둡게"), "moon"],
+                  ].map(([id, label, icon]) => (
+                    <button
+                      key={id}
+                      className={theme === id ? "active" : ""}
+                      aria-pressed={theme === id}
+                      onClick={() => setTheme(id)}
+                    >
+                      <Icon name={icon as IconName} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="setting-row appearance-row">
+                <div>
+                  <strong>{msg("테마 색상")}</strong>
+                </div>
+                <div className="accent-options">
+                  {[
+                    ["green", msg("그린")],
+                    ["rose", msg("로즈")],
+                    ["blue", msg("블루")],
+                    ["violet", msg("바이올렛")],
+                  ].map(([id, label]) => (
+                    <button
+                      key={id}
+                      className={`accent-choice ${id}`}
+                      aria-pressed={accent === id}
+                      onClick={() => setAccent(id)}
+                    >
+                      <i />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DisplaySettings userId={user.id} embedded />
+            <AppearanceSettings userId={user.id} embedded />
           </section>
           <section className="panel">
             <div className="setting-group">
@@ -2885,12 +2884,6 @@ export function SettingsView({
             )}
           </div>
         </section>
-      )}
-      {section === "settings" && (
-        <>
-          <DisplaySettings userId={user.id} />
-          <AppearanceSettings userId={user.id} />
-        </>
       )}
       {section === "administration" && user.admin && (
         <AdminAPISettings user={user} refresh={refresh} />

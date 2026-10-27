@@ -675,5 +675,9 @@
   "연결할 때 Authorization: Bearer 앱비밀번호를 사용해요. 공유 해제·키 폐기·비밀번호 변경 시 접근이 차단됩니다. 모든 기기 로그아웃은 API 키에 영향을 주지 않아요.": "Use Authorization: Bearer APP_PASSWORD to connect. Access is blocked when sharing is removed, a key is revoked or your password changes. Signing out all devices does not affect API keys.",
   "삭제한 기록을 살펴봐요.": "Review deleted records.",
   "삭제한 기록을 확인하고, 필요한 기록은 다시 복구하세요.": "Review deleted records and restore the ones you need.",
-  "휴지통": "Trash"
+  "휴지통": "Trash",
+  "계정 전체 설정": "Account-wide preferences",
+  "이 계정으로 로그인한 모든 기기에 적용해요.": "Applies on every device signed in to this account.",
+  "브라우저별 화면 설정": "Display settings for this browser",
+  "밝기·색상·글씨 크기·화면 배치는 현재 브라우저에만 적용해요.": "Brightness, colors, text size and layout apply only to this browser."
 }

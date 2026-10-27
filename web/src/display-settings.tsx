@@ -59,7 +59,13 @@ export function useCompactLayout() {
   }, []);
   return compact;
 }
-export function DisplaySettings({ userId }: { userId: string }) {
+export function DisplaySettings({
+  userId,
+  embedded = false,
+}: {
+  userId: string;
+  embedded?: boolean;
+}) {
   const [value, save] = useDisplayPreferences(userId);
   const [error, setError] = useState("");
   function update(next: DisplayPreferences) {
@@ -70,13 +76,17 @@ export function DisplaySettings({ userId }: { userId: string }) {
       setError(msg("이 브라우저에 설정을 저장하지 못했어요."));
     }
   }
+  const Container = embedded ? "div" : "section";
+  const Heading = embedded ? "h3" : "h2";
   return (
-    <section className="panel">
+    <Container className={embedded ? "browser-settings-group" : "panel"}>
       <div className="setting-group">
-        <h2>{msg("화면 구성")}</h2>
-        <p className="setting-explainer">
-          {msg("이 계정의 현재 브라우저에 적용해요.")}
-        </p>
+        <Heading>{msg("화면 구성")}</Heading>
+        {!embedded && (
+          <p className="setting-explainer">
+            {msg("이 계정의 현재 브라우저에 적용해요.")}
+          </p>
+        )}
         {(
           [
             ["showPageHeadings", msg("페이지 타이틀·설명 표시")],
@@ -115,6 +125,6 @@ export function DisplaySettings({ userId }: { userId: string }) {
           </p>
         )}
       </div>
-    </section>
+    </Container>
   );
 }

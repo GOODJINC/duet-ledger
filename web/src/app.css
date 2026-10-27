@@ -2902,3 +2902,21 @@ body {
   font-size: calc(13px * var(--text-scale, 1));
   color: var(--ink);
 }
+
+.api-access-warning {
+  margin-bottom: 12px;
+}
+.exchange-heading .exchange-base + p {
+  margin-top: 10px;
+}
+.browser-settings-group {
+  border-top: 1px solid var(--line);
+}
+.browser-settings-group h3 {
+  font-size: calc(15px * var(--text-scale, 1));
+  margin-bottom: 14px;
+}
+.scope-controls-row > .primary-button {
+  margin-left: auto;
+  flex-shrink: 0;
+}

@@ -772,3 +772,20 @@ it("안전 모드 주소는 관리 초기 화면과 설정 이동에서도 유�
   expect(location.search).toBe("?safe-theme=1");
   expect(screen.queryByText("공통 CSS·글꼴")).toBeNull();
 });
+
+it("groups account-wide preferences separately from browser display preferences", () => {
+  render(<SettingsView {...settings()} section="settings" />);
+  const account = document.querySelector('[data-settings-scope="account"]')!;
+  const browser = document.querySelector('[data-settings-scope="browser"]')!;
+  for (const name of ["언어", "시간대", "기본 통화", "빠른 입력 기본 계좌"])
+    expect(account.contains(screen.getByLabelText(name))).toBe(true);
+  for (const name of [
+    "화면 구성",
+    "디자인 직접 설정",
+    "화면 밝기",
+    "테마 색상",
+  ])
+    expect(browser.contains(screen.getByText(name))).toBe(true);
+  expect(browser.querySelectorAll("section.panel")).toHaveLength(0);
+  expect(browser.contains(screen.getByLabelText("글씨 크기"))).toBe(true);
+});

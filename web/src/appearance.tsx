@@ -123,7 +123,13 @@ export function useAppearance(id: string) {
     };
   }, [id]);
 }
-export function AppearanceSettings({ userId }: { userId: string }) {
+export function AppearanceSettings({
+  userId,
+  embedded = false,
+}: {
+  userId: string;
+  embedded?: boolean;
+}) {
   const [value, setValue] = useState(() => load(userId));
   const [message, setMessage] = useState("");
   const [scaleDraft, setScaleDraft] = useState(String(value.scale));
@@ -140,17 +146,19 @@ export function AppearanceSettings({ userId }: { userId: string }) {
       );
     }
   }
+  const Container = embedded ? "div" : "section";
+  const Heading = embedded ? "h3" : "h2";
   return (
-    <section className="panel">
+    <Container className={embedded ? "browser-settings-group" : "panel"}>
       <div className="setting-group">
-        <h2>
+        <Heading>
           {msg("디자인 직접 설정")}{" "}
           <Help>
             {msg(
               "글씨 크기와 색상은 현재 브라우저에 저장해요. 공통 CSS·글꼴은 관리자가 관리 화면에서 설정합니다.",
             )}
           </Help>
-        </h2>
+        </Heading>
         <div className="setting-row">
           <label htmlFor="custom-size">
             {msg("글씨 크기")}
@@ -212,7 +220,7 @@ export function AppearanceSettings({ userId }: { userId: string }) {
           {message}
         </p>
       </div>
-    </section>
+    </Container>
   );
 }
 

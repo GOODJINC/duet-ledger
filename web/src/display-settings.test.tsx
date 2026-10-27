@@ -277,3 +277,22 @@ it("places mobile account creation in the page heading when titles are visible",
   );
   expect(document.querySelector(".mobile-account-create")).toBeNull();
 });
+
+it.each(["home", "ledger", "stats", "accounts"])(
+  "places the desktop action beside scope tabs on %s",
+  async (page) => {
+    history.replaceState({}, "", `/${page}`);
+    const actor = userEvent.setup();
+    render(<Application {...appProps()} />);
+    const button = document.querySelector<HTMLButtonElement>(
+      ".scope-controls-row > .primary-button",
+    )!;
+    expect(button).not.toBeNull();
+    expect(document.querySelector(".heading-actions button")).toBeNull();
+    expect(button.textContent).toBe(
+      page === "accounts" ? "계좌 만들기" : "빠른 입력",
+    );
+    await actor.click(button);
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+  },
+);
