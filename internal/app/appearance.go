@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/binary"
@@ -66,16 +68,18 @@ func (a *App) appearanceAsset(w http.ResponseWriter, r *http.Request, u *User) e
 	}
 	w.Header().Set("Content-Type", mime)
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
-	w.WriteHeader(200)
-	_, err = w.Write(data)
-	return err
+	return streamResponse(w, io.NopCloser(bytes.NewReader(data)))
 }
 
 var cssComments = regexp.MustCompile(`/\*[\s\S]*?\*/`)
 var blockedCSS = regexp.MustCompile(`(?i)[\\<>\x00]|url\s*\(|@import|@namespace|@document|@font-face|image\s*\(|image-set\s*\(|expression\s*\(|-moz-binding|behavior\s*:`)
 
 func validateServerCSS(data []byte) error {
-	if !utf8.Valid(data) || blockedCSS.MatchString(cssComments.ReplaceAllString(string(data), "")) {
+	css := data
+	if cssComments.FindIndex(data) != nil {
+		css = cssComments.ReplaceAll(data, nil)
+	}
+	if !utf8.Valid(data) || blockedCSS.Match(css) {
 		return bad("CSS에 외부 주소·글꼴 선언·이스케이프 문자를 사용할 수 없어요.")
 	}
 	return nil
@@ -86,6 +90,82 @@ func validateServerFont(data []byte) error {
 	}
 	return nil
 }
+
+type appearanceUploadKey struct{}
+type preparedAppearanceAsset struct {
+	data []byte
+	name string
+}
+
+// Receiving and validating administrator assets does not own the database lock.
+// Spooling avoids io.ReadAll growth copies; SQLite still needs one complete blob
+// when storing the asset in the existing schema.
+func prepareAppearanceUpload(r *http.Request) (preparedAppearanceAsset, error) {
+	var out preparedAppearanceAsset
+	kind := r.PathValue("kind")
+	if kind != "css" && kind != "font" {
+		return out, missing()
+	}
+	reader, err := r.MultipartReader()
+	if err != nil {
+		return out, bad("파일 첨부 형식을 확인해 주세요.")
+	}
+	part, err := reader.NextPart()
+	if err != nil {
+		return out, bad("파일을 선택해 주세요.")
+	}
+	defer part.Close()
+	if part.FormName() != "file" || part.FileName() == "" {
+		return out, bad("파일을 선택해 주세요.")
+	}
+	out.name = filepath.Base(strings.ReplaceAll(part.FileName(), "\\", "/"))
+	if len(out.name) > 255 {
+		return out, bad("파일 이름을 짧게 해 주세요.")
+	}
+	var staged requestBuffer
+	defer staged.Close()
+	if _, err = io.Copy(&staged, part); err != nil {
+		return out, bad("파일을 끝까지 읽지 못했어요.")
+	}
+	content, err := staged.reader()
+	if err != nil {
+		return out, err
+	}
+	size := int64(staged.memory.Len())
+	if staged.file != nil {
+		info, e := staged.file.Stat()
+		if e != nil {
+			return out, e
+		}
+		size = info.Size()
+	}
+	if size > int64(int(^uint(0)>>1)) {
+		return out, bad("파일을 끝까지 읽지 못했어요.")
+	}
+	out.data = make([]byte, int(size))
+	if _, err = io.ReadFull(content, out.data); err != nil {
+		return out, bad("파일을 끝까지 읽지 못했어요.")
+	}
+	if kind == "css" {
+		err = validateServerCSS(out.data)
+	} else {
+		err = validateServerFont(out.data)
+	}
+	if err != nil {
+		return out, err
+	}
+	if extra, e := reader.NextPart(); e != io.EOF {
+		if extra != nil {
+			extra.Close()
+		}
+		return out, bad("파일을 하나씩 첨부해 주세요.")
+	}
+	return out, nil
+}
+func withAppearanceUpload(r *http.Request, upload preparedAppearanceAsset) {
+	*r = *r.WithContext(context.WithValue(r.Context(), appearanceUploadKey{}, upload))
+}
+
 func (a *App) updateAppearanceAsset(w http.ResponseWriter, r *http.Request, u *User) error {
 	if !u.Admin {
 		return forbidden()
@@ -97,40 +177,11 @@ func (a *App) updateAppearanceAsset(w http.ResponseWriter, r *http.Request, u *U
 	var data []byte
 	name := ""
 	if r.Method != "DELETE" {
-		reader, err := r.MultipartReader()
-		if err != nil {
+		upload, ok := r.Context().Value(appearanceUploadKey{}).(preparedAppearanceAsset)
+		if !ok {
 			return bad("파일 첨부 형식을 확인해 주세요.")
 		}
-		part, err := reader.NextPart()
-		if err != nil {
-			return bad("파일을 선택해 주세요.")
-		}
-		defer part.Close()
-		if part.FormName() != "file" || part.FileName() == "" {
-			return bad("파일을 선택해 주세요.")
-		}
-		name = filepath.Base(strings.ReplaceAll(part.FileName(), "\\", "/"))
-		if len(name) > 255 {
-			return bad("파일 이름을 짧게 해 주세요.")
-		}
-		data, err = io.ReadAll(part)
-		if err != nil {
-			return bad("파일을 끝까지 읽지 못했어요.")
-		}
-		if kind == "css" {
-			err = validateServerCSS(data)
-		} else {
-			err = validateServerFont(data)
-		}
-		if err != nil {
-			return err
-		}
-		if extra, e := reader.NextPart(); e != io.EOF {
-			if extra != nil {
-				extra.Close()
-			}
-			return bad("파일을 하나씩 첨부해 주세요.")
-		}
+		data, name = upload.data, upload.name
 	}
 	tx, err := a.DB.Begin()
 	if err != nil {

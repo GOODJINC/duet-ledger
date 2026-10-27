@@ -32,6 +32,9 @@ func baseCategoryName(code string) string {
 	return code
 }
 func (a *App) categoryList(q queryer, ledger, kind string) ([]Category, error) {
+	return a.categoryListForAccount(q, ledger, kind, "")
+}
+func (a *App) categoryListForAccount(q queryer, ledger, kind, account string) ([]Category, error) {
 	out := []Category{}
 	index := map[string]int{}
 	for _, c := range baseCategories {
@@ -61,7 +64,7 @@ func (a *App) categoryList(q queryer, ledger, kind string) ([]Category, error) {
 		return nil, err
 	}
 	rows.Close()
-	legacy, err := q.Query("SELECT DISTINCT p.category FROM postings p JOIN events e ON e.id=p.event_id JOIN accounts ac ON ac.id=p.account_id WHERE ac.ledger_id=? AND (CASE WHEN e.kind='income' THEN 'income' ELSE 'expense' END)=? AND e.kind!='transfer' ORDER BY p.category", ledger, kind)
+	legacy, err := q.Query("SELECT DISTINCT p.category FROM postings p JOIN events e ON e.id=p.event_id JOIN accounts ac ON ac.id=p.account_id WHERE ac.ledger_id=? AND (CASE WHEN e.kind='income' THEN 'income' ELSE 'expense' END)=? AND e.kind!='transfer' AND (?='' OR ac.id=?) ORDER BY p.category", ledger, kind, account, account)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +158,13 @@ func (a *App) listCategories(w http.ResponseWriter, r *http.Request, u *User) er
 			return err
 		}
 	}
-	list, err := a.categoryList(a.DB, ledger, kind)
+	// Explicit ledger categories are common settings. Legacy categories derived
+	// from transactions must stay inside the authorized account.
+	legacyAccount := ""
+	if u.API != nil || restricted {
+		legacyAccount = account
+	}
+	list, err := a.categoryListForAccount(a.DB, ledger, kind, legacyAccount)
 	if err != nil {
 		return err
 	}

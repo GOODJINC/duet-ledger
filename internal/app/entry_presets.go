@@ -33,7 +33,7 @@ func presetAvailable(v TxInput, accounts map[string]Account, ledger string) bool
 }
 
 func (a *App) listEntryPresets(w http.ResponseWriter, r *http.Request, u *User) error {
-	all, err := a.accounts(a.DB, u)
+	all, err := a.accountMetadata(a.DB, u, "")
 	if err != nil {
 		return err
 	}

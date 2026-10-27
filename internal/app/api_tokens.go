@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -143,7 +142,7 @@ func (a *App) createAppPassword(w http.ResponseWriter, r *http.Request, u *User)
 	if n > 0 {
 		expiry = time.Now().Add(time.Duration(n) * 24 * time.Hour).Unix()
 	}
-	available, err := a.accounts(a.DB, u)
+	available, err := a.accountMetadata(a.DB, u, "")
 	if err != nil {
 		return err
 	}
@@ -226,7 +225,7 @@ func revokeAppPasswords(q queryer, userID string) error {
 }
 func (a *App) authenticateApp(r *http.Request) (*User, error) {
 	deny := func() (*User, error) {
-		host, _, _ := net.SplitHostPort(r.RemoteAddr)
+		host := a.clientIP(r)
 		if !a.apiRate("api-invalid:"+host, 30) {
 			return nil, &apiError{429, "rate_limit", "잠시 후 다시 시도해 주세요."}
 		}
@@ -277,26 +276,6 @@ func (a *App) authenticateApp(r *http.Request) (*User, error) {
 	err = rows.Err()
 	rows.Close()
 	return u, err
-}
-func (a *App) apiRate(key string, limit int) bool {
-	t := time.Now()
-	if len(a.attempts) > 10000 {
-		for k, v := range a.attempts {
-			if t.Sub(v.Since) > 10*time.Minute {
-				delete(a.attempts, k)
-			}
-		}
-		if len(a.attempts) > 10000 {
-			return false
-		}
-	}
-	v := a.attempts[key]
-	if t.Sub(v.Since) >= time.Minute {
-		v = attempt{Since: t}
-	}
-	v.Count++
-	a.attempts[key] = v
-	return v.Count <= limit
 }
 func (a *App) listAPIRequests(w http.ResponseWriter, r *http.Request, u *User) error {
 	rows, err := a.DB.Query("SELECT r.id,r.credential_id,c.name,r.method,r.path,r.status,r.created_at FROM api_requests r JOIN api_credentials c ON c.id=r.credential_id WHERE r.user_id=? ORDER BY r.created_at DESC,r.id DESC LIMIT 100", u.ID)

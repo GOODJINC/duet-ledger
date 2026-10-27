@@ -125,6 +125,8 @@ Params:
 
 분류: `GET /categories?account=계좌ID&kind=expense` 또는 `kind=income`. 반환된 `code`를 거래의 `category`로 사용합니다. 직접 입력한 이름을 분류 코드로 대신 보내지 마세요.
 
+가계부에 등록된 공통 분류와 조회 계좌의 거래에서 수집한 분류를 반환합니다. 다른 계좌의 거래에서만 사용한 분류는 포함하지 않습니다.
+
 목록·통계 공통 필터:
 
 | Params              | 의미                                                 |

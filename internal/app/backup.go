@@ -189,11 +189,9 @@ func (a *App) downloadBackup(w http.ResponseWriter, r *http.Request, u *User) er
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
-	_, err = io.Copy(w, f)
-	return err
+	return streamResponse(w, f)
 }
 func (a *App) RunBackups(ctx context.Context) {
 	tick := time.NewTicker(time.Minute)

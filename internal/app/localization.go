@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -47,12 +48,13 @@ func localizeMessage(locale, message string) string {
 func writeRequestError(w http.ResponseWriter, r *http.Request, u *User, err error, bearer bool) {
 	var problem *apiError
 	if !errors.As(err, &problem) {
+		log.Printf("api failure: %T: %v", err, err)
 		problem = &apiError{500, "internal", "처리하지 못했어요. 서버 상태를 확인해 주세요."}
 	}
 	if bearer && problem.Status == 401 {
 		w.Header().Set("WWW-Authenticate", `Bearer realm="duet-ledger", error="invalid_token"`)
 	}
-	if problem.Status == 429 && w.Header().Get("Retry-After") == "" {
+	if bearer && problem.Status == 429 && w.Header().Get("Retry-After") == "" {
 		w.Header().Set("Retry-After", "60")
 	}
 	writeJSON(w, problem.Status, map[string]string{"error": problem.Code, "message": localizeMessage(requestLocale(r, u), problem.Message)})

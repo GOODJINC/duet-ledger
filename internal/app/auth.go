@@ -5,7 +5,6 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -86,35 +85,7 @@ func (a *App) setup(w http.ResponseWriter, r *http.Request, u *User) error {
 	}
 	return a.issueSession(w, id, 201)
 }
-func (a *App) rateAllowed(r *http.Request, key string, limit int) bool {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		host = r.RemoteAddr
-	}
-	key = key + ":" + host
-	t := time.Now()
-	if len(a.attempts) > 10000 {
-		for k, v := range a.attempts {
-			if t.Sub(v.Since) > 10*time.Minute {
-				delete(a.attempts, k)
-			}
-		}
-		if len(a.attempts) > 10000 {
-			return false
-		}
-	}
-	v := a.attempts[key]
-	if t.Sub(v.Since) > 10*time.Minute {
-		v = attempt{Since: t}
-	}
-	v.Count++
-	a.attempts[key] = v
-	return v.Count <= limit
-}
 func (a *App) login(w http.ResponseWriter, r *http.Request, u *User) error {
-	if !a.rateAllowed(r, "login", 30) {
-		return &apiError{429, "rate_limit", "로그인 시도가 많아요. 10분 뒤 다시 시도해 주세요."}
-	}
 	var c credentials
 	if err := decode(r, &c); err != nil {
 		return err
@@ -122,6 +93,16 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, u *User) error {
 	if len(c.Password) > 256 || len(c.Username) > 100 {
 		return bad("입력을 확인해 주세요.")
 	}
+	if !a.loginAllowed(r, c.Username) {
+		w.Header().Set("Retry-After", "600")
+		return &apiError{429, "rate_limit", "로그인 시도가 많아요. 10분 뒤 다시 시도해 주세요."}
+	}
+	failed := true
+	defer func() {
+		if failed {
+			a.loginFailed(r, c.Username)
+		}
+	}()
 	var id, hash, secret string
 	err := a.DB.QueryRow("SELECT id,password,totp FROM users WHERE username=?", strings.ToLower(strings.TrimSpace(c.Username))).Scan(&id, &hash, &secret)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -144,6 +125,8 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, u *User) error {
 			return &apiError{401, "totp_invalid", "인증 코드가 맞지 않거나 이미 사용되었어요."}
 		}
 	}
+	failed = false
+	a.loginSucceeded(r, c.Username)
 	duration := 7 * 24 * time.Hour
 	if c.Remember {
 		duration = 30 * 24 * time.Hour
@@ -165,20 +148,10 @@ func (a *App) issueSession(w http.ResponseWriter, id string, status int, pending
 	return a.issueSessionFor(w, id, status, 7*24*time.Hour, true, pending...)
 }
 func (a *App) issueSessionFor(w http.ResponseWriter, id string, status int, duration time.Duration, persistent bool, pending ...bool) error {
-	token := encode64(random(32))
-	csrf := encode64(random(32))
-	t := time.Now()
-	if _, err := a.DB.Exec("DELETE FROM sessions WHERE expires_at < ?", t.Unix()); err != nil {
+	csrf, err := a.createSession(w, id, duration, persistent)
+	if err != nil {
 		return err
 	}
-	if _, err := a.DB.Exec("INSERT INTO sessions VALUES(?,?,?,?,?)", tokenHash(token), id, csrf, t.Add(duration).Unix(), t.Unix()); err != nil {
-		return err
-	}
-	maxAge := 0
-	if persistent {
-		maxAge = int(duration.Seconds())
-	}
-	a.setCookie(w, token, maxAge)
 	u, err := a.user(id)
 	if err != nil {
 		return err
@@ -190,6 +163,30 @@ func (a *App) issueSessionFor(w http.ResponseWriter, id string, status int, dura
 	writeJSON(w, status, u)
 	return nil
 }
+func (a *App) createSession(w http.ResponseWriter, id string, duration time.Duration, persistent bool) (string, error) {
+	token := encode64(random(32))
+	marker := "s."
+	if persistent {
+		marker = "p."
+	}
+	csrf := marker + encode64(random(32))
+	t := time.Now()
+	if _, err := a.DB.Exec("DELETE FROM sessions WHERE expires_at < ?", t.Unix()); err != nil {
+		return "", err
+	}
+	if _, err := a.DB.Exec("INSERT INTO sessions VALUES(?,?,?,?,?)", tokenHash(token), id, csrf, t.Add(duration).Unix(), t.Unix()); err != nil {
+		return "", err
+	}
+	maxAge := 0
+	if persistent {
+		maxAge = int(duration.Seconds())
+	}
+	a.setCookie(w, token, maxAge)
+	return csrf, nil
+}
+func (a *App) renewSession(w http.ResponseWriter, u *User) error {
+	return a.issueSessionFor(w, u.ID, 200, u.sessionDuration, u.sessionPersistent)
+}
 func (a *App) setCookie(w http.ResponseWriter, value string, maxAge int) {
 	http.SetCookie(w, &http.Cookie{Name: "duet-ledger-session", Value: value, Path: "/", HttpOnly: true, Secure: a.Config.SecureCookie, SameSite: http.SameSiteStrictMode, MaxAge: maxAge})
 }
@@ -199,7 +196,8 @@ func (a *App) authenticate(r *http.Request) (*User, error) {
 		return nil, &apiError{401, "login_required", "로그인이 필요해요."}
 	}
 	var id, csrf string
-	err = a.DB.QueryRow("SELECT user_id,csrf FROM sessions WHERE token_hash=? AND expires_at>?", tokenHash(cookie.Value), time.Now().Unix()).Scan(&id, &csrf)
+	var expires, created int64
+	err = a.DB.QueryRow("SELECT user_id,csrf,expires_at,created_at FROM sessions WHERE token_hash=? AND expires_at>?", tokenHash(cookie.Value), time.Now().Unix()).Scan(&id, &csrf, &expires, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, &apiError{401, "login_required", "다시 로그인해 주세요."}
 	}
@@ -211,6 +209,11 @@ func (a *App) authenticate(r *http.Request) (*User, error) {
 		return nil, err
 	}
 	u.CSRF = csrf
+	u.sessionDuration = time.Duration(expires-created) * time.Second
+	// Older sessions did not record the choice. Preserve their existing
+	// rotation behavior; a fresh login records the exact policy without a
+	// schema change or invalidating any existing session.
+	u.sessionPersistent = !strings.HasPrefix(csrf, "s.")
 	return u, nil
 }
 func (a *App) me(w http.ResponseWriter, r *http.Request, u *User) error {
@@ -348,7 +351,7 @@ func (a *App) changePassword(w http.ResponseWriter, r *http.Request, u *User) er
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	return a.issueSession(w, u.ID, 200)
+	return a.renewSession(w, u)
 }
 func (a *App) checkSecondFactor(id, code string) (bool, error) {
 	var cipherSecret, recovery string
@@ -457,13 +460,10 @@ func (a *App) confirmTOTP(w http.ResponseWriter, r *http.Request, u *User) error
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	token := encode64(random(32))
-	csrf := encode64(random(32))
-	t := time.Now()
-	if _, err = a.DB.Exec("INSERT INTO sessions VALUES(?,?,?,?,?)", tokenHash(token), u.ID, csrf, t.Add(7*24*time.Hour).Unix(), t.Unix()); err != nil {
+	csrf, err := a.createSession(w, u.ID, u.sessionDuration, u.sessionPersistent)
+	if err != nil {
 		return err
 	}
-	a.setCookie(w, token, int((7 * 24 * time.Hour).Seconds()))
 	writeJSON(w, 200, map[string]any{"recovery_codes": codes, "csrf": csrf})
 	return nil
 }
@@ -502,5 +502,5 @@ func (a *App) disableTOTP(w http.ResponseWriter, r *http.Request, u *User) error
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	return a.issueSession(w, u.ID, 200)
+	return a.renewSession(w, u)
 }

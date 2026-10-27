@@ -123,6 +123,8 @@ Keys cannot create accounts or other keys, change users/sharing/server settings,
 
 Categories: `GET /categories?account=ACCOUNT_ID&kind=expense` or `kind=income`. Use the returned `code` in a transaction's `category`; do not substitute an arbitrary category name.
 
+Returns shared category definitions configured for the ledger and legacy categories derived from the requested account’s transactions. Categories used only in other accounts’ transactions are excluded.
+
 List/statistics query parameters:
 
 | Parameter           | Meaning                                                                        |

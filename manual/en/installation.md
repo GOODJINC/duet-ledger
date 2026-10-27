@@ -66,6 +66,12 @@ Use the actual origin without a path or trailing slash. Enabling secure cookies 
 
 Install the PWA using the browser's install-app menu at the trusted HTTPS address. Plain HTTP may remain restricted even over a VPN. Offline transaction entry is not supported.
 
+## Proxies and login limits
+
+Forwarded IP headers are ignored by default. If you use a reverse proxy, optionally set `DUET_LEDGER_TRUSTED_PROXIES` to a comma-separated list of exact proxy IP addresses or CIDRs that connect directly to the app. The proxy must set or append the real client address in `X-Forwarded-For`. The app walks the chain from right to left and uses the first untrusted address.
+
+Do not trust the entire internet. Leave this empty until you have verified your proxy addresses. Successful sign-ins do not consume the failed-login budget. Failures are limited to 30 per account and 300 overall per client IP in ten minutes. This reduces interference between users behind one proxy while still bounding attempts across many accounts.
+
 ## Storage
 
 The installation directory holds Compose and `.env`; application data is stored in the Docker volume `duet-ledger-data` and survives container replacement. **Deleting the volume can lose your records.** Follow [Operations](operations.md) for updates, backups and restoration.

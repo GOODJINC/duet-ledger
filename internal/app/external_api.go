@@ -14,6 +14,7 @@ type apiStatusWriter struct {
 	status int
 }
 
+func (w *apiStatusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 func (w *apiStatusWriter) WriteHeader(status int) {
 	if w.status == 0 {
 		w.status = status
@@ -74,15 +75,28 @@ func (a *App) addExternalAPI(m *http.ServeMux) {
 }
 func (a *App) externalAPI(permission string, h handler) http.HandlerFunc {
 	return func(original http.ResponseWriter, r *http.Request) {
-		w := &apiStatusWriter{ResponseWriter: original}
+		original.Header().Set("Cache-Control", "no-store")
+		original.Header().Set("X-Content-Type-Options", "nosniff")
+		original.Header().Set("Referrer-Policy", "no-referrer")
+		if !a.sameOrigin(r) {
+			writeRequestError(original, r, nil, forbidden(), true)
+			return
+		}
+		cleanup, err := a.receiveRequest(original, r, a.authenticateApp)
+		if err != nil {
+			writeRequestError(original, r, nil, err, true)
+			return
+		}
+		defer cleanup()
+		response := newBufferedResponse(original.Header())
+		defer response.send(original, r)
+		w := &apiStatusWriter{ResponseWriter: response}
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		r.Body = http.MaxBytesReader(w, r.Body, 22<<20)
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		var u *User
-		var err error
 		if !a.sameOrigin(r) {
 			err = forbidden()
 		} else {

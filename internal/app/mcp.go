@@ -113,7 +113,7 @@ type mcpTransactionInput struct {
 	Title            string `json:"title"`
 	Timezone         string `json:"timezone,omitempty" jsonschema:"IANA time zone. Defaults to the user's setting."`
 	ToID             string `json:"to_id,omitempty" jsonschema:"Destination account ID. Transfers require access to both accounts."`
-	Category         string `json:"category,omitempty" jsonschema:"Category code from list_categories."`
+	Category         string `json:"category" jsonschema:"Required category code from list_categories. Use transfer for transfers."`
 	Note             string `json:"note,omitempty"`
 	TargetNote       string `json:"target_note,omitempty"`
 	OriginalCurrency string `json:"original_currency,omitempty"`

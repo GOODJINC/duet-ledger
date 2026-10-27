@@ -3,12 +3,11 @@ package app
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -24,16 +23,21 @@ const Version = "0.1.0"
 
 type Config struct {
 	DataDir, PublicURL string
+	TrustedProxies     []string
 	SecureCookie       bool
 	Assets             fs.FS
 }
 type App struct {
-	DB       *sql.DB
-	Config   Config
-	mu       sync.Mutex
-	master   []byte
-	lockFile *os.File
-	attempts map[string]attempt
+	DB             *sql.DB
+	Config         Config
+	mu             sync.Mutex
+	rateMu         sync.Mutex
+	appearanceMu   sync.Mutex
+	receiptMu      sync.Mutex
+	master         []byte
+	lockFile       *os.File
+	attempts       map[string]attempt
+	trustedProxies []netip.Prefix
 }
 type attempt struct {
 	Count int
@@ -45,21 +49,23 @@ type queryer interface {
 	QueryRow(string, ...any) *sql.Row
 }
 type User struct {
-	API              *APIScope      `json:"-"`
-	APIEnabled       bool           `json:"api_enabled"`
-	DefaultAccountID string         `json:"default_account_id"`
-	ExchangeRates    []ExchangeRate `json:"exchange_rates"`
-	ID               string         `json:"id"`
-	Username         string         `json:"username"`
-	Name             string         `json:"name"`
-	Admin            bool           `json:"admin"`
-	Locale           string         `json:"locale"`
-	Timezone         string         `json:"timezone"`
-	TOTP             bool           `json:"totp_enabled"`
-	CSRF             string         `json:"csrf,omitempty"`
-	DefaultCurrency  string         `json:"default_currency"`
-	ShowSidebar      bool           `json:"show_sidebar_message"`
-	SharingPending   bool           `json:"sharing_pending,omitempty"`
+	sessionDuration   time.Duration
+	sessionPersistent bool
+	API               *APIScope      `json:"-"`
+	APIEnabled        bool           `json:"api_enabled"`
+	DefaultAccountID  string         `json:"default_account_id"`
+	ExchangeRates     []ExchangeRate `json:"exchange_rates"`
+	ID                string         `json:"id"`
+	Username          string         `json:"username"`
+	Name              string         `json:"name"`
+	Admin             bool           `json:"admin"`
+	Locale            string         `json:"locale"`
+	Timezone          string         `json:"timezone"`
+	TOTP              bool           `json:"totp_enabled"`
+	CSRF              string         `json:"csrf,omitempty"`
+	DefaultCurrency   string         `json:"default_currency"`
+	ShowSidebar       bool           `json:"show_sidebar_message"`
+	SharingPending    bool           `json:"sharing_pending,omitempty"`
 }
 type apiError struct {
 	Status        int
@@ -93,6 +99,10 @@ func decode(r *http.Request, value any) error {
 	return nil
 }
 func New(c Config) (result *App, err error) {
+	proxies, err := parseTrustedProxies(c.TrustedProxies)
+	if err != nil {
+		return nil, err
+	}
 	if c.DataDir == "" {
 		c.DataDir = "./data"
 	}
@@ -122,7 +132,7 @@ func New(c Config) (result *App, err error) {
 		lock.Close()
 		return nil, fmt.Errorf("another Duet Ledger process uses this data directory")
 	}
-	a := &App{Config: c, lockFile: lock, attempts: map[string]attempt{}}
+	a := &App{Config: c, lockFile: lock, attempts: map[string]attempt{}, trustedProxies: proxies}
 	defer func() {
 		if err != nil {
 			a.Close()
@@ -161,48 +171,51 @@ func (a *App) Close() error {
 type handler func(http.ResponseWriter, *http.Request, *User) error
 
 func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Referrer-Policy", "no-referrer")
-		// Administrator appearance uploads have no application file-size cap.
-		// Authentication and CSRF checks still run before their body is consumed.
-		if !(r.Method == "PUT" && strings.HasPrefix(r.URL.Path, "/api/admin/appearance/")) {
-			r.Body = http.MaxBytesReader(w, r.Body, 22<<20)
+	return func(original http.ResponseWriter, r *http.Request) {
+		original.Header().Set("Cache-Control", "no-store")
+		original.Header().Set("X-Content-Type-Options", "nosniff")
+		original.Header().Set("Referrer-Policy", "no-referrer")
+		if r.Method != "GET" && r.Method != "HEAD" && !a.sameOrigin(r) {
+			writeJSON(original, 403, map[string]string{"error": "origin", "message": localizeMessage(requestLocale(r, nil), "허용되지 않은 접속 주소예요.")})
+			return
 		}
-		if r.Method != "GET" && r.Method != "HEAD" {
-			if !a.sameOrigin(r) {
-				writeJSON(w, 403, map[string]string{"error": "origin", "message": localizeMessage(requestLocale(r, nil), "허용되지 않은 접속 주소예요.")})
-				return
+		var identity func(*http.Request) (*User, error)
+		if auth {
+			identity = a.browserIdentity
+		}
+		cleanup, err := a.receiveRequest(original, r, identity)
+		if err != nil {
+			writeRequestError(original, r, nil, err, false)
+			return
+		}
+		defer cleanup()
+		// Exchange quotes have no writes and their remote network call must not own
+		// the application mutex. Authentication is complete before releasing it.
+		if r.Method == "GET" && r.URL.Path == "/api/me/exchange-quote" {
+			a.mu.Lock()
+			u, err := a.browserIdentity(r)
+			a.mu.Unlock()
+			if err == nil {
+				err = h(original, r, u)
 			}
+			if err != nil {
+				writeRequestError(original, r, u, err, false)
+			}
+			return
 		}
-		// A single database owner serializes authorization checks and mutations. Revocation
-		// cannot interleave between a permission check and its write.
+		response := newBufferedResponse(original.Header())
+		defer response.send(original, r)
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		var u *User
-		var err error
-		if auth {
-			if r.Header.Get("Authorization") != "" {
-				writeJSON(w, 403, map[string]string{"error": "wrong_auth_route", "message": localizeMessage(requestLocale(r, nil), "앱 비밀번호는 /api/v1 경로에서만 사용해 주세요.")})
-				return
-			}
-			u, err = a.authenticate(r)
-			if err == nil && r.Method != "GET" && r.Method != "HEAD" && !secureEqual(r.Header.Get("X-CSRF-Token"), u.CSRF) {
-				err = &apiError{403, "csrf", "화면을 새로고침하고 다시 시도해 주세요."}
-			}
+		if identity != nil {
+			u, err = identity(r)
 		}
 		if err == nil {
-			err = h(w, r, u)
+			err = h(response, r, u)
 		}
 		if err != nil {
-			var e *apiError
-			if errors.As(err, &e) {
-				writeJSON(w, e.Status, map[string]string{"error": e.Code, "message": localizeMessage(requestLocale(r, u), e.Message)})
-			} else {
-				log.Printf("api failure: %T: %v", err, err)
-				writeJSON(w, 500, map[string]string{"error": "internal", "message": localizeMessage(requestLocale(r, nil), "처리하지 못했어요. 서버 상태를 확인해 주세요.")})
-			}
+			writeRequestError(response, r, u, err, false)
 		}
 	}
 }

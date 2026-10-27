@@ -65,7 +65,7 @@ func run() error {
 		return fmt.Errorf("supported commands: serve, version, restore, reset-password")
 	}
 	assets, _ := fs.Sub(webassets.Files, "dist")
-	a, err := app.New(app.Config{DataDir: *data, PublicURL: os.Getenv("DUET_LEDGER_PUBLIC_URL"), SecureCookie: os.Getenv("DUET_LEDGER_SECURE_COOKIE") == "true", Assets: assets})
+	a, err := app.New(app.Config{DataDir: *data, PublicURL: os.Getenv("DUET_LEDGER_PUBLIC_URL"), SecureCookie: os.Getenv("DUET_LEDGER_SECURE_COOKIE") == "true", TrustedProxies: strings.Split(os.Getenv("DUET_LEDGER_TRUSTED_PROXIES"), ","), Assets: assets})
 	if err != nil {
 		return err
 	}

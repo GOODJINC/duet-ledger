@@ -78,8 +78,18 @@ func (a *App) ledgerRole(q queryer, u *User, id string) (string, error) {
 	}
 	return role, err
 }
-func (a *App) accounts(q queryer, u *User) ([]Account, error) {
-	rows, err := q.Query(`SELECT a.id,a.ledger_id,l.name,a.name,a.kind,a.currency,a.scale,a.opening,a.archived,a.version,l.owner_id,l.kind,COALESCE(m.role,''),COALESCE(g.role,''),EXISTS(SELECT 1 FROM grants gg WHERE gg.account_id=a.id),o.name FROM accounts a JOIN ledgers l ON l.id=a.ledger_id JOIN users o ON o.id=l.owner_id LEFT JOIN members m ON m.ledger_id=l.id AND m.user_id=? LEFT JOIN grants g ON g.account_id=a.id AND g.user_id=? WHERE a.deleted_at IS NULL AND l.deleted_at IS NULL AND (l.owner_id=? OR (m.user_id IS NOT NULL AND l.kind='shared') OR g.user_id IS NOT NULL) ORDER BY a.archived,a.created_at,a.id`, u.ID, u.ID, u.ID)
+func (a *App) accountMetadata(q queryer, u *User, id string) ([]Account, error) {
+	if id != "" && u.API != nil && !u.API.Accounts[id] {
+		return nil, missing()
+	}
+	query := `SELECT a.id,a.ledger_id,l.name,a.name,a.kind,a.currency,a.scale,a.opening,a.archived,a.version,l.owner_id,l.kind,COALESCE(m.role,''),COALESCE(g.role,''),EXISTS(SELECT 1 FROM grants gg WHERE gg.account_id=a.id),o.name FROM accounts a JOIN ledgers l ON l.id=a.ledger_id JOIN users o ON o.id=l.owner_id LEFT JOIN members m ON m.ledger_id=l.id AND m.user_id=? LEFT JOIN grants g ON g.account_id=a.id AND g.user_id=? WHERE a.deleted_at IS NULL AND l.deleted_at IS NULL AND (l.owner_id=? OR (m.user_id IS NOT NULL AND l.kind='shared') OR g.user_id IS NOT NULL)`
+	args := []any{u.ID, u.ID, u.ID}
+	if id != "" {
+		query += " AND a.id=?"
+		args = append(args, id)
+	}
+	query += " ORDER BY a.archived,a.created_at,a.id"
+	rows, err := q.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -124,27 +134,58 @@ func (a *App) accounts(q queryer, u *User) ([]Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	for i := range out {
+	return out, nil
+}
+func (a *App) accounts(q queryer, u *User) ([]Account, error) {
+	out, err := a.accountMetadata(q, u, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(out) == 0 {
+		return out, nil
+	}
+	args := make([]any, 0, len(out))
+	for _, ac := range out {
+		args = append(args, ac.ID)
+	}
+	rows, err := q.Query("SELECT p.account_id,SUM(p.amount) FROM postings p JOIN events e ON e.id=p.event_id WHERE e.deleted_at IS NULL AND p.account_id IN ("+placeholders(len(out))+") GROUP BY p.account_id", args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	deltas := map[string]int64{}
+	for rows.Next() {
+		var id string
 		var delta int64
-		if err = q.QueryRow("SELECT COALESCE(SUM(p.amount),0) FROM postings p JOIN events e ON e.id=p.event_id WHERE p.account_id=? AND e.deleted_at IS NULL", out[i].ID).Scan(&delta); err != nil {
+		if err = rows.Scan(&id, &delta); err != nil {
 			return nil, err
 		}
+		deltas[id] = delta
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	for i := range out {
 		initial, _ := strconv.ParseInt(out[i].Opening, 10, 64)
-		out[i].Balance = strconv.FormatInt(initial+delta, 10)
+		out[i].Balance = strconv.FormatInt(initial+deltas[out[i].ID], 10)
 	}
 	return out, nil
 }
+
+// Mutation authorization does not need balances or unrelated accounts. Keep the
+// same role resolution/redaction as the list endpoint through accountMetadata.
 func (a *App) account(q queryer, u *User, id string) (Account, error) {
-	all, err := a.accounts(q, u)
+	if id == "" {
+		return Account{}, missing()
+	}
+	items, err := a.accountMetadata(q, u, id)
 	if err != nil {
 		return Account{}, err
 	}
-	for _, v := range all {
-		if v.ID == id {
-			return v, nil
-		}
+	if len(items) == 0 {
+		return Account{}, missing()
 	}
-	return Account{}, missing()
+	return items[0], nil
 }
 func (a *App) listAccounts(w http.ResponseWriter, r *http.Request, u *User) error {
 	v, err := a.accounts(a.DB, u)

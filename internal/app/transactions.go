@@ -416,7 +416,7 @@ func (a *App) editableEvent(q queryer, u *User, pid string) (string, int, bool, 
 	if err != nil {
 		return "", 0, false, err
 	}
-	visible, err := a.accounts(q, u)
+	visible, err := a.accountMetadata(q, u, "")
 	if err != nil {
 		return "", 0, false, err
 	}
@@ -567,7 +567,7 @@ func (a *App) setDeleted(w http.ResponseWriter, r *http.Request, u *User, delete
 	return nil
 }
 func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transaction, error) {
-	all, err := a.accounts(q, u)
+	all, err := a.accountMetadata(q, u, "")
 	if err != nil {
 		return nil, err
 	}
@@ -728,7 +728,8 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 	if err != nil {
 		return nil, err
 	}
-	categoryLabels := map[string]string{}
+	type categoryLabelKey struct{ account, kind, code string }
+	categoryLabels := map[categoryLabelKey]string{}
 	labelArgs := []any{}
 	for _, id := range ids {
 		labelArgs = append(labelArgs, id)
@@ -743,7 +744,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 			labelRows.Close()
 			return nil, err
 		}
-		categoryLabels[account+"|"+kind+"|"+code] = name
+		categoryLabels[categoryLabelKey{account, kind, code}] = name
 	}
 	err = labelRows.Err()
 	labelRows.Close()
@@ -757,7 +758,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 		}
 		for j := range out[i].Legs {
 			leg := &out[i].Legs[j]
-			if label := categoryLabels[leg.AccountID+"|"+kind+"|"+leg.Category]; label != "" {
+			if label := categoryLabels[categoryLabelKey{leg.AccountID, kind, leg.Category}]; label != "" {
 				leg.CategoryName = label
 			}
 			if leg.CategoryName == "" {
@@ -786,14 +787,16 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 func summarize(items []Transaction) TransactionPage {
 	page := TransactionPage{Items: items, Count: len(items), Totals: []CurrencyTotal{}, Categories: []CategoryTotal{}, Daily: []DayTotal{}}
 	sums := map[string][2]int64{}
-	cat := map[string]int64{}
-	daily := map[string][2]int64{}
+	type categoryKey struct{ currency, code, name string }
+	cat := map[categoryKey]int64{}
+	type dayKey struct{ currency, date string }
+	daily := map[dayKey][2]int64{}
 	scales := map[string]int{}
 	for _, v := range items {
 		scales[v.Currency] = v.Scale
 		d := sums[v.Currency]
-		dayKey := v.Currency + "|" + v.Date
-		day := daily[dayKey]
+		dayID := dayKey{v.Currency, v.Date}
+		day := daily[dayID]
 		for _, l := range v.Legs {
 			n, _ := strconv.ParseInt(l.Amount, 10, 64)
 			switch v.Kind {
@@ -803,19 +806,18 @@ func summarize(items []Transaction) TransactionPage {
 			case "expense", "refund":
 				d[1] -= n
 				day[1] -= n
-				cat[v.Currency+"|"+l.Category+"|"+l.CategoryName] -= n
+				cat[categoryKey{v.Currency, l.Category, l.CategoryName}] -= n
 			}
 		}
 		sums[v.Currency] = d
-		daily[dayKey] = day
+		daily[dayID] = day
 	}
 	for c, v := range sums {
 		page.Totals = append(page.Totals, CurrencyTotal{c, scales[c], strconv.FormatInt(v[0], 10), strconv.FormatInt(v[1], 10)})
 	}
 	sort.Slice(page.Totals, func(i, j int) bool { return page.Totals[i].Currency < page.Totals[j].Currency })
 	for key, v := range cat {
-		p := strings.SplitN(key, "|", 3)
-		page.Categories = append(page.Categories, CategoryTotal{Name: p[2], Currency: p[0], Scale: scales[p[0]], Category: p[1], Amount: strconv.FormatInt(v, 10)})
+		page.Categories = append(page.Categories, CategoryTotal{Name: key.name, Currency: key.currency, Scale: scales[key.currency], Category: key.code, Amount: strconv.FormatInt(v, 10)})
 	}
 	sort.Slice(page.Categories, func(i, j int) bool {
 		a, _ := strconv.ParseInt(page.Categories[i].Amount, 10, 64)
@@ -826,8 +828,7 @@ func summarize(items []Transaction) TransactionPage {
 		return a > b
 	})
 	for key, v := range daily {
-		p := strings.SplitN(key, "|", 2)
-		page.Daily = append(page.Daily, DayTotal{p[0], scales[p[0]], p[1], strconv.FormatInt(v[0], 10), strconv.FormatInt(v[1], 10)})
+		page.Daily = append(page.Daily, DayTotal{key.currency, scales[key.currency], key.date, strconv.FormatInt(v[0], 10), strconv.FormatInt(v[1], 10)})
 	}
 	sort.Slice(page.Daily, func(i, j int) bool {
 		return page.Daily[i].Date < page.Daily[j].Date || page.Daily[i].Date == page.Daily[j].Date && page.Daily[i].Currency < page.Daily[j].Currency
