@@ -1408,6 +1408,8 @@ export function Application({
                       ))}
                     </div>
                   )}
+                </div>
+                <div className="date-currency-toolbar period-toolbar">
                   {compactLayout &&
                     page === "accounts" &&
                     !display.showPageHeadings && (
@@ -1419,8 +1421,6 @@ export function Application({
                         {msg("계좌 만들기")}
                       </button>
                     )}
-                </div>
-                <div className="date-currency-toolbar period-toolbar">
                   {page !== "accounts" && (
                     <div className="month-nav">
                       <button
@@ -1748,7 +1748,7 @@ export function Application({
             )}
             {page === "accounts" && (
               <>
-                <div className="scope-explanation">
+                <div className="scope-explanation accounts-summary">
                   <Icon name="info" />
                   {msg(
                     "선택한 계좌의 잔액을 합산해요. 통화가 다르면 따로 표시합니다.",

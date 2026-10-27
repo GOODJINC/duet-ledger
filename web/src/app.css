@@ -1323,7 +1323,7 @@ body[data-theme="dark"] .primary-button {
   gap: 12px;
 }
 .ledger-summary {
-  font-size: calc(14px * var(--text-scale, 1));
+  font-size: calc(13px * var(--text-scale, 1));
   line-height: 1.7;
   flex-wrap: wrap;
   color: var(--ink);
@@ -2848,10 +2848,8 @@ body {
 }
 @media (max-width: 760px) {
   .mobile-account-create {
-    margin-left: auto;
+    margin: 0;
     flex-shrink: 0;
-    padding: 9px 10px;
-    font-size: calc(12px * var(--text-scale, 1));
     white-space: nowrap;
   }
   .real-dialog.categories-dialog .field-input,
@@ -2885,15 +2883,21 @@ body {
 }
 
 @media (max-width: 760px) {
-  .heading-actions .primary-button {
+  .heading-actions .primary-button,
+  .mobile-account-create {
     min-width: calc(96px * var(--text-scale, 1));
     min-height: calc(34px * var(--text-scale, 1));
     font-size: calc(10px * var(--text-scale, 1));
     padding: 8px 10px;
     white-space: nowrap;
   }
-  .heading-actions .primary-button svg {
+  .heading-actions .primary-button svg,
+  .mobile-account-create svg {
     width: 13px;
     height: 13px;
   }
+}
+
+.accounts-summary {
+  font-size: calc(13px * var(--text-scale, 1));
 }

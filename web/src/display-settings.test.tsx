@@ -221,7 +221,7 @@ it("uses a page header for long dialogs while retaining compact month selection"
   expect(screen.queryByRole("button", { name: "뒤로가기" })).toBeNull();
 });
 
-it("keeps account creation beside scope tabs on mobile", async () => {
+it("keeps account creation beside the ledger and profile controls when mobile titles are hidden", async () => {
   compact = true;
   history.replaceState({}, "", "/accounts");
   localStorage.setItem(
@@ -233,7 +233,10 @@ it("keeps account creation beside scope tabs on mobile", async () => {
   const create = document.querySelector<HTMLButtonElement>(
     ".mobile-account-create",
   )!;
-  expect(create.closest(".scope-controls-row")).not.toBeNull();
+  expect(create.closest(".period-toolbar")).not.toBeNull();
+  expect(
+    document.querySelector(".period-toolbar .header-right"),
+  ).not.toBeNull();
   expect(
     document.querySelector(".scope-controls-row .scope-tabs"),
   ).not.toBeNull();
