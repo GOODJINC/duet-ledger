@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { today } from "./dates";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   cleanup,
@@ -14,7 +15,6 @@ import { AccessReview } from "./access-review";
 import {
   api,
   post,
-  today,
   type Account,
   type EntryPresetInput,
   type User,

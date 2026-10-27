@@ -41,15 +41,29 @@ node scripts/check-compose.mjs
 
 Use standalone `compose.dev.yaml` with `.env.dev` for development. It uses a separate container, local image, port and data volume; rebuild after source changes. Production data is never mounted. Tests use disposable datasets; never attach production data. Run Docker race checks with `docker build --target checks .`.
 
+## 화면 코드 구조 · Frontend structure
+
+- `main.tsx`: 앱 시작·로그인 상태 복구. `auth.tsx`: 로그인·회원가입 화면.
+- `app.tsx`: 화면 전환·조회 조건·자료 로딩·팝업 연결.
+- `settings.tsx`: 계정·브라우저·관리 설정. `navigation.ts`: 경로·메뉴 정의.
+- `ledger-views.tsx`: 거래 목록·행·달력. `dashboard-panels.tsx`: 요약·차트·계좌 패널.
+- `dates.ts`, `accounts.ts`: 공통 날짜·시간 처리와 화면의 입력 가능 계좌 판단.
+
+컴포넌트는 해당 모듈에서 직접 가져옵니다. 앱 시작 파일을 재사용 모듈로 가져오지 않습니다. 권한 검증의 최종 책임은 서버에 있습니다.
+
+Import components from their owning modules, rather than the startup entry point. Shared helpers keep the existing rules; the server remains responsible for authorization.
+
 ## 번역·문서 · Translation and documentation
 
 - 화면: `web/src/i18n/ko.json`, `en.json`
 - 서버 문구: `internal/app/i18n/en.json`
 - 사용자 매뉴얼: `manual/ko/`, `manual/en/`
 
-`{0}` 같은 치환자를 유지하고 사용자 입력 자료는 번역하지 않습니다. 새 언어는 카탈로그·선택지·서버 언어 검증·매뉴얼을 함께 추가합니다. 문서는 Markdown을 수정하며 앱용 HTML은 빌드 시 생성됩니다.
+화면 문구를 바꾸면 두 UI 카탈로그를 함께 갱신하고 사용하지 않는 키를 제거합니다. 검사는 누락·남은 키·자리표시자를 확인합니다.
 
-Preserve placeholders and user-entered data. A new language needs catalogs, selectors, server validation and manuals. Edit Markdown sources; bundled HTML is generated. Update `CHANGELOG.md` when user-visible behavior changes.
+`{0}` 같은 치환자를 유지하고 사용자 입력 자료는 번역하지 않습니다. 새 언어는 카탈로그·선택지·서버 언어 검증·매뉴얼을 함께 추가합니다. 문서는 Markdown을 수정하며 앱용 HTML은 빌드 시 생성됩니다. 새 매뉴얼 페이지는 한·영 원본과 묶음 빌더 목록에 함께 추가합니다.
+
+Update both UI catalogs and remove unused keys. Preserve placeholders and user-entered data. A new language needs catalogs, selectors, server validation and manuals. Edit Markdown sources; bundled HTML is generated. Add new manual pages in both languages and in the bundled-manual builder. Update `CHANGELOG.md` when user-visible behavior changes.
 
 ```bash
 npm --prefix web run i18n:check
@@ -65,9 +79,3 @@ npm --prefix web run docs:check
 Push/PR runs checks. A published Release or manual default-branch workflow publishes images. Version tags cannot be overwritten; only stable releases update `latest`. Publishing uses the workflow's `GITHUB_TOKEN` with `packages: write`.
 
 기여 라이선스는 [AGPL-3.0-only](LICENSE)입니다. Contributions use AGPL-3.0-only.
-
-## 번역 · Translations
-
-화면 문구를 바꾸면 `web/src/i18n/ko.json`과 `en.json`을 함께 갱신하고 사용하지 않는 키를 제거합니다. `npm --prefix web run i18n:check`는 누락·남은 키·자리표시자를 검사합니다. 사용자가 입력한 이름·메모는 번역하지 않습니다.
-
-Update both UI catalogs when changing text, remove unused keys and run `npm --prefix web run i18n:check`. Keep user-entered names and notes unchanged. New manual pages belong in both `manual/ko` and `manual/en`, and in the bundled-manual builder.

@@ -1,3 +1,5 @@
+import { isWritableAccount } from "./accounts";
+import { today, currentTime } from "./dates";
 import { EntryShortcuts } from "./entry-shortcuts";
 import { canLeaveEntry, useEntryExit } from "./entry-exit";
 import { useTask } from "./use-task";
@@ -16,7 +18,6 @@ import {
   formatMoney,
   toDecimal,
   toMinor,
-  today,
   displayCategory,
   kindNames,
   currencyScales,
@@ -66,8 +67,7 @@ export function EntryDialog(
   const tx = p.transaction;
   const editable = p.accounts.filter(
     (a) =>
-      !a.archived &&
-      a.role !== "viewer" &&
+      isWritableAccount(a) &&
       (!p.selectedLedger || a.ledger_id === p.selectedLedger),
   );
   const negative = tx?.legs.find((l) => BigInt(l.amount) < 0n);
@@ -104,15 +104,7 @@ export function EntryDialog(
   );
   const [date, setDate] = useState(tx?.date || today(p.user.timezone));
   const [clock, setClock] = useState(
-    tx?.time ||
-      (tx
-        ? ""
-        : new Intl.DateTimeFormat("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hourCycle: "h23",
-            timeZone: p.user.timezone,
-          }).format(new Date())),
+    tx?.time || (tx ? "" : currentTime(p.user.timezone)),
   );
   const categoryKind = kind === "income" ? "income" : "expense";
   const [choices, setChoices] = useState<Category[]>([]);
@@ -331,14 +323,7 @@ export function EntryDialog(
     );
     setRate(factor ? factorDecimal(factor) : "");
     setDate(today(p.user.timezone));
-    setClock(
-      new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-        timeZone: p.user.timezone,
-      }).format(new Date()),
-    );
+    setClock(currentTime(p.user.timezone));
     setFile(null);
     setPresetRevision((v) => v + 1);
     task.setError("");
@@ -1223,7 +1208,7 @@ export function AccountDialog(
             >
               {msg("내역 보기")}
             </button>
-            {ac.role !== "viewer" && !ac.archived && (
+            {isWritableAccount(ac) && (
               <button className="primary-button" onClick={() => p.entry(ac.id)}>
                 {msg("기록 추가")}
               </button>

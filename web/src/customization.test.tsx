@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { today } from "./dates";
 import { afterEach, beforeEach, it, expect, vi } from "vitest";
 import {
   cleanup,
@@ -8,7 +9,9 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SettingsView, Application, TransactionRows } from "./main";
+import { SettingsView } from "./settings";
+import { Application } from "./app";
+import { TransactionRows } from "./ledger-views";
 import {
   EntryDialog,
   DetailDialog,
@@ -17,14 +20,7 @@ import {
   type DialogProps,
 } from "./dialogs";
 import { CategoriesDialog, ExchangeSettings } from "./preferences";
-import {
-  api,
-  post,
-  today,
-  type User,
-  type Account,
-  type Transaction,
-} from "./api";
+import { api, post, type User, type Account, type Transaction } from "./api";
 vi.mock("./api", async (original) => ({
   ...(await original<typeof import("./api")>()),
   api: vi.fn(),

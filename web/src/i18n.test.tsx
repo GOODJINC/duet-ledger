@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Auth } from "./main";
+import { Auth } from "./auth";
 import { EntryDialog } from "./dialogs";
 import { CategoriesDialog } from "./preferences";
 import {

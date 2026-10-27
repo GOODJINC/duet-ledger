@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { PasswordInput } from "./ui";
 import { SecurityDialog } from "./management";
 import { EntryDialog, LedgerDialog, type DialogProps } from "./dialogs";
-import { Auth } from "./main";
+import { Auth } from "./auth";
 import { api, post, type User, type Account, type Ledger } from "./api";
 vi.mock("./api", async (importOriginal) => {
   const original = await importOriginal<typeof import("./api")>();

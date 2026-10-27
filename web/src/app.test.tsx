@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
+import { dateRange } from "./dates";
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Auth } from "./main";
+import { Auth } from "./auth";
 import { EntryDialog, AccountDialog } from "./dialogs";
 import {
   APIError,
@@ -10,7 +11,6 @@ import {
   api,
   toMinor,
   formatMoney,
-  dateRange,
   type Account,
   type User,
   type Ledger,

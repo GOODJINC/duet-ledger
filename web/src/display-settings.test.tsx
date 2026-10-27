@@ -8,7 +8,8 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Application, Auth } from "./main";
+import { Application } from "./app";
+import { Auth } from "./auth";
 import { DisplaySettings } from "./display-settings";
 import { AppearanceSettings } from "./appearance";
 import { Modal } from "./ui";

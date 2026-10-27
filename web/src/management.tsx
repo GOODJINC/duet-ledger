@@ -1,3 +1,4 @@
+import { isWritableAccount } from "./accounts";
 import { AccessReview } from "./access-review";
 import { useTask } from "./use-task";
 import { msg, intlLocale } from "./i18n";
@@ -528,7 +529,7 @@ export function ImportDialog(p: DialogProps) {
   const [filename, setFilename] = useState("");
   const [format, setFormat] = useState("csv");
   const [account, setAccount] = useState(
-    p.accounts.find((a) => !a.archived && a.role !== "viewer")?.id || "",
+    p.accounts.find(isWritableAccount)?.id || "",
   );
   const [preview, setPreview] = useState<Record<string, unknown> | null>(null);
   const task = useTask();
@@ -592,13 +593,11 @@ export function ImportDialog(p: DialogProps) {
             <option value="" disabled>
               {msg("계좌 선택")}
             </option>
-            {p.accounts
-              .filter((a) => a.role !== "viewer" && !a.archived)
-              .map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} · {a.currency}
-                </option>
-              ))}
+            {p.accounts.filter(isWritableAccount).map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} · {a.currency}
+              </option>
+            ))}
           </select>
           <div className="modal-note">
             {msg("UTF-8 CSV의 첫 줄: date, kind, title, amount")}
