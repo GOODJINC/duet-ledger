@@ -26,7 +26,7 @@ Compose resolves `${…}` settings when it runs. Use `.env` to change the port a
 
 ## Manuals
 
-[Installation](manual/en/installation.md) · [Usage](manual/en/usage.md) · [Updates, backup and restore](manual/en/operations.md) · [API](manual/en/api.md) · [MCP](manual/en/mcp.md) · [Troubleshooting](manual/en/troubleshooting.md)
+[Installation](manual/en/installation.md) · [Usage](manual/en/usage.md) · [Updates, backup and restore](manual/en/operations.md) · [Appearance](manual/en/appearance.md) · [API](manual/en/api.md) · [MCP](manual/en/mcp.md) · [Troubleshooting](manual/en/troubleshooting.md)
 
 Also available in the app's user menu → **Help and support**.
 

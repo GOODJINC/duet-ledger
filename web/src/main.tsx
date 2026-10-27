@@ -2599,14 +2599,16 @@ export function SettingsView({
             <h2>{msg("로그인과 보안")}</h2>
             {row(
               msg("로그인 보안"),
-              msg("2단계 인증 {0} · 비밀번호·복구 코드", [
+              msg("비밀번호·복구 코드를 관리해요. 2단계 인증은 {0} 상태예요.", [
                 user.totp_enabled ? msg("사용 중") : msg("미사용"),
               ]),
               () => open("security"),
             )}
             {row(
               msg("API 앱 비밀번호"),
-              msg("계좌별 접근·기능 권한·만료·폐기"),
+              msg(
+                "접근 계좌·권한·만료를 설정하고 앱 비밀번호를 발급·폐기해요.",
+              ),
               () => open("api-keys"),
             )}
           </div>
@@ -2616,8 +2618,10 @@ export function SettingsView({
         <>
           <section className="panel" data-settings-scope="account">
             <div className="setting-group">
-              <h2>{msg("계정 전체 설정")}</h2>
-              <p className="setting-explainer">
+              <h2 className="settings-section-title">
+                {msg("계정 전체 설정")}
+              </h2>
+              <p className="settings-section-description">
                 {msg("이 계정으로 로그인한 모든 기기에 적용해요.")}
               </p>
               <form onSubmit={save} className="inline-settings-form">
@@ -2705,7 +2709,7 @@ export function SettingsView({
                   </label>
                   <Help>
                     {msg(
-                      "특정 가계부를 선택하면 그 가계부 안에서만 선택해요. 기본 계좌가 없으면 기본 통화가 같은 계좌를 우선합니다.",
+                      "특정 가계부를 선택하면 그 안의 계좌만 사용해요. 기본 계좌가 없으면 기본 통화와 같은 계좌를 우선해요.",
                     )}
                   </Help>
                 </div>
@@ -2745,15 +2749,17 @@ export function SettingsView({
               </form>
               {row(
                 msg("보조 통화와 환율"),
-                msg("필요한 통화를 추가하고 환율을 설정해요."),
+                msg("보조 통화를 추가하고 통화별 환율을 설정해요."),
                 () => setExchangeOpen(true),
               )}
             </div>
           </section>
           <section className="panel" data-settings-scope="browser">
             <div className="setting-group">
-              <h2>{msg("브라우저별 화면 설정")}</h2>
-              <p className="setting-explainer">
+              <h2 className="settings-section-title">
+                {msg("브라우저별 화면 설정")}
+              </h2>
+              <p className="settings-section-description">
                 {msg(
                   "밝기·색상·글씨 크기·화면 배치는 현재 브라우저에만 적용해요.",
                 )}
@@ -2811,20 +2817,22 @@ export function SettingsView({
               <h2>{msg("가계부와 공유")}</h2>
               {row(
                 msg("가계부 관리"),
-                msg("표시 순서·만들기·소개 문구·수정·삭제"),
+                msg("가계부 생성·수정·삭제와 소개 문구·표시 순서를 관리해요."),
                 () => open("ledger-manage"),
               )}
               {row(
                 msg("가계부 분류 관리"),
-                msg("수입·지출 분류 추가·수정·순서 변경"),
+                msg("수입·지출 분류를 추가·수정·삭제하고 순서를 바꿔요."),
                 () => open("categories"),
               )}
-              {row(msg("공유 관리"), msg("초대·승인·역할 변경·공유 해제"), () =>
-                open("sharing"),
+              {row(
+                msg("공유 관리"),
+                msg("공유 초대·승인·역할 변경·공유 해제를 관리해요."),
+                () => open("sharing"),
               )}
               {row(
                 msg("책임자 이전·공유 나가기"),
-                msg("기록을 유지하고 공유 관계를 정리해요."),
+                msg("기록을 유지하면서 책임자를 이전하거나 공유에서 나가요."),
                 () => open("lifecycle"),
               )}
             </div>
@@ -2834,31 +2842,33 @@ export function SettingsView({
               <h2>{msg("자료 관리")}</h2>
               {row(
                 msg("기록 휴지통"),
-                msg("현재 가계부 범위의 삭제한 기록을 조회·복구해요."),
+                msg("현재 조회 범위의 삭제한 거래를 확인·복구해요."),
                 showTrash,
                 msg("열기"),
               )}
               {row(
                 msg("삭제한 계좌"),
-                msg("책임자인 계좌를 복구해요."),
+                msg("내가 책임자인 삭제 계좌를 확인·복구해요."),
                 () => open("account-trash"),
                 msg("열기"),
               )}
               {row(
                 msg("CSV 내보내기"),
-                msg("기간·검색 조건의 기록을 원래 통화로 내보내요."),
+                msg("조회 조건에 맞는 거래를 원래 통화로 CSV에 내보내요."),
                 exportCSV,
                 msg("내보내기"),
               )}
               {row(
                 msg("JSON 자료 내보내기"),
-                msg("전체 기간 자료 · 사진·공유 권한 제외"),
+                msg(
+                  "전체 기간의 가계부 자료를 JSON으로 내보내요. 사진·공유 권한은 제외해요.",
+                ),
                 exportJSON,
                 msg("내보내기"),
               )}
               {row(
                 msg("CSV·JSON 가져오기"),
-                msg("미리 보기와 중복 확인 후 반영해요."),
+                msg("CSV·JSON 자료를 미리 보고 중복을 확인한 뒤 가져와요."),
                 () => open("import"),
                 msg("가져오기"),
               )}
@@ -2872,13 +2882,15 @@ export function SettingsView({
             <h2>{msg("서버 관리")}</h2>
             {row(
               msg("사용자와 가입 관리"),
-              msg("공개 회원가입 허용·새 사용자 초대"),
+              msg("회원가입 허용 여부를 정하고 새 사용자를 초대해요."),
               () => open("admin"),
               msg("가입·초대 관리"),
             )}
             {row(
               msg("서버 운영 백업"),
-              msg("모든 사용자의 자료와 사진이 포함됩니다. 관리자 전용."),
+              msg(
+                "모든 사용자의 자료·사진을 백업·복원해요. 관리자만 사용할 수 있어요.",
+              ),
               () => open("backup"),
               msg("백업"),
             )}

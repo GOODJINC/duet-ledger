@@ -124,6 +124,7 @@ try {
       "index",
       "installation",
       "usage",
+      "appearance",
       "operations",
       "api",
       "mcp",
@@ -138,6 +139,10 @@ try {
       );
     }
   }
+  const sampleCSS = await readFile("manual/samples/soft-blue.css", "utf8");
+  const sampleResponse = await fetch(app.url + "/manual/samples/soft-blue.css");
+  assert.equal(sampleResponse.status, 200);
+  assert.equal(await sampleResponse.text(), sampleCSS);
   for (const removed of [
     "/duet_api.py",
     "/api-help.html",
@@ -241,8 +246,8 @@ try {
   const design = new FormData();
   design.append(
     "file",
-    new Blob([".panel{border-radius:23px}"], { type: "text/css" }),
-    "shared.css",
+    new Blob([sampleCSS], { type: "text/css" }),
+    "soft-blue.css",
   );
   const designResponse = await fetch(app.url + "/api/admin/appearance/css", {
     method: "PUT",
@@ -254,7 +259,10 @@ try {
     body: design,
   });
   assert.equal(designResponse.status, 200);
-  assert.equal((await c.request("GET", "/appearance")).css.name, "shared.css");
+  assert.equal(
+    (await c.request("GET", "/appearance")).css.name,
+    "soft-blue.css",
+  );
   await c.request("PATCH", "/admin/api-settings", { enabled: true });
   const issued = await c.request(
     "POST",
@@ -392,12 +400,12 @@ try {
   });
   assert.equal(
     (await restoredClient.request("GET", "/appearance")).css.name,
-    "shared.css",
+    "soft-blue.css",
   );
   const restoredCSS = await fetch(restoreApp.url + "/api/appearance/css", {
     headers: { Cookie: restoredClient.cookie },
   });
-  assert.equal(await restoredCSS.text(), ".panel{border-radius:23px}");
+  assert.equal(await restoredCSS.text(), sampleCSS);
   assert.equal(
     (await restoredClient.request("GET", "/accounts"))[0].balance,
     "59863",

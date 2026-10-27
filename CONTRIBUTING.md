@@ -65,3 +65,9 @@ npm --prefix web run docs:check
 Push/PR runs checks. A published Release or manual default-branch workflow publishes images. Version tags cannot be overwritten; only stable releases update `latest`. Publishing uses the workflow's `GITHUB_TOKEN` with `packages: write`.
 
 기여 라이선스는 [AGPL-3.0-only](LICENSE)입니다. Contributions use AGPL-3.0-only.
+
+## 번역 · Translations
+
+화면 문구를 바꾸면 `web/src/i18n/ko.json`과 `en.json`을 함께 갱신하고 사용하지 않는 키를 제거합니다. `npm --prefix web run i18n:check`는 누락·남은 키·자리표시자를 검사합니다. 사용자가 입력한 이름·메모는 번역하지 않습니다.
+
+Update both UI catalogs when changing text, remove unused keys and run `npm --prefix web run i18n:check`. Keep user-entered names and notes unchanged. New manual pages belong in both `manual/ko` and `manual/en`, and in the bundled-manual builder.

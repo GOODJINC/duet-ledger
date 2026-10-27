@@ -26,7 +26,7 @@ Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와
 
 ## 매뉴얼
 
-[설치](manual/ko/installation.md) · [사용법](manual/ko/usage.md) · [업데이트·백업·복원](manual/ko/operations.md) · [API](manual/ko/api.md) · [MCP](manual/ko/mcp.md) · [문제 해결](manual/ko/troubleshooting.md)
+[설치](manual/ko/installation.md) · [사용법](manual/ko/usage.md) · [업데이트·백업·복원](manual/ko/operations.md) · [디자인 설정](manual/ko/appearance.md) · [API](manual/ko/api.md) · [MCP](manual/ko/mcp.md) · [문제 해결](manual/ko/troubleshooting.md)
 
 앱의 사용자 메뉴 → **도움말 및 지원**에서도 볼 수 있습니다.
 

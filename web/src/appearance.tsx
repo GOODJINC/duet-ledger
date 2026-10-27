@@ -1,4 +1,4 @@
-import { msg } from "./i18n";
+import { msg, manualURL } from "./i18n";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { Help, Icon } from "./ui";
@@ -155,7 +155,7 @@ export function AppearanceSettings({
           {msg("디자인 직접 설정")}{" "}
           <Help>
             {msg(
-              "글씨 크기와 색상은 현재 브라우저에 저장해요. 공통 CSS·글꼴은 관리자가 관리 화면에서 설정합니다.",
+              "글씨 크기·색상은 현재 브라우저에 저장해요. 공통 CSS·글꼴은 관리자가 설정해요.",
             )}
           </Help>
         </Heading>
@@ -269,26 +269,45 @@ export function ServerAppearanceSettings() {
   return (
     <section className="panel">
       <div className="setting-group">
-        <h2>
+        <h2 className="settings-section-title">
           {msg("공통 CSS·글꼴")}{" "}
           <Help>
             {msg(
-              "관리자만 변경할 수 있으며 로그인한 모든 사용자에게 적용해요. 서버 백업에도 포함됩니다. 앱의 파일 용량 제한은 없지만 서버 저장 공간과 프록시 제한은 적용될 수 있어요. 화면이 가려지면 /admin?safe-theme=1로 접속한 뒤 파일을 해제하세요. CSS의 외부 자료 로딩은 허용하지 않아요.",
+              "관리자만 공통 CSS·WOFF2 파일을 적용할 수 있어요. 모든 사용자에게 적용되며 서버 백업에 포함돼요. 화면이 가려지면 /admin?safe-theme=1에서 해제해요.",
             )}
           </Help>
         </h2>
-        <p className="panel-subtitle">
+        <p className="settings-section-description">
           {msg("관리자가 설정한 디자인을 모든 사용자에게 적용해요.")}
         </p>
+        <div className="appearance-guide-links">
+          <a
+            className="text-link"
+            href={manualURL("appearance")}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {msg("CSS·글꼴 적용 안내")}
+          </a>
+          <a
+            className="text-link"
+            href="/manual/samples/soft-blue.css"
+            download="duet-ledger-soft-blue.css"
+          >
+            {msg("샘플 CSS 다운로드")}
+          </a>
+        </div>
         {(["css", "font"] as const).map((kind) => (
           <div className="setting-row" key={kind}>
             <div className="appearance-file-title">
               {kind === "css" ? msg("CSS 파일") : msg("사용자 글꼴")}
               <Help>
                 {kind === "css"
-                  ? msg("CSS 형식 · 용량 제한 없음")
+                  ? msg(
+                      "CSS 파일로 색상·간격을 바꿔요. 앱의 파일 용량 제한은 없어요.",
+                    )
                   : msg(
-                      "WOFF2 형식 · 용량 제한 없음 · 사용 권한이 있는 글꼴을 올려 주세요.",
+                      "사용 권한이 있는 WOFF2 글꼴을 올려요. 앱의 파일 용량 제한은 없어요.",
                     )}
               </Help>
             </div>
@@ -318,9 +337,9 @@ export function ServerAppearanceSettings() {
                 onClick={() => {
                   if (
                     confirm(
-                      msg("모든 사용자의 공통 ") +
-                        (kind === "css" ? "CSS" : msg("글꼴")) +
-                        msg(" 적용을 해제할까요?"),
+                      msg("모든 사용자의 공통 {0} 적용을 해제할까요?", [
+                        kind === "css" ? "CSS" : msg("글꼴"),
+                      ]),
                     )
                   )
                     void update(kind);

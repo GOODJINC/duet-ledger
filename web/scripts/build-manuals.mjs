@@ -7,6 +7,7 @@ import {
   mkdir,
   rm,
   access,
+  copyFile,
 } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,7 @@ const pages = [
   "index",
   "installation",
   "usage",
+  "appearance",
   "operations",
   "api",
   "mcp",
@@ -117,5 +119,13 @@ if (process.argv.includes("--check")) {
 <html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHTML(title)} · Duet Ledger</title><link rel="stylesheet" href="/manual.css"></head><body><header><nav aria-label="${home}"><a href="index.html">Duet Ledger · ${home}</a><span><a href="../${other}/${page}.html">${other === "en" ? "English" : "한국어"}</a><a href="${page}.md" download>Markdown</a><a href="/home">${app}</a></span></nav></header><main>${content}</main></body></html>\n`,
     );
   }
-  console.log(`Built ${sources.size} bundled manuals from Markdown.`);
+  const sampleOutput = path.join(outputRoot, "samples");
+  await mkdir(sampleOutput, { recursive: true });
+  await copyFile(
+    path.join(sourceRoot, "samples", "soft-blue.css"),
+    path.join(sampleOutput, "soft-blue.css"),
+  );
+  console.log(
+    `Built ${sources.size} bundled manuals and CSS sample from Markdown sources.`,
+  );
 }

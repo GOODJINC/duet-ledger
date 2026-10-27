@@ -8,7 +8,7 @@ const en = JSON.parse(
   await readFile(new URL("i18n/en.json", sourceRoot), "utf8"),
 );
 const messages = new Set();
-for (const file of await readdir(sourceRoot)) {
+for (const file of await readdir(sourceRoot, { recursive: true })) {
   if (!/\.(ts|tsx)$/.test(file) || file.includes(".test.")) continue;
   const source = ts.createSourceFile(
     file,
@@ -51,8 +51,12 @@ for (const key of messages) {
   if (!en[key].trim() || (key !== "한국어" && /[가-힣]/.test(en[key])))
     throw new Error(`Untranslated message: ${key}`);
 }
-for (const key of Object.keys(ko)) {
-  if (!(key in en)) throw new Error(`Missing English catalog key: ${key}`);
+for (const key of new Set([...Object.keys(ko), ...Object.keys(en)])) {
+  if (!(key in ko) || !(key in en))
+    throw new Error(`Catalog key mismatch: ${key}`);
+  if (!messages.has(key)) throw new Error(`Unused UI catalog key: ${key}`);
+  if (ko[key] !== key)
+    throw new Error(`Korean catalog text differs from its key: ${key}`);
 }
 console.log(
   `Validated ${messages.size} UI messages and translation placeholders.`,

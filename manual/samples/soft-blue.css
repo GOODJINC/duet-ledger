@@ -1,0 +1,10 @@
+/* Duet Ledger sample: blue accents in light mode and softer card corners. */
+body[data-theme="light"] {
+  --green: #315f8b;
+  --mint: #e5eef6;
+  --mint-soft: #f0f5fa;
+}
+
+.panel {
+  border-radius: 16px;
+}

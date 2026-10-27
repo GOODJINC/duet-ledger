@@ -88,3 +88,5 @@ In **Settings → Page layout**, choose whether to show page titles/descriptions
 Select **Keep me signed in for 30 days** on the sign-in screen for a 30-day session. Otherwise, a browser-session cookie is used with a maximum server lifetime of seven days. Browser session restoration may restore the cookie after windows close. Sign-out, security changes and sign-out on all devices still apply.
 
 CSV export follows the current filters. JSON export is for moving records across all dates, without photos, login details or sharing permissions. Preview imports before applying. **A complete server restore requires an operational backup and its original `master.key`.** See [Operations](operations.md).
+
+Shared CSS and fonts are administrator-only. See the [appearance guide](appearance.md) for the CSS sample, font uploads and interface recovery.

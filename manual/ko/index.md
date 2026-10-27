@@ -5,6 +5,7 @@
 | [설치](installation.md)         | Docker Compose, 접속 주소·포트, HTTPS·PWA  |
 | [사용법](usage.md)              | 가계부·계좌·거래·공유·통계·환율            |
 | [운영](operations.md)           | 업데이트·백업·복원·로그인 복구             |
+| [디자인 설정](appearance.md) | 관리자 CSS·글꼴 적용·샘플·화면 복구 |
 | [API](api.md)                   | 앱 비밀번호, Postman, 거래·통계·영수증 API |
 | [MCP](mcp.md)                   | AI 클라이언트 연결과 사용                  |
 | [문제 해결](troubleshooting.md) | 접속·설정·권한·지원                        |

@@ -73,13 +73,18 @@ export function AdminAPISettings({
   return (
     <section className="panel">
       <div className="setting-group">
-        <h2>{msg("외부 API · MCP")}</h2>
+        <h2 className="settings-section-title">{msg("외부 API · MCP")}</h2>
+        <p className="settings-section-description">
+          {msg(
+            "사용자는 계정 설정 → API 앱 비밀번호에서 API·MCP 연결을 관리해요.",
+          )}
+        </p>
         <label className="setting-row">
           <span>
             {msg("API 사용 허용 (모든 사용자)")}
             <Help>
               {msg(
-                "API와 MCP에 함께 적용돼요. 기본은 꺼져 있어요. 허용하면 각 사용자가 자기 계좌와 권한을 선택해 앱 비밀번호를 발급합니다. 끄면 기존 키도 즉시 차단하고, 다시 켜면 만료·폐기되지 않은 키를 사용할 수 있어요.",
+                "API·MCP 사용을 함께 허용해요. 기본값은 차단이에요. 사용자는 접근 계좌·권한을 선택해 앱 비밀번호를 발급해요. 차단하면 기존 키도 중지되고, 다시 허용하면 유효한 키를 사용할 수 있어요.",
               )}
             </Help>
           </span>
@@ -91,11 +96,7 @@ export function AdminAPISettings({
             onChange={(e) => void change(e.target.checked)}
           />
         </label>
-        <p className="panel-subtitle">
-          {msg(
-            "사용자는 계정 설정 → API 앱 비밀번호에서 API·MCP 연결을 관리해요.",
-          )}
-        </p>
+
         <ErrorText error={error} />
       </div>
     </section>

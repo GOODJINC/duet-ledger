@@ -2920,3 +2920,20 @@ body {
   margin-left: auto;
   flex-shrink: 0;
 }
+
+/* Shared heading rhythm for account, browser and administration settings. */
+.settings-page .setting-group .settings-section-title {
+  margin-bottom: 6px;
+}
+.settings-page .settings-section-description {
+  font-size: calc(13px * var(--text-scale, 1));
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+.appearance-guide-links {
+  display: flex;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
