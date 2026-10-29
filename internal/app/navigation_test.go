@@ -68,7 +68,7 @@ func TestCategoryDeletionIsPermanentButPreservesHistoricalLabels(t *testing.T) {
 			}
 		}
 	}
-	report := c.report("")
+	report := c.report("&type=expense")
 	if report.Items[0].Legs[0].CategoryName != "교육비" || c.balance(account) != "9000" {
 		t.Fatal("history label or balance lost")
 	}
@@ -77,7 +77,7 @@ func TestCategoryDeletionIsPermanentButPreservesHistoricalLabels(t *testing.T) {
 	input.Version = report.Items[0].Version
 	input.Title = "수정한 거래"
 	c.send("PUT", "/transactions/"+pid, input, 200, nil)
-	if c.report("").Items[0].Legs[0].CategoryName != "교육비" {
+	if c.report("&type=expense").Items[0].Legs[0].CategoryName != "교육비" {
 		t.Fatal("historical edit erased label snapshot")
 	}
 	// Built-in categories must not reappear either, and income/expense are separate.
@@ -132,7 +132,7 @@ func TestVersionThreeHiddenCategoriesUpgradeWithoutLosingHistory(t *testing.T) {
 			t.Fatal("old hidden category was restored")
 		}
 	}
-	if client.report("").Items[0].Legs[0].CategoryName != "이전 식비" || client.balance(account) != "900" || client.user.DefaultCurrency != "KRW" {
+	if client.report("&type=expense").Items[0].Legs[0].CategoryName != "이전 식비" || client.balance(account) != "900" || client.user.DefaultCurrency != "KRW" {
 		t.Fatal("upgrade changed history, balance or default")
 	}
 }

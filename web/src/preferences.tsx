@@ -1,4 +1,6 @@
 import { msg, intlLocale } from "./i18n";
+import { useTask } from "./use-task";
+import { purgeMessage, type PurgeResult } from "./api";
 import { copyText } from "./clipboard";
 import { useEffect, useState, useRef } from "react";
 import { api, post, displayCategory, type Category } from "./api";
@@ -400,12 +402,31 @@ export function AccountTrashDialog(p: DialogProps) {
   const [items, setItems] = useState<
     { id: string; name: string; ledger_name: string }[]
   >([]);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const task = useTask();
   const load = () => api<typeof items>("/accounts/trash").then(setItems);
   useEffect(() => {
-    load().catch((e) => setError(e.message));
+    load().catch((e) => task.setError(e.message));
   }, []);
+  async function purge(id?: string) {
+    if (
+      !confirm(
+        msg(
+          "계좌와 모든 기록·사진을 영구 삭제할까요? 복구할 수 없으며 기존 백업에는 사본이 남을 수 있어요.",
+        ),
+      )
+    )
+      return;
+    await task.run(async () => {
+      const result = await post<PurgeResult>(
+        id ? `/accounts/${id}/permanent` : "/accounts/trash",
+        { confirm: true, ...(id ? {} : { ids: items.map((a) => a.id) }) },
+        "DELETE",
+      );
+      await load();
+      await p.refresh();
+      p.notify(purgeMessage(result));
+    });
+  }
   return (
     <Modal
       title={msg("삭제한 계좌")}
@@ -413,38 +434,53 @@ export function AccountTrashDialog(p: DialogProps) {
       onClose={p.close}
     >
       {!items.length && <p>{msg("삭제한 계좌가 없어요.")}</p>}
+      {items.length > 0 && (
+        <button
+          className="secondary-button danger-text trash-empty-button"
+          disabled={task.busy}
+          onClick={() => purge()}
+        >
+          {msg("계좌 휴지통 비우기")}
+        </button>
+      )}
       {items.map((ac) => (
         <div className="setting-row" key={ac.id}>
           <div>
             <strong>{ac.name}</strong>
             <p>{ac.ledger_name}</p>
           </div>
-          <button
-            className="secondary-button"
-            disabled={busy}
-            onClick={async () => {
-              if (
-                !confirm(msg("계좌·기록과 기존 공유 권한을 다시 활성화할까요?"))
-              )
-                return;
-              setBusy(true);
-              try {
-                await post(`/accounts/${ac.id}/restore`);
-                await load();
-                await p.refresh();
-                p.notify(msg("계좌를 복구했어요."));
-              } catch (e) {
-                setError((e as Error).message);
-              } finally {
-                setBusy(false);
+          <div className="trash-actions">
+            <button
+              className="secondary-button"
+              disabled={task.busy}
+              onClick={() =>
+                task.run(async () => {
+                  if (
+                    !confirm(
+                      msg("계좌·기록과 기존 공유 권한을 다시 활성화할까요?"),
+                    )
+                  )
+                    return;
+                  await post(`/accounts/${ac.id}/restore`);
+                  await load();
+                  await p.refresh();
+                  p.notify(msg("계좌를 복구했어요."));
+                })
               }
-            }}
-          >
-            {msg("복구")}
-          </button>
+            >
+              {msg("복구")}
+            </button>
+            <button
+              className="secondary-button danger-text"
+              disabled={task.busy}
+              onClick={() => purge(ac.id)}
+            >
+              {msg("영구 삭제")}
+            </button>
+          </div>
         </div>
       ))}
-      <ErrorText error={error} />
+      <ErrorText error={task.error} />
     </Modal>
   );
 }

@@ -28,6 +28,12 @@ Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와
 
 기존 설치는 [업데이트 안내](manual/ko/operations.md#업데이트)에 따라 백업 후 이미지 버전을 변경하세요. 게시된 버전은 [Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 확인할 수 있습니다.
 
+## 0.2.0 업데이트 안내
+
+시작 잔액이 계좌 생성 시각의 수입·지출 거래로 전환됩니다. **잔액은 유지되지만 과거 수입·지출 통계는 달라집니다.** 업데이트 전 운영 백업 ZIP과 원래 `master.key`를 보관하세요.
+
+휴지통의 영구 삭제는 복구할 수 없습니다. 시작 잔액 수정·삭제 범위·저장 단축키는 [사용법](manual/ko/usage.md)을 참고하세요.
+
 ## 매뉴얼
 
 [설치](manual/ko/installation.md) · [사용법](manual/ko/usage.md) · [업데이트·백업·복원](manual/ko/operations.md) · [디자인 설정](manual/ko/appearance.md) · [API](manual/ko/api.md) · [MCP](manual/ko/mcp.md) · [문제 해결](manual/ko/troubleshooting.md)

@@ -95,13 +95,14 @@ func (a *App) deleteAccount(w http.ResponseWriter, r *http.Request, u *User) err
 		return forbidden()
 	}
 	var v struct {
-		Confirm string `json:"confirm_name"`
-		Version int    `json:"version"`
+		Confirm  string `json:"confirm_name"`
+		Accepted bool   `json:"confirm"`
+		Version  int    `json:"version"`
 	}
 	if err = decode(r, &v); err != nil {
 		return err
 	}
-	if v.Confirm != ac.Name {
+	if !v.Accepted && v.Confirm != ac.Name {
 		return bad("삭제할 계좌 이름을 정확히 입력해 주세요.")
 	}
 	tx, err := a.DB.Begin()

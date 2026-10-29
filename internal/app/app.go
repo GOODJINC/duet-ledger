@@ -19,7 +19,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.1.1"
+const Version = "0.2.0"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -291,6 +291,8 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/accounts", a.createAccount, true)
 	add("DELETE /api/accounts/{id}", a.deleteAccount, true)
 	add("GET /api/accounts/trash", a.trashedAccounts, true)
+	add("DELETE /api/accounts/trash", a.purgeAccounts, true)
+	add("DELETE /api/accounts/{id}/permanent", a.purgeAccounts, true)
 	add("POST /api/accounts/{id}/restore", a.restoreAccount, true)
 	add("PATCH /api/accounts/{id}", a.updateAccount, true)
 	add("DELETE /api/accounts/{id}/grant", a.leaveAccount, true)
@@ -299,6 +301,8 @@ func (a *App) Routes() http.Handler {
 	add("PUT /api/transactions/{id}", a.updateTransaction, true)
 	add("POST /api/transactions/{id}/trash", a.trashTransaction, true)
 	add("POST /api/transactions/{id}/restore", a.restoreTransaction, true)
+	add("DELETE /api/transactions/trash", a.emptyTransactionTrash, true)
+	add("DELETE /api/transactions/{id}/permanent", a.purgeTransaction, true)
 	add("POST /api/transactions/{id}/receipts", a.uploadReceipt, true)
 	add("GET /api/receipts/{id}", a.getReceipt, true)
 	add("DELETE /api/receipts/{id}", a.deleteReceipt, true)

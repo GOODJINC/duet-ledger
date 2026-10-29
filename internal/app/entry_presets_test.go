@@ -120,7 +120,7 @@ func TestPresetMigrationFromVersionSixPreservesDataAndSessions(t *testing.T) {
 	a, server, c := newTestApp(t)
 	account := c.account(c.personalLedger(), "Existing", "bank", "KRW", "12345")
 	c.create(txInput(account, "expense", "345"))
-	if _, err := a.DB.Exec("DROP TABLE entry_presets; DROP INDEX events_creator_recent; DELETE FROM schema_version WHERE version=7"); err != nil {
+	if _, err := a.DB.Exec("DROP TABLE entry_presets; DROP INDEX events_creator_recent; DELETE FROM schema_version WHERE version>=7"); err != nil {
 		t.Fatal(err)
 	}
 	dir := a.Config.DataDir
@@ -132,7 +132,7 @@ func TestPresetMigrationFromVersionSixPreservesDataAndSessions(t *testing.T) {
 	}
 	defer upgraded.Close()
 	var version int
-	if err = upgraded.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil || version != 7 {
+	if err = upgraded.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil || version != 8 {
 		t.Fatal(version, err)
 	}
 	s := httptest.NewServer(upgraded.Routes())

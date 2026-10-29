@@ -2,7 +2,16 @@
 
 [한국어](CHANGELOG.md)
 
-## 0.1.1 · Preparing for release
+## 0.2.0 · 2026-10-29
+
+- Account opening balances become transactions dated at account creation: positive amounts are income and negative amounts are expenses. View, edit, trash and restore them like ordinary entries. Zero amounts create no entry.
+- Existing opening balances are converted without changing balances. **Historical income/expense totals change.** Very large amounts are split within the existing per-transaction limit.
+- Clarified account archiving/deletion, improved spacing, and replaced typed account-name confirmation with Confirm/Cancel.
+- Added permanent deletion and empty-trash actions for records and accounts. **Permanent deletion cannot be undone.** Only owners of every involved account may purge a record; account purging cannot remove another account's transfer history or balance.
+- Save quick entries and transaction edits with Ctrl+Enter, or Command+Enter on Mac.
+- **Storage upgrades automatically to schema 8.** Save an operational backup and the original master.key before updating. Existing backups may retain copies of permanently deleted data.
+
+## 0.1.1 · 2026-10-28
 
 - Slow request bodies and response transfers no longer hold the shared data lock. Authentication and sharing permissions are checked again before saving.
 - Account-scoped API/MCP category lookups exclude categories found only in other accounts. Failed uploads count toward API limits and appear in request history.

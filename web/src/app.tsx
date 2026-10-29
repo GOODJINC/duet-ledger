@@ -1,4 +1,6 @@
 import { isWritableAccount } from "./accounts";
+import { useTask } from "./use-task";
+import { purgeMessage, type PurgeResult } from "./api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDisplayPreferences, useCompactLayout } from "./display-settings";
 import {
@@ -27,7 +29,7 @@ import {
   type Report,
 } from "./api";
 import { today, dateRange } from "./dates";
-import { Brand, Icon, Privacy, Empty, type IconName } from "./ui";
+import { Brand, Icon, Privacy, Empty, ErrorText, type IconName } from "./ui";
 import {
   EntryDialog,
   LedgerDialog,
@@ -131,6 +133,7 @@ export function Application({
   const [accountFilter, setAccountFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [trash, setTrash] = useState(false);
+  const purgeTask = useTask();
   const [view, setView] = useState("list");
   const [day, setDay] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
@@ -1026,6 +1029,39 @@ export function Application({
                         formatMoney(totals?.expense || "0", scale, currency),
                       ])}
                 </div>
+                {trash &&
+                  report.count > 0 &&
+                  accounts.some((a) => a.role === "owner") && (
+                    <div className="trash-empty-button">
+                      <button
+                        className="secondary-button danger-text"
+                        disabled={purgeTask.busy}
+                        onClick={() =>
+                          purgeTask.run(async () => {
+                            if (
+                              !confirm(
+                                msg(
+                                  "현재 검색·기간·계좌 조건에 맞는 휴지통 기록과 사진을 영구 삭제할까요? 모든 계좌의 책임자인 기록만 삭제하며 복구할 수 없어요.",
+                                ),
+                              )
+                            )
+                              return;
+                            const result = await post<PurgeResult>(
+                              `/transactions/trash?${params.toString()}`,
+                              { confirm: true },
+                              "DELETE",
+                            );
+                            setPageNumber(1);
+                            await refresh();
+                            setToast(purgeMessage(result));
+                          })
+                        }
+                      >
+                        {msg("현재 범위 휴지통 비우기")}
+                      </button>
+                    <ErrorText error={purgeTask.error} />
+                    </div>
+                  )}
                 {view === "calendar" ? (
                   <CalendarView
                     date={date}
@@ -1266,7 +1302,7 @@ export function Application({
           <footer className="app-footer">
             <span>{msg("기록이 쌓이면, 일상이 보이니까.")}</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.1.1
+              Duet Ledger <span className="footer-dot">·</span> 0.2.0
             </span>
           </footer>
         </div>

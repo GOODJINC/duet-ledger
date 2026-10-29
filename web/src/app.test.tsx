@@ -1,10 +1,17 @@
 // @vitest-environment happy-dom
 import { dateRange } from "./dates";
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AccountTrashDialog } from "./preferences";
 import { Auth } from "./auth";
-import { EntryDialog, AccountDialog } from "./dialogs";
+import { EntryDialog, AccountDialog, DetailDialog } from "./dialogs";
 import {
   APIError,
   post,
@@ -14,6 +21,7 @@ import {
   type Account,
   type User,
   type Ledger,
+  type Transaction,
 } from "./api";
 
 vi.mock("./api", async (importOriginal) => {
@@ -74,7 +82,11 @@ beforeEach(() => {
       : ({} as any),
   );
 });
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("정확한 금액과 기간", () => {
   it("소수와 큰 금액을 부동소수점 오차 없이 처리한다", () => {
@@ -268,5 +280,139 @@ describe("실제 입력 화면", () => {
     expect(
       vi.mocked(api).mock.calls.filter(([path]) => path.endsWith("/receipts")),
     ).toHaveLength(2);
+  });
+});
+
+describe("계좌·기록 휴지통과 저장 단축키", () => {
+  it("Ctrl+Enter는 저장하며 입력 중 조합·반복 키는 무시한다", async () => {
+    const actor = userEvent.setup();
+    const p = props();
+    vi.mocked(post).mockResolvedValue({ id: "saved" });
+    render(<EntryDialog {...p} />);
+    await actor.type(screen.getByLabelText("금액"), "12.34");
+    await actor.type(screen.getByLabelText("내용"), "Lunch");
+    const input = screen.getByLabelText("내용");
+    fireEvent.keyDown(input, {
+      key: "Enter",
+      ctrlKey: true,
+      isComposing: true,
+    });
+    fireEvent.keyDown(input, { key: "Enter", ctrlKey: true, repeat: true });
+    expect(post).not.toHaveBeenCalled();
+    await actor.click(input);
+    await actor.keyboard("{Control>}{Enter}{/Control}");
+    await waitFor(() => expect(p.close).toHaveBeenCalledOnce());
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith(
+      "/transactions",
+      expect.objectContaining({ amount: "1234", title: "Lunch" }),
+      "POST",
+      expect.anything(),
+    );
+  });
+  it("계좌 삭제는 이름 입력 없이 확인·취소하고 기록 유지 설명을 보여준다", async () => {
+    const actor = userEvent.setup();
+    const p = props();
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    const prompt = vi.fn();
+    vi.stubGlobal("prompt", prompt);
+    vi.mocked(post).mockResolvedValue({ ok: true });
+    render(
+      <AccountDialog
+        {...p}
+        account={account}
+        entry={vi.fn()}
+        showLedger={vi.fn()}
+      />,
+    );
+    await actor.click(screen.getByRole("button", { name: /계좌 설정/ }));
+    expect(screen.getByLabelText("계좌 보관")).toBeTruthy();
+    expect(screen.getByText(/보관·삭제해도 기존 기록은 유지/)).toBeTruthy();
+    await actor.click(screen.getByRole("button", { name: "계좌 삭제" }));
+    expect(post).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true);
+    await actor.click(screen.getByRole("button", { name: "계좌 삭제" }));
+    await waitFor(() => expect(p.close).toHaveBeenCalled());
+    expect(prompt).not.toHaveBeenCalled();
+    expect(post).toHaveBeenCalledWith(
+      "/accounts/a1",
+      { confirm: true, version: 1 },
+      "DELETE",
+    );
+  });
+  it("기록 영구 삭제는 경고 확인 후 최신 버전을 보내고 취소하면 유지한다", async () => {
+    const actor = userEvent.setup();
+    const p = props();
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal("confirm", confirm);
+    vi.mocked(post).mockResolvedValue({ deleted: 1, cleanup_pending: 0 });
+    const transaction: Transaction = {
+      id: "p1",
+      kind: "expense",
+      date: "2026-10-21",
+      time: "12:00",
+      timezone: "UTC",
+      currency: "USD",
+      scale: 2,
+      version: 2,
+      creator: "민수",
+      creator_username: "minsu",
+      can_edit: true,
+      can_purge: true,
+      deleted: true,
+      legs: [
+        {
+          id: "p1",
+          account_id: "a1",
+          amount: "-100",
+          title: "Lunch",
+          category: "food",
+          note: "",
+          receipts: [],
+        },
+      ],
+    };
+    render(<DetailDialog {...p} transaction={transaction} edit={vi.fn()} />);
+    await actor.click(screen.getByRole("button", { name: "영구 삭제" }));
+    expect(post).not.toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalledWith(
+      expect.stringContaining("복구할 수 없어요"),
+    );
+    confirm.mockReturnValue(true);
+    await actor.click(screen.getByRole("button", { name: "영구 삭제" }));
+    await waitFor(() => expect(p.close).toHaveBeenCalled());
+    expect(post).toHaveBeenCalledWith(
+      "/transactions/p1/permanent",
+      { confirm: true, version: 2 },
+      "DELETE",
+    );
+  });
+  it("계좌 휴지통 비우기는 화면에 표시한 계좌만 확인 후 삭제한다", async () => {
+    const actor = userEvent.setup();
+    const p = props();
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true),
+    );
+    vi.mocked(api)
+      .mockResolvedValueOnce([
+        { id: "a1", name: "Deleted", ledger_name: "Private" },
+      ])
+      .mockResolvedValueOnce([]);
+    vi.mocked(post).mockResolvedValue({ deleted: 1, cleanup_pending: 0 });
+    render(<AccountTrashDialog {...p} />);
+    await actor.click(
+      await screen.findByRole("button", { name: "계좌 휴지통 비우기" }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("삭제한 계좌가 없어요.")).toBeTruthy(),
+    );
+    expect(post).toHaveBeenCalledWith(
+      "/accounts/trash",
+      { confirm: true, ids: ["a1"] },
+      "DELETE",
+    );
+    expect(p.refresh).toHaveBeenCalledOnce();
   });
 });

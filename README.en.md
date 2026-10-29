@@ -28,6 +28,12 @@ Compose resolves `${…}` settings when it runs. Use `.env` to change the port a
 
 For an existing installation, follow [Updating](manual/en/operations.md#updating): back up your data, then change the image version. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) for published versions.
 
+## Updating to 0.2.0
+
+Opening balances become income/expense transactions dated at account creation. **Balances stay the same, but historical income/expense totals change.** Save an operational backup ZIP and the original `master.key` before updating.
+
+Permanent deletion from trash cannot be undone. See [Usage](manual/en/usage.md) for editing opening entries, deletion scope and save shortcuts.
+
 ## Manuals
 
 [Installation](manual/en/installation.md) · [Usage](manual/en/usage.md) · [Updates, backup and restore](manual/en/operations.md) · [Appearance](manual/en/appearance.md) · [API](manual/en/api.md) · [MCP](manual/en/mcp.md) · [Troubleshooting](manual/en/troubleshooting.md)

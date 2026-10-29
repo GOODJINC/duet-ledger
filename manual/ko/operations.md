@@ -18,10 +18,10 @@ docker compose restart duet-ledger
 
 먼저 [변경 기록](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md)을 읽고 운영 백업과 `master.key`를 별도로 보관합니다. [Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 대상 버전의 이미지 게시 완료를 확인합니다.
 
-Compose와 같은 폴더의 `.env`에서 버전을 지정합니다. 예를 들어 0.1.1로 업데이트하려면 다음 값을 사용합니다.
+Compose와 같은 폴더의 `.env`에서 버전을 지정합니다. 예를 들어 0.2.0으로 업데이트하려면 다음 값을 사용합니다.
 
 ```dotenv
-DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.1.1
+DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.2.0
 ```
 
 Docker 관리 화면을 사용한다면 해당 화면의 환경변수 또는 `image` 태그를 바꿉니다. `.env`나 실행 환경에 `DUET_LEDGER_IMAGE`가 있으면 Compose 파일의 기본 이미지보다 우선합니다. 업데이트 시점을 직접 선택하려면 `latest` 대신 정확한 버전을 사용하세요.
@@ -36,6 +36,10 @@ docker compose logs --tail 100 duet-ledger
 버전 태그를 고정한 경우 pull만으로 다른 버전으로 바뀌지는 않습니다. 실행 중인 컨테이너는 새 이미지 게시만으로 자동 교체되지 않습니다.
 
 기존 데이터 볼륨·환경변수는 유지합니다. 구조가 자동 변경될 수 있으므로 **이전 이미지로만 바꾸는 것은 안전한 되돌리기가 아닙니다.** 되돌릴 때는 업데이트 전 자료 사본과 호환되는 앱 이미지를 함께 사용하세요.
+
+## 0.2.0으로 업데이트할 때
+
+저장 구조가 8로 갱신됩니다. 기존 시작 잔액은 계좌 생성 시각의 수입(양수)·지출(음수)로 전환됩니다. 현재 잔액은 유지하지만 해당 기간의 수입·지출 통계는 달라집니다. 업데이트 전 백업을 보관하고 변경된 통계를 확인하세요.
 
 ## 다른 Docker 환경으로 이전
 

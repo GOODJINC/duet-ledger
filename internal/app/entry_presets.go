@@ -84,7 +84,7 @@ func (a *App) listEntryPresets(w http.ResponseWriter, r *http.Request, u *User) 
 			args = append(args, id)
 		}
 	}
-	rows, err = a.DB.Query(`SELECT e.id,e.kind,e.original_currency,e.original_amount,e.exchange_rate FROM events e WHERE e.creator_id=? AND e.deleted_at IS NULL AND e.kind IN ('income','expense','transfer') AND EXISTS (SELECT 1 FROM postings p WHERE p.event_id=e.id AND p.account_id IN (`+placeholders(len(ids))+`)) AND NOT EXISTS (SELECT 1 FROM postings p WHERE p.event_id=e.id AND p.account_id NOT IN (`+placeholders(len(ids))+`)) ORDER BY e.created_at DESC,e.id DESC LIMIT 20`, args...)
+	rows, err = a.DB.Query(`SELECT e.id,e.kind,e.original_currency,e.original_amount,e.exchange_rate FROM events e WHERE e.creator_id=? AND e.deleted_at IS NULL AND e.kind IN ('income','expense','transfer') AND NOT EXISTS(SELECT 1 FROM postings opening WHERE opening.event_id=e.id AND opening.category='opening_balance') AND EXISTS (SELECT 1 FROM postings p WHERE p.event_id=e.id AND p.account_id IN (`+placeholders(len(ids))+`)) AND NOT EXISTS (SELECT 1 FROM postings p WHERE p.event_id=e.id AND p.account_id NOT IN (`+placeholders(len(ids))+`)) ORDER BY e.created_at DESC,e.id DESC LIMIT 20`, args...)
 	if err != nil {
 		return err
 	}

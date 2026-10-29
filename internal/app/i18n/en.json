@@ -202,5 +202,13 @@
   "사진이 너무 커요.": "The photo is too large.",
   "JPG·PNG 사진만 가능하며 해상도는 1,600만 화소까지 지원해요.": "Only JPG and PNG photos up to 16 megapixels are supported.",
   "사진이 손상되었어요.": "The photo is damaged.",
-  "즐겨찾기는 100개까지 저장할 수 있어요.": "You can save up to 100 favorites."
+  "즐겨찾기는 100개까지 저장할 수 있어요.": "You can save up to 100 favorites.",
+  "시작 잔액": "Opening balance",
+  "영구 삭제를 확인해 주세요.": "Confirm permanent deletion.",
+  "휴지통에 있는 기록만 영구 삭제할 수 있어요.": "Only trashed records can be permanently deleted.",
+  "기록이 변경됐어요. 다시 조회해 주세요.": "The record has changed. Fetch it again.",
+  "삭제할 계좌를 선택해 주세요.": "Select the accounts to delete.",
+  "중복된 계좌예요.": "Duplicate account selection.",
+  "다른 계좌와 연결된 이체가 있어 영구 삭제할 수 없어요. 계좌를 복구해 이체를 정리하거나 연결된 삭제 계좌를 함께 비워 주세요.": "This account has transfers linked to another account. Restore it and resolve the transfers, or empty the connected deleted accounts together.",
+  "이미 영구 삭제된 요청이에요. 새 기록에는 새 요청 식별자를 사용해 주세요.": "This request was permanently deleted. Use a new request ID for a new record."
 }

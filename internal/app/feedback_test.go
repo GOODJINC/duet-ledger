@@ -51,7 +51,7 @@ func TestLedgerTrashPreservesDataAndRevokesAccess(t *testing.T) {
 	}
 	other.send("POST", "/ledgers/"+ledger+"/restore", map[string]any{}, 404, nil)
 	c.send("POST", "/ledgers/"+ledger+"/restore", map[string]any{}, 200, nil)
-	if c.balance(account) != "88000" || other.report("").Items[0].ID != pid {
+	if c.balance(account) != "88000" || transactionByID(t, other.report(""), pid).ID != pid {
 		t.Fatal("restore lost original data or memberships")
 	}
 }
@@ -70,10 +70,10 @@ func TestScopedEntryClockAndCategorySearch(t *testing.T) {
 	input.Time = "12:34"
 	input.Timezone = "Asia/Seoul"
 	c.create(input)
-	if c.report("&search="+url.QueryEscape("식비")).Count != 1 || c.report("&search="+c.user.Username).Count != 1 {
+	if c.report("&search="+url.QueryEscape("식비")).Count != 1 || c.report("&search="+c.user.Username).Count != 3 {
 		t.Fatal("translated category or author search failed")
 	}
-	item := c.report("&ledger=" + family).Items[0]
+	item := c.report("&ledger=" + family + "&type=expense").Items[0]
 	if item.Time != "12:34" || item.Timezone != "Asia/Seoul" {
 		t.Fatal("time was not preserved")
 	}
@@ -81,7 +81,7 @@ func TestScopedEntryClockAndCategorySearch(t *testing.T) {
 	c.send("POST", "/transactions", input, 400, nil)
 	var income []Category
 	c.send("GET", "/categories?account="+shared+"&kind=income", nil, 200, &income)
-	if len(income) != 6 || income[0].Code != "salary" {
+	if len(income) != 7 || income[0].Code != "salary" {
 		t.Fatal("income categories mismatch")
 	}
 	var custom Category
@@ -191,7 +191,7 @@ func TestVersionOneDataUpgrade(t *testing.T) {
 	}
 	defer a.Close()
 	var balance int64
-	if err = a.DB.QueryRow("SELECT opening FROM accounts WHERE id='oldaccount'").Scan(&balance); err != nil || balance != 123456 {
+	if err = a.DB.QueryRow("SELECT opening+COALESCE((SELECT SUM(amount) FROM postings WHERE account_id='oldaccount'),0) FROM accounts WHERE id='oldaccount'").Scan(&balance); err != nil || balance != 123456 {
 		t.Fatal("upgrade changed old account data")
 	}
 	user, err := a.user("old")

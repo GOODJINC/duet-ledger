@@ -45,6 +45,23 @@ export type Account = {
   owner_name: string;
 };
 export type Receipt = { id: string; size: number; media_type: string };
+export type PurgeResult = {
+  deleted: number;
+  skipped?: number;
+  cleanup_pending: number;
+};
+export function purgeMessage(result: PurgeResult) {
+  if (result.cleanup_pending)
+    return msg(
+      "영구 삭제했지만 일부 사진 파일 정리에 실패했어요. 서버 관리자에게 문의해 주세요.",
+    );
+  if (result.skipped)
+    return msg(
+      "{0}건을 영구 삭제했어요. 다른 책임자의 기록 {1}건은 유지했어요.",
+      [result.deleted, result.skipped],
+    );
+  return msg("{0}개 항목을 영구 삭제했어요.", [result.deleted]);
+}
 export type Leg = {
   id: string;
   account_id: string;
@@ -57,6 +74,7 @@ export type Leg = {
   receipts: Receipt[];
 };
 export type Transaction = {
+  can_purge?: boolean;
   original_currency?: string;
   original_amount?: string;
   exchange_rate?: string;
@@ -240,6 +258,7 @@ export function toDecimal(minor: string, scale: number) {
   );
 }
 export const categories = [
+  { id: "opening_balance", label: "시작 잔액", color: "#8da6a0" },
   { id: "food", label: "식비", color: "#9fb58c" },
   { id: "groceries", label: "장보기", color: "#c5cfa5" },
   { id: "coffee", label: "카페·간식", color: "#d8b79b" },

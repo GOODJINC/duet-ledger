@@ -41,7 +41,7 @@ func TestForeignChargeAndMixedCurrencyReport(t *testing.T) {
 	in.ExchangeRate = "1400"
 	pid := c.create(in)
 	report := c.report("&display_currency=KRW")
-	if report.Totals[0].Expense != "28000" || report.Items[0].OriginalAmount != "2000" || report.Items[0].ExchangeRate != "1400" || c.balance(krw) != "-28000" {
+	if report.Totals[0].Expense != "28000" || transactionByID(t, report, pid).OriginalAmount != "2000" || transactionByID(t, report, pid).ExchangeRate != "1400" || c.balance(krw) != "-28000" {
 		t.Fatal("foreign snapshot or native balance incorrect")
 	}
 	in.Amount = "27999"
@@ -50,7 +50,7 @@ func TestForeignChargeAndMixedCurrencyReport(t *testing.T) {
 	c.send("PUT", "/me/exchange-rates", ExchangeRate{"USD", "KRW", "1500"}, 200, nil)
 	c.create(txInput(usd, "expense", "500"))
 	report = c.report("&display_currency=KRW")
-	if len(report.Items) != 2 || report.Totals[0].Expense != "35500" || report.Items[0].DisplayScale == nil || *report.Items[0].DisplayScale != 0 {
+	if len(report.Items) != 3 || report.Totals[0].Expense != "35500" || report.Items[0].DisplayScale == nil || *report.Items[0].DisplayScale != 0 {
 		t.Fatal("mixed currency report mismatch")
 	}
 	report = c.report("&display_currency=USD")

@@ -8,11 +8,25 @@ func (a *App) migrate() error {
 	if err := a.DB.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version); err != nil {
 		return err
 	}
-	if version > 7 {
+	if version > 8 {
 		return fmt.Errorf("unsupported database version: %d", version)
 	}
-	if version == 7 {
+	if version == 8 {
 		return nil
+	}
+	if version == 7 {
+		tx, err := a.DB.Begin()
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if err = migrateOpeningBalances(tx); err != nil {
+			return err
+		}
+		if _, err = tx.Exec("INSERT INTO schema_version VALUES(8)"); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if version == 6 {
 		tx, err := a.DB.Begin()
@@ -26,7 +40,10 @@ CREATE INDEX IF NOT EXISTS events_creator_recent ON events(creator_id,created_at
 INSERT INTO schema_version VALUES(7);`); err != nil {
 			return err
 		}
-		return tx.Commit()
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return a.migrate()
 	}
 	if version == 5 {
 		tx, err := a.DB.Begin()

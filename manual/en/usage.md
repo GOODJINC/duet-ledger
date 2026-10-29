@@ -8,10 +8,12 @@ One user account can use multiple ledgers. Personal ledgers start private; share
 
 1. Use the ledger picker at the upper left, or at the top on mobile.
 2. Open **Accounts → Create account** to add a bank, cash, card or loan account.
-3. Set its currency and opening balance. Opening balances are not income. Enter unpaid card balances and loans as negative amounts.
+3. Set its currency and opening balance. Opening balances are recorded as income at account creation. Enter unpaid card balances and loans as negative amounts to record them as expenses. Zero creates no transaction.
 4. Use **Settings → Manage ledgers** to create, edit, reorder or restore ledgers.
 
 Selecting a ledger restricts accounts and quick-entry destinations to that ledger. All ledgers combines accounts you can access.
+
+To change an opening balance, select the account's creation month or year, search for **opening_balance** in the ledger and edit that transaction. Opening money is not counted twice. Updating to 0.2.0 converts existing opening balances into transactions at account creation: **current balances stay the same, but historical income/expense totals change.** Very large openings are split within the transaction amount limit.
 
 ## Transactions and receipts
 
@@ -25,7 +27,17 @@ Open **Quick entry**, select Expense, Income or Transfer, and enter the amount, 
 
 On mobile, entry, transaction details and management dialogs fill the screen. Use the header Back button or browser Back to return with your filters and scroll position preserved. Month selection remains a small dialog, and desktop dialogs stay centered. Leaving a changed entry or transaction edit asks whether to discard it; cancelling keeps the form. You cannot leave while saving. Reload and tab-close warnings depend on browser support; drafts are not stored automatically.
 
-Close dialogs with Close, Escape or browser Back. Clicking outside does not close them. `Q` opens Quick entry; `/` focuses search. Shortcuts are ignored while typing in fields.
+Close dialogs with Close, Escape or browser Back. Clicking outside does not close them. `Q` opens Quick entry; `/` focuses search. Those two shortcuts are ignored while typing. In quick entry and transaction edits, **Ctrl+Enter** saves the form; Mac also supports Command+Enter. Required-field validation still applies.
+
+## Archive, trash and permanent deletion
+
+Account **archiving** and **deletion** both retain existing records. Archiving prevents new entries. Deletion hides the account and records and stops shared access. Moving an account to the trash now uses Confirm/Cancel without typing its name.
+
+- **Settings → Transaction trash**: open a record for **Delete permanently**, or use **Empty trash in current view**. Emptying applies to all matching pages within the current dates, search and account filters. Only records whose every account you own are removed; other owners' records are skipped.
+- **Settings → Deleted accounts**: delete an account permanently or empty account trash. This removes the accounts, their records, photos and sharing references.
+- An account with a transfer linked to another account cannot be purged alone. If you own both accounts and both are trashed, empty them together. This protects the counterpart's balance.
+
+**Permanent deletion cannot be undone.** Review the confirmation before proceeding. Existing backups may retain copies, and minimal audit/retry-prevention metadata remains. API/MCP deletion still moves records to trash; permanent deletion is available only through the web app.
 
 ## Favorites and recent entries
 
@@ -44,7 +56,7 @@ Choose day/week/month/year and list/calendar views. Click the month heading to j
 
 Search matches descriptions, category labels, notes, author names and usernames. Combine account, transaction-type and date filters. Totals include all matching transactions, not just the current page. Insights shows daily trends and expenses by category.
 
-Recorded balances use opening balances and saved transactions. They do not synchronize automatically with a bank.
+Recorded balances use saved transactions, including opening entries. They do not synchronize automatically with a bank.
 
 ## Sharing and invitations
 

@@ -420,7 +420,11 @@ func (a *App) importJSON(w http.ResponseWriter, r *http.Request, u *User) error 
 		id := newID()
 		mapping[ac.ID] = id
 		opening, _ := strconv.ParseInt(ac.Opening, 10, 64)
-		if _, err = tx.Exec("INSERT INTO accounts(id,ledger_id,name,kind,currency,scale,opening,archived,created_at) VALUES(?,?,?,?,?,?,?,?,?)", id, ledgerID, ac.Name, ac.Kind, ac.Currency, ac.Scale, opening, ac.Archived, now()); err != nil {
+		created := now()
+		if _, err = tx.Exec("INSERT INTO accounts(id,ledger_id,name,kind,currency,scale,opening,archived,created_at) VALUES(?,?,?,?,?,?,?,?,?)", id, ledgerID, ac.Name, ac.Kind, ac.Currency, ac.Scale, 0, ac.Archived, created); err != nil {
+			return err
+		}
+		if err = recordOpeningBalance(tx, id, ac.Currency, ac.Scale, opening, created, u.ID, u.Locale, u.Timezone); err != nil {
 			return err
 		}
 	}

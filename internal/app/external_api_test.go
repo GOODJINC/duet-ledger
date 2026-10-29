@@ -120,7 +120,7 @@ func TestExternalAccountIsolationAndReadOnly(t *testing.T) {
 	}
 	var report TransactionPage
 	c.external(key, "GET", "/transactions?from=1900-01-01&to=2100-12-31", nil, 200, &report)
-	if report.Count != 2 || report.Totals[0].Expense != "100" {
+	if report.Count != 3 || report.Totals[0].Expense != "100" || report.Totals[0].Income != "10000" {
 		t.Fatal("unselected totals leaked", report.Count, report.Totals)
 	}
 	for _, tx := range report.Items {

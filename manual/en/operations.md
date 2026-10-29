@@ -18,10 +18,10 @@ The restart policy starts the container after reboots when Docker is running. `/
 
 Read the [changelog](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.en.md) and save a backup with its original `master.key`. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) to confirm that the target image has been published.
 
-Set the version in `.env` beside your Compose file. For example, to update to 0.1.1:
+Set the version in `.env` beside your Compose file. For example, to update to 0.2.0:
 
 ```dotenv
-DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.1.1
+DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.2.0
 ```
 
 In a Docker management interface, change its environment variable or `image` tag. A `DUET_LEDGER_IMAGE` value in `.env` or the shell overrides the Compose default. Prefer an exact version over `latest` to control when you update.
@@ -36,6 +36,10 @@ docker compose logs --tail 100 duet-ledger
 Pulling a fixed tag does not switch versions. Publishing an image does not automatically replace a running container.
 
 Keep the volume and environment settings. **An old image alone is not a safe rollback after schema migration.** Use a compatible app and a pre-update data copy. Never delete the production volume during updates.
+
+## Updating to 0.2.0
+
+Storage upgrades to schema 8. Existing opening balances become income (positive) or expense (negative) entries dated at account creation. Current balances stay the same, but income/expense totals for those dates change. Keep a pre-update backup and review the changed reports.
 
 ## Moving Docker installations
 

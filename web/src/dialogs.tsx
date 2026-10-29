@@ -1,4 +1,5 @@
 import { isWritableAccount } from "./accounts";
+import { purgeMessage, type PurgeResult } from "./api";
 import { today, currentTime } from "./dates";
 import { EntryShortcuts } from "./entry-shortcuts";
 import { canLeaveEntry, useEntryExit } from "./entry-exit";
@@ -381,6 +382,13 @@ export function EntryDialog(
     >
       <form
         onSubmit={submit}
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            if (!task.busy && !e.repeat && !e.nativeEvent.isComposing)
+              e.currentTarget.requestSubmit();
+          }
+        }}
         onChangeCapture={exit.touch}
         onClickCapture={exit.touch}
         className="entry-form"
@@ -1342,7 +1350,7 @@ export function AccountDialog(
               />
               <p className="entry-hint">
                 {msg(
-                  "신용카드 미결제액·대출 잔액은 음수로 입력해요. 시작 잔액은 수입으로 잡지 않아요.",
+                  "시작 잔액은 계좌를 만든 시각의 수입으로 기록해요. 신용카드 미결제액·대출 잔액은 음수로 입력하면 지출로 기록합니다.",
                 )}
               </p>
               <div className="privacy-notice">
@@ -1364,32 +1372,41 @@ export function AccountDialog(
             </>
           )}
           {ac && (
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={archived}
-                onChange={(e) => setArchived(e.target.checked)}
-              />
-              {msg("계좌 보관 (기존 기록은 유지)")}
-            </label>
+            <div className="account-lifecycle-settings">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={archived}
+                  onChange={(e) => setArchived(e.target.checked)}
+                />
+                {msg("계좌 보관")}
+              </label>
+              <p className="entry-hint">
+                {msg(
+                  "보관·삭제해도 기존 기록은 유지됩니다. 보관하면 새 입력을 막고, 삭제하면 계좌와 기록을 숨기고 공유 접근을 중단해요. 삭제한 계좌는 설정에서 복구할 수 있어요.",
+                )}
+              </p>
+            </div>
           )}
           {ac && (
             <button
               type="button"
-              className="secondary-button danger-text"
+              className="secondary-button danger-text account-trash-button"
               disabled={task.busy}
               onClick={() =>
                 task.run(async () => {
-                  const answer = prompt(
-                    msg(
-                      "계좌와 내역을 숨기고 공유 접근을 중단합니다. 이체 상대 계좌의 기록은 남습니다. 설정에서 복구할 수 있어요. 삭제하려면 계좌 이름 '{0}'을 입력해 주세요.",
-                      [ac.name],
-                    ),
-                  );
-                  if (answer === null) return;
+                  if (
+                    !confirm(
+                      msg(
+                        "'{0}' 계좌를 휴지통으로 옮길까요? 기존 기록은 유지되며 설정에서 복구할 수 있어요.",
+                        [ac.name],
+                      ),
+                    )
+                  )
+                    return;
                   await post(
                     `/accounts/${ac.id}`,
-                    { confirm_name: answer, version: ac.version },
+                    { confirm: true, version: ac.version },
                     "DELETE",
                   );
                   await p.refresh();
@@ -1548,6 +1565,34 @@ export function DetailDialog(
             >
               <Icon name="restore" />
               {msg("복구하기")}
+            </button>
+          )}
+          {t.deleted && t.can_purge && (
+            <button
+              className="secondary-button danger-text"
+              disabled={task.busy}
+              onClick={() =>
+                task.run(async () => {
+                  if (
+                    !confirm(
+                      msg(
+                        "이 기록과 첨부 사진을 영구 삭제할까요? 복구할 수 없어요.",
+                      ),
+                    )
+                  )
+                    return;
+                  const result = await post<PurgeResult>(
+                    `/transactions/${t.id}/permanent`,
+                    { confirm: true, version: t.version },
+                    "DELETE",
+                  );
+                  await p.refresh();
+                  p.notify(purgeMessage(result));
+                  p.close();
+                })
+              }
+            >
+              {msg("영구 삭제")}
             </button>
           )}
         </div>

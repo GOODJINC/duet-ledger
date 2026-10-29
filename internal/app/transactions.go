@@ -46,6 +46,7 @@ type Transaction struct {
 	Version          int    `json:"version"`
 	Creator          string `json:"creator"`
 	CanEdit          bool   `json:"can_edit"`
+	CanPurge         bool   `json:"can_purge,omitempty"`
 	Deleted          bool   `json:"deleted"`
 	Legs             []Leg  `json:"legs"`
 	eventID          string
@@ -194,7 +195,7 @@ func (a *App) validateTx(q queryer, u *User, v *TxInput) ([]Account, int64, erro
 	}
 	if source.Role != "owner" && v.Kind != "transfer" {
 		known := false
-		for _, category := range []string{"food", "groceries", "coffee", "transport", "home", "shopping", "health", "salary", "side_income", "allowance", "bonus", "financial_income", "other", "transfer"} {
+		for _, category := range []string{"food", "groceries", "coffee", "transport", "home", "shopping", "health", "salary", "side_income", "allowance", "bonus", "financial_income", "other", "transfer", "opening_balance"} {
 			if category == v.Category {
 				known = true
 			}
@@ -376,6 +377,9 @@ func (a *App) createTransaction(w http.ResponseWriter, r *http.Request, u *User)
 			}
 			var pid string
 			if e = tx.QueryRow("SELECT id FROM postings WHERE event_id=? AND account_id=?", event, v.AccountID).Scan(&pid); e != nil {
+				if errors.Is(e, sql.ErrNoRows) {
+					return conflict("이미 영구 삭제된 요청이에요. 새 기록에는 새 요청 식별자를 사용해 주세요.")
+				}
 				return e
 			}
 			writeJSON(w, 200, map[string]string{"id": pid})
@@ -683,6 +687,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 			return nil, e
 		}
 		editable := map[string]bool{}
+		owned := map[string]bool{}
 		for rs.Next() {
 			var event, account string
 			if e = rs.Scan(&event, &account); e != nil {
@@ -694,6 +699,8 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 				value = true
 			}
 			editable[event] = value && roles[account] != "" && roles[account] != "viewer"
+			owner, exists := owned[event]
+			owned[event] = (!exists || owner) && roles[account] == "owner"
 		}
 		e = rs.Err()
 		rs.Close()
@@ -702,6 +709,7 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 		}
 		for id, value := range editable {
 			out[indices[id]].CanEdit = value && (u.API == nil || u.API.Permissions["update"])
+			out[indices[id]].CanPurge = out[indices[id]].Deleted && owned[id] && u.API == nil
 		}
 	}
 	receiptArgs := []any{}

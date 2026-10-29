@@ -189,7 +189,7 @@ Creation input fields:
 | Foreign-currency fields    | Original currency, amount and rate described above     |
 | `ledger_id`                | Optional additional ledger-membership constraint       |
 
-`Idempotency-Key` is required and limited to 128 bytes. Generate one per transaction. If a connection fails and the outcome is unknown, retry with **the same input and key**. Reusing a key for changed input returns `409`. Deduplication is scoped to the app password.
+`Idempotency-Key` is required and limited to 128 bytes. Generate one per transaction. If a connection fails and the outcome is unknown, retry with **the same input and key**. Reusing a key for changed input returns `409`. Deduplication is scoped to the app password. A key for a record permanently deleted in the web app cannot be reused and returns `409`. Use a new key for a new record.
 
 Updates use **PUT, not PATCH**. Fetch `GET /transactions/{id}` first. Submit the complete input plus its latest `version`; retain foreign-currency fields, notes and categories you want to keep. A successful update returns `200`, an `id` and account-specific `posting_ids`. Fetch again for the new version.
 

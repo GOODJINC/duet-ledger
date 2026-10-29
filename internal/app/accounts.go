@@ -337,7 +337,11 @@ func (a *App) createAccount(w http.ResponseWriter, r *http.Request, u *User) err
 		return err
 	}
 	defer tx.Rollback()
-	if _, err = tx.Exec("INSERT INTO accounts(id,ledger_id,name,kind,currency,scale,opening,created_at) VALUES(?,?,?,?,?,?,?,?)", id, v.LedgerID, strings.TrimSpace(v.Name), v.Kind, v.Currency, v.Scale, opening, now()); err != nil {
+	created := now()
+	if _, err = tx.Exec("INSERT INTO accounts(id,ledger_id,name,kind,currency,scale,opening,created_at) VALUES(?,?,?,?,?,?,?,?)", id, v.LedgerID, strings.TrimSpace(v.Name), v.Kind, v.Currency, v.Scale, 0, created); err != nil {
+		return err
+	}
+	if err = recordOpeningBalance(tx, id, v.Currency, v.Scale, opening, created, u.ID, u.Locale, u.Timezone); err != nil {
 		return err
 	}
 	if err = audit(tx, u, "created", "account", id); err != nil {

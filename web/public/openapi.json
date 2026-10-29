@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "Duet Ledger web session API and scoped external /api/v1 app-password API. Amounts are integer strings. API access defaults off; an administrator must enable it. Every external request intersects the app-password account allowlist with current user access. Remote MCP is available at /mcp using the same app-password permissions. External API calls, including validation failures, count before body reception toward 120 requests/minute/key. Ordinary request/response temporary files share a 32MiB server budget; capacity exhaustion returns 503 busy. Request history never stores bodies, keys or search terms."
   },
   "servers": [
@@ -811,7 +811,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Creates the account and its opening postings atomically at the same creation time in the user time zone. Positive opening balances become income; negative balances become expenses; zero creates no posting. accounts.opening is stored as zero to prevent double counting. Very large openings are split within the existing posting amount limit."
       }
     },
     "/api/accounts/{id}": {
@@ -910,20 +911,36 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["confirm_name", "version"],
+                "required": ["version"],
                 "properties": {
                   "confirm_name": {
                     "type": "string"
                   },
                   "version": {
                     "type": "integer"
+                  },
+                  "confirm": {
+                    "type": "boolean"
                   }
-                }
+                },
+                "anyOf": [
+                  {
+                    "required": ["confirm"],
+                    "properties": {
+                      "confirm": {
+                        "const": true
+                      }
+                    }
+                  },
+                  {
+                    "required": ["confirm_name"]
+                  }
+                ]
               }
             }
           }
         },
-        "description": "Hides this account and its postings/receipts from every user. Transfer counterpart balance remains intact. Pending account invitations are cancelled. Existing grants resume on restore."
+        "description": "Hides this account and its postings/receipts from every user. Transfer counterpart balance remains intact. Pending account invitations are cancelled. Existing grants resume on restore. Confirm with confirm=true and the current version. confirm_name remains accepted for older clients. Records are retained until the owner explicitly purges the account trash."
       }
     },
     "/api/accounts/{id}/grant": {
@@ -2586,6 +2603,49 @@
             }
           }
         }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted; backup copies and minimal audit/retry metadata may remain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 confirmation/input, 401 sign-in, 403 not owner, 404 not accessible, 409 stale version, active record or linked transfer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeConfirmation"
+              }
+            }
+          }
+        },
+        "summary": "Empty selected account trash",
+        "description": "Browser only. Requires confirm=true and ids (1 to 500). Every account must be deleted and owned by the caller. Transfers may be removed only when every connected account is in this deletion set. All selected accounts are purged atomically or none are changed.",
+        "operationId": "delete_api_accounts_trash"
       }
     },
     "/api/accounts/{id}/restore": {
@@ -4365,6 +4425,255 @@
           }
         ]
       }
+    },
+    "/api/transactions/{id}/permanent": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted; backup copies and minimal audit/retry metadata may remain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 confirmation/input, 401 sign-in, 403 not owner, 404 not accessible, 409 stale version, active record or linked transfer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeConfirmation"
+              }
+            }
+          }
+        },
+        "summary": "Permanently delete one trashed transaction",
+        "description": "Browser only. Requires confirm=true, current version and ownership of every event account. Deletes every leg and receipt. A retained scrubbed retry tombstone prevents resurrection by old Idempotency-Keys.",
+        "operationId": "delete_api_transactions_id_permanent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/transactions/trash": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted; backup copies and minimal audit/retry metadata may remain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 confirmation/input, 401 sign-in, 403 not owner, 404 not accessible, 409 stale version, active record or linked transfer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeConfirmation"
+              }
+            }
+          }
+        },
+        "summary": "Empty transaction trash in the selected view",
+        "description": "Browser only. Requires confirm=true. Honors the transaction list query filters across all matching pages. Skips records not owned on every leg; returns the skipped count. Active records are never purged.",
+        "operationId": "delete_api_transactions_trash",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "private", "shared"]
+            }
+          },
+          {
+            "name": "ledger",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trash",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "display_currency",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Convert totals/categories/daily and add item display_currency/display_scale and leg display_amount. Original amounts and account currencies stay unchanged. Items without a conversion rate are listed in missing_currencies and excluded from converted aggregates."
+          }
+        ]
+      }
+    },
+    "/api/accounts/{id}/permanent": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted; backup copies and minimal audit/retry metadata may remain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "400 confirmation/input, 401 sign-in, 403 not owner, 404 not accessible, 409 stale version, active record or linked transfer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeConfirmation"
+              }
+            }
+          }
+        },
+        "summary": "Permanently delete one trashed account",
+        "description": "Browser only. Requires confirm=true and ownership of a deleted account in an active ledger. Removes account records, receipts, grants, invitations and key/favorite/default-account references. Rejects transfers linked to any account outside the deletion set.",
+        "operationId": "delete_api_accounts_id_permanent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -4486,7 +4795,8 @@
           "opening": {
             "type": "string",
             "pattern": "^-?[0-9]+$",
-            "default": "0"
+            "default": "0",
+            "description": "Signed minor-unit integer string. Recorded as income/expense at creation rather than an immutable balance component."
           }
         }
       },
@@ -4956,7 +5266,8 @@
           },
           "opening": {
             "type": "string",
-            "pattern": "^-?[0-9]+$"
+            "pattern": "^-?[0-9]+$",
+            "description": "Legacy opening component; zero after conversion to opening transactions. Use ordinary transactions to view or edit opening money."
           },
           "balance": {
             "type": "string",
@@ -5083,6 +5394,11 @@
             "items": {
               "$ref": "#/components/schemas/APILeg"
             }
+          },
+          "can_purge": {
+            "type": "boolean",
+            "readOnly": true,
+            "description": "Optional browser-only permission for trashed records owned on every leg. Not a capability granted to API app passwords."
           }
         }
       },
@@ -5444,6 +5760,41 @@
           }
         },
         "description": "Private favorite input. Only income/expense/transfer; dates, time, timezone, ledger constraint and version are not saved."
+      },
+      "PurgeConfirmation": {
+        "type": "object",
+        "required": ["confirm"],
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "const": true
+          },
+          "version": {
+            "type": "integer"
+          },
+          "ids": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PurgeResult": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "cleanup_pending": {
+            "type": "integer",
+            "description": "Photo unlink failures after database deletion. Contact the server operator if nonzero."
+          }
+        }
       }
     },
     "responses": {

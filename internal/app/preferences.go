@@ -18,6 +18,7 @@ type Category struct {
 var baseCategories = []Category{
 	{"food", "식비", "expense", false}, {"groceries", "장보기", "expense", false}, {"coffee", "카페·간식", "expense", false}, {"transport", "교통", "expense", false}, {"home", "주거·생활", "expense", false}, {"shopping", "쇼핑", "expense", false}, {"health", "건강", "expense", false}, {"other", "기타", "expense", false},
 	{"salary", "월급", "income", false}, {"side_income", "부수입", "income", false}, {"allowance", "용돈", "income", false}, {"bonus", "상여", "income", false}, {"financial_income", "금융소득", "income", false}, {"other", "기타", "income", false},
+	{"opening_balance", "시작 잔액", "income", false}, {"opening_balance", "시작 잔액", "expense", false},
 }
 
 func baseCategoryName(code string) string {

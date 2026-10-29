@@ -2937,3 +2937,23 @@ body {
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
+
+.account-lifecycle-settings {
+  margin-top: 20px;
+}
+.account-lifecycle-settings .entry-hint {
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+.account-trash-button {
+  margin-top: 20px;
+}
+.trash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.trash-empty-button {
+  margin: 12px 0;
+}

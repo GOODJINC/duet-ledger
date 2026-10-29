@@ -162,7 +162,7 @@ func TestPrivateSharingAndTransferIsolation(t *testing.T) {
 			t.Fatalf("hidden metadata leaked: %s", secret)
 		}
 	}
-	report := other.report("")
+	report := other.report("&type=transfer")
 	if len(report.Items) != 1 || len(report.Items[0].Legs) != 1 || report.Items[0].CanEdit || report.Items[0].Legs[0].Amount != "300000" {
 		t.Fatalf("invalid partial transfer projection: %+v", report.Items)
 	}
@@ -207,7 +207,7 @@ func TestWholeLedgerInheritanceAndUnionPermissions(t *testing.T) {
 	if other.balance(card) != "-11000" {
 		t.Fatal("grant union not effective")
 	}
-	if len(other.report("").Items) != 1 {
+	if len(other.report("").Items) != 3 {
 		t.Fatal("overlapping paths duplicated transaction")
 	}
 	owner.send("DELETE", "/sharing/account/"+card+"/"+other.user.ID, nil, 200, nil)
@@ -233,7 +233,7 @@ func TestBalancesVersionsTrashAndCurrency(t *testing.T) {
 	pay.ToID = card
 	c.create(pay)
 	report := c.report("")
-	if report.Totals[0].Expense != "100000" {
+	if report.Totals[0].Expense != "150000" {
 		t.Fatal("card repayment double counted")
 	}
 	if c.balance(card) != "-50000" || c.balance(bank) != "900000" {
@@ -305,7 +305,7 @@ func TestIdempotencyAndAtomicConcurrentWrites(t *testing.T) {
 			t.Errorf("unexpected duplicate status: %d", status)
 		}
 	}
-	if created != 1 || c.report("").Count != 1 || c.balance(account) != "99900" {
+	if created != 1 || c.report("").Count != 2 || c.balance(account) != "99900" {
 		t.Fatal("duplicate write")
 	}
 	input.Amount = "200"
@@ -313,7 +313,7 @@ func TestIdempotencyAndAtomicConcurrentWrites(t *testing.T) {
 		t.Fatal("changed payload reused idempotency key")
 	}
 	var count int
-	if err := a.DB.QueryRow("SELECT COUNT(*) FROM postings").Scan(&count); err != nil || count != 1 {
+	if err := a.DB.QueryRow("SELECT COUNT(*) FROM postings").Scan(&count); err != nil || count != 2 {
 		t.Fatal("unexpected postings")
 	}
 }
@@ -360,19 +360,19 @@ func TestCSVAndJSONImports(t *testing.T) {
 	payload := map[string]any{"account_id": account, "content": content, "dry_run": true}
 	var preview map[string]any
 	c.send("POST", "/import/csv", payload, 200, &preview)
-	if preview["rows"] != float64(2) || c.report("").Count != 0 {
+	if preview["rows"] != float64(2) || c.report("").Count != 1 {
 		t.Fatal("preview mutated records")
 	}
 	payload["dry_run"] = false
 	c.send("POST", "/import/csv", payload, 201, nil)
 	var repeated map[string]int
 	c.send("POST", "/import/csv", payload, 201, &repeated)
-	if repeated["inserted"] != 0 || repeated["duplicates"] != 2 || c.report("").Count != 2 {
+	if repeated["inserted"] != 0 || repeated["duplicates"] != 2 || c.report("").Count != 3 {
 		t.Fatal("csv duplicate detection failed")
 	}
 	bad := map[string]any{"account_id": account, "content": content + "2026-02-31,expense,bad,100,food,\n", "dry_run": false}
 	c.send("POST", "/import/csv", bad, 400, nil)
-	if c.report("").Count != 2 {
+	if c.report("").Count != 3 {
 		t.Fatal("failed CSV partially inserted")
 	}
 	var exported Export
@@ -383,7 +383,7 @@ func TestCSVAndJSONImports(t *testing.T) {
 	c.send("POST", "/import/json", map[string]any{"data": exported, "dry_run": false}, 409, nil)
 	exported.Exported = "2099-01-01T00:00:00Z"
 	c.send("POST", "/import/json", map[string]any{"data": exported, "dry_run": false}, 409, nil)
-	if c.report("").Count != 4 {
+	if c.report("").Count != 6 {
 		t.Fatal("JSON records mismatch")
 	}
 	if c.balance(account) != "138000" {
@@ -408,7 +408,7 @@ func TestLedgerExportAndPartialTransferRoundTrip(t *testing.T) {
 	c.create(input)
 	var exported Export
 	c.send("GET", "/export?format=json&ledger="+selected, nil, 200, &exported)
-	if len(exported.Accounts) != 1 || exported.Accounts[0].ID != source || len(exported.Transactions) != 1 || len(exported.Transactions[0].Legs) != 1 {
+	if len(exported.Accounts) != 1 || exported.Accounts[0].ID != source || len(exported.Transactions) != 2 || len(exported.Transactions[0].Legs) != 1 {
 		t.Fatal("ledger export included another ledger or lost its transfer")
 	}
 	c.send("POST", "/import/json", map[string]any{"data": exported, "dry_run": false}, 201, nil)
@@ -680,4 +680,16 @@ func TestFirstAccountBecomesOnlyAdministrator(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dataDir, "setup-token")); !os.IsNotExist(err) {
 		t.Fatal("initial signup still creates a setup token file")
 	}
+}
+
+// Opening entries can sort ahead of a test's transaction; select the ID under test.
+func transactionByID(t *testing.T, report TransactionPage, id string) Transaction {
+	t.Helper()
+	for _, item := range report.Items {
+		if item.ID == id {
+			return item
+		}
+	}
+	t.Fatalf("transaction %s missing", id)
+	return Transaction{}
 }

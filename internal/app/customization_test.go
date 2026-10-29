@@ -65,7 +65,7 @@ func TestAccountTrashPreservesTransferAndRevokesReceipts(t *testing.T) {
 	c.send("POST", "/transactions", txInput(source, "income", "1"), 404, nil)
 	other.send("POST", "/accounts/"+source+"/restore", map[string]any{}, 404, nil)
 	c.send("POST", "/accounts/"+source+"/restore", map[string]any{}, 200, nil)
-	if c.balance(source) != "60000" || c.balance(target) != "30000" || other.report("").Count != 2 {
+	if c.balance(source) != "60000" || c.balance(target) != "30000" || other.report("").Count != 3 {
 		t.Fatal("restore changed financial records or grants")
 	}
 	other.send("GET", "/receipts/"+ref.ID, nil, 200, nil)
