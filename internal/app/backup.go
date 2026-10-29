@@ -16,14 +16,20 @@ import (
 )
 
 type BackupInfo struct {
-	Name    string `json:"name"`
-	Size    int64  `json:"size"`
-	Created string `json:"created_at"`
+	Name          string `json:"name"`
+	Size          int64  `json:"size"`
+	Created       string `json:"created_at"`
+	BeforeRestore bool   `json:"before_restore,omitempty"`
 }
 
-func (a *App) backup() (string, error) {
+func (a *App) backup() (string, error) { return a.backupArchive(false) }
+
+func (a *App) backupArchive(beforeRestore bool) (string, error) {
 	dir := filepath.Join(a.Config.DataDir, "backups")
 	name := "duet-ledger-backup-" + time.Now().UTC().Format("20060102-150405") + "-" + newID()[:6] + ".zip"
+	if beforeRestore {
+		name = strings.TrimSuffix(name, ".zip") + "-before-restore.zip"
+	}
 	snapshot := filepath.Join(dir, newID()+".sqlite")
 	defer os.Remove(snapshot)
 	if _, err := a.DB.Exec("VACUUM INTO ?", snapshot); err != nil {
@@ -126,6 +132,15 @@ func (a *App) backup() (string, error) {
 	if err = os.Rename(temp, path); err != nil {
 		return "", err
 	}
+	directory, err := os.Open(dir)
+	if err != nil {
+		return "", err
+	}
+	err = directory.Sync()
+	directory.Close()
+	if err != nil {
+		return "", err
+	}
 	complete = true
 	return name, nil
 }
@@ -143,7 +158,7 @@ func (a *App) backupList() ([]BackupInfo, error) {
 		if e != nil {
 			return nil, e
 		}
-		out = append(out, BackupInfo{f.Name(), info.Size(), info.ModTime().UTC().Format(time.RFC3339)})
+		out = append(out, BackupInfo{Name: f.Name(), Size: info.Size(), Created: info.ModTime().UTC().Format(time.RFC3339), BeforeRestore: strings.HasSuffix(f.Name(), "-before-restore.zip")})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name > out[j].Name })
 	return out, nil
@@ -202,6 +217,9 @@ func (a *App) RunBackups(ctx context.Context) {
 			return
 		case <-tick.C:
 			a.mu.Lock()
+			if a.restorePlan != nil && time.Now().After(a.restorePlan.until) {
+				a.clearRestorePlan()
+			}
 			var count int
 			err := a.DB.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
 			list, e := a.backupList()

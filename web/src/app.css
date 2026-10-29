@@ -2957,3 +2957,66 @@ body {
 .trash-empty-button {
   margin: 12px 0;
 }
+
+/* Backup and restore share the existing compact management layout. */
+.backup-tabs {
+  margin-bottom: 20px;
+}
+.backup-tabs button {
+  flex: 1;
+}
+.backup-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.backup-file {
+  margin-top: 10px;
+  min-width: 0;
+}
+.backup-file span {
+  overflow-wrap: anywhere;
+}
+.backup-restore-form {
+  margin-top: 20px;
+}
+.backup-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+}
+.backup-summary div {
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-align: center;
+}
+.backup-summary dt {
+  font-size: 13px;
+}
+.backup-summary dd {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.backup-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 20px 0;
+}
+.backup-confirm input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.backup-row {
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .backup-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

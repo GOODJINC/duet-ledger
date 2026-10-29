@@ -122,7 +122,7 @@ it("계정·일반·관리 설정을 분리하고 일반 사용자에게 관리 
   const p = settings();
   const v = render(<SettingsView {...p} section="account-settings" />);
   expect(screen.getByText("로그인 보안")).toBeTruthy();
-  expect(screen.queryByText("서버 운영 백업")).toBeNull();
+  expect(screen.queryByText("백업과 복원")).toBeNull();
   expect(screen.queryByText("테마 색상")).toBeNull();
   v.rerender(
     <SettingsView {...p} section="settings" user={{ ...user, admin: false }} />,
@@ -133,9 +133,9 @@ it("계정·일반·관리 설정을 분리하고 일반 사용자에게 관리 
     screen.getByRole("navigation", { name: "설정 구분" }).textContent,
   ).toBe("계정 설정설정");
   expect(screen.queryByRole("button", { name: "가입·초대 관리" })).toBeNull();
-  expect(screen.queryByText("서버 운영 백업")).toBeNull();
+  expect(screen.queryByText("백업과 복원")).toBeNull();
   v.rerender(<SettingsView {...p} section="administration" />);
-  expect(screen.getByText("서버 운영 백업")).toBeTruthy();
+  expect(screen.getByText("백업과 복원")).toBeTruthy();
   expect(screen.queryByText("디자인 직접 설정")).toBeNull();
   expect(screen.getByText("공통 CSS·글꼴")).toBeTruthy();
   expect(screen.queryByLabelText("표시할 이름")).toBeNull();

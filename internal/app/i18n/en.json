@@ -210,5 +210,19 @@
   "삭제할 계좌를 선택해 주세요.": "Select the accounts to delete.",
   "중복된 계좌예요.": "Duplicate account selection.",
   "다른 계좌와 연결된 이체가 있어 영구 삭제할 수 없어요. 계좌를 복구해 이체를 정리하거나 연결된 삭제 계좌를 함께 비워 주세요.": "This account has transfers linked to another account. Restore it and resolve the transfers, or empty the connected deleted accounts together.",
-  "이미 영구 삭제된 요청이에요. 새 기록에는 새 요청 식별자를 사용해 주세요.": "This request was permanently deleted. Use a new request ID for a new record."
+  "이미 영구 삭제된 요청이에요. 새 기록에는 새 요청 식별자를 사용해 주세요.": "This request was permanently deleted. Use a new request ID for a new record.",
+  "다른 백업 작업이 진행 중이에요. 잠시 후 다시 시도해 주세요.": "Another backup operation is in progress. Please try again shortly.",
+  "백업 ZIP과 원래 키 파일을 확인해 주세요.": "Check the backup ZIP and its original key file.",
+  "백업 파일을 받지 못했어요. 웹 복원은 512MB까지 지원해요.": "Could not receive the backup file. Web restoration supports files up to 512 MB.",
+  "백업 ZIP은 512MB 이하, 키 파일은 32바이트여야 해요.": "The backup ZIP must be no larger than 512 MB and the key file must be 32 bytes.",
+  "복원할 백업을 하나 선택해 주세요.": "Select one backup to restore.",
+  "백업 검증에 실패했어요. 백업 ZIP과 원래 키 파일을 확인해 주세요.": "Backup validation failed. Check the ZIP and its original key file.",
+  "이 서버 버전에서 복원할 수 없는 백업이에요.": "This backup cannot be restored by this server version.",
+  "지원하지 않는 백업 데이터 구조예요.": "This backup has an unsupported database structure.",
+  "관리자 계정이 없는 백업은 웹에서 복원할 수 없어요.": "Backups without an administrator account cannot be restored through the web interface.",
+  "백업의 인증 정보를 확인할 수 없어요.": "Could not validate the backup’s authentication data.",
+  "백업의 영수증 파일을 확인해 주세요.": "Check the backup’s receipt files.",
+  "복원 확인 시간이 지났어요. 백업을 다시 확인해 주세요.": "The restore preview has expired or is unavailable. Check the backup again.",
+  "모든 사용자 자료가 백업 시점으로 바뀌는지 확인해 주세요.": "Confirm that all users’ data will be replaced with the selected backup.",
+  "현재 자료 백업에 실패해 복원하지 않았어요. 저장 공간과 권한을 확인해 주세요.": "The current data could not be backed up, so restoration was not started. Check available disk space and permissions."
 }

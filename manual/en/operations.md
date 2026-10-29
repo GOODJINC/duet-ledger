@@ -47,11 +47,20 @@ On the same Docker server, stop the old app and attach the existing `duet-ledger
 
 ## Backup and restore
 
-### Make a backup
+### master.key
 
-Administrators can create and download a ZIP in **Server backup**. Automatic backups run daily while the server is running. **Automatic cleanup keeps only the latest seven backups on the server, including manually created backups.** Copy backups to another device; copies on the same disk do not protect against disk failure.
+`master.key` is a server secret generated automatically on first start. It currently encrypts two-factor authentication (TOTP) secrets and verifies that a backup matches its original key. It does not encrypt the entire transaction database. **The original key is required for operational restore even if two-factor authentication is disabled.**
 
-The operational ZIP contains all users' records, receipts and shared appearance files, but **not `master.key`**. It is unencrypted. Never upload it to GitHub or a public share.
+| Installation           | Key location                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| Default Docker Compose | `/data/master.key` inside the container, persisted in the `duet-ledger-data` volume |
+| Custom data directory  | `master.key` in the directory selected by `DUET_LEDGER_DATA_DIR` or `--data-dir`    |
+
+It is not automatically created beside your Compose file. Keeping the data volume preserves the key across container updates. Other installations and development containers have different keys; use the original key from the installation that created the backup.
+
+Download the key in **Administration → Backup and restore → Download key file** after verifying your current password and, if enabled, a verification code. Keep a copy when first setting up the server.
+
+If the web interface is unavailable, copy it from the default container as follows. Replace `duet-ledger` if you changed the container name. If a key already exists in the destination, do not overwrite it; keep a separate folder for each installation.
 
 ```bash
 mkdir -p private-backup
@@ -60,7 +69,38 @@ docker cp duet-ledger:/data/master.key ./private-backup/master.key
 chmod 600 ./private-backup/master.key
 ```
 
-Place the downloaded ZIP in this private folder too. CSV/JSON exports are data-transfer formats, not complete operational backups.
+**Operational backup ZIPs do not include the key.** Store it securely and separately, and label which backups it belongs to. Never upload it to GitHub, public shares or messages. Deleting or replacing it can break existing two-factor authentication or normal restoration. If it is missing, check the original volume and saved copies first. A newly generated key cannot replace the original.
+
+### Make a backup
+
+1. Open **Administration → Backup and restore**.
+2. Select **Create and download backup**. The verified ZIP is saved on the server and downloaded to your device.
+3. On first use, also select **Download key file** and keep `master.key` separately.
+
+The ZIP includes all users’ records, receipts and shared appearance files. **It is not encrypted and does not include the key.** Keep both files private and label them so you know which installation they belong to. CSV/JSON exports do not replace a server backup.
+
+Automatic backups run daily while the server is running. Cleanup retains the latest seven files, including manual and pre-restore backups. **Download important copies to another device.**
+
+### Restore through the web interface
+
+**All users’ data will be replaced with the selected backup.** Notify other users and finish any other work first.
+
+1. Open **Backup and restore → Restore**, or use **Restore** next to a saved backup.
+2. Select a server backup or attach a ZIP from your device.
+3. Backups from this server use its current key automatically. For a backup from another server, attach that backup’s original `master.key`.
+4. Select **Check backup** and review its date and user, account, transaction and receipt counts.
+5. Enter your current administrator password and, if enabled, a verification code. Acknowledge that the data will be replaced, then select **Back up current data and restore**.
+6. Sign in again using credentials from the backup and check balances, transactions, photos and sharing permissions.
+
+The server checks the archive, key, database integrity and photos first. Current data is automatically backed up before restoration. If the database update fails, existing data remains intact. To undo a successful restore, select the file marked **Automatic backup before restore** and follow the same steps. Retention applies to this backup too; download it if needed.
+
+Restoration invalidates **all login sessions, pending invitations and API app passwords**. Accounts and approved sharing relationships return to their backed-up state. Web restoration retains this server’s `master.key` and re-encrypts imported two-factor secrets with it. New backups use the current server’s key; older ZIP files still require the key they were created with.
+
+Web uploads support ZIP files up to **512 MB**, with up to **10 GB** of uncompressed data. Proxy upload limits, available disk space and request timeouts may impose lower limits. A preview lasts 10 minutes and must be recreated after a restart. Other requests may briefly wait while the server validates, creates or restores a backup.
+
+### When the web interface is unavailable or the backup is too large
+
+Use the server’s `restore` command. It restores into a new directory and refuses to overwrite existing data. This also lets you test a backup in a separate volume. Place copies of the ZIP and its original key in `private-backup` before following the steps below.
 
 ### Test a restore into a separate Docker volume
 

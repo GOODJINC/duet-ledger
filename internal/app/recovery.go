@@ -52,10 +52,10 @@ func Restore(archive, dataDir, keyFile string) error {
 		if !allowed || strings.Contains(f.Name, "..") || strings.Contains(f.Name, "\\") {
 			return fmt.Errorf("unsupported archive entry")
 		}
-		size += f.UncompressedSize64
-		if size > 10<<30 {
+		if f.UncompressedSize64 > (10<<30)-size {
 			return fmt.Errorf("archive exceeds 10 GB restore limit")
 		}
+		size += f.UncompressedSize64
 		if f.Name == "manifest.json" {
 			if f.UncompressedSize64 > 65536 {
 				return fmt.Errorf("invalid manifest")
@@ -122,6 +122,13 @@ func Restore(archive, dataDir, keyFile string) error {
 	if err != nil {
 		return err
 	}
+	// Backups contain tables and indexes only. Never execute uploaded triggers
+	// during session invalidation or later schema upgrades.
+	var unsafe int
+	if err = db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type IN('trigger','view') OR upper(sql) LIKE '%CREATE VIRTUAL TABLE%'").Scan(&unsafe); err != nil || unsafe != 0 {
+		db.Close()
+		return fmt.Errorf("unsupported database objects in backup")
+	}
 	var check string
 	err = db.QueryRow("PRAGMA integrity_check").Scan(&check)
 	if err != nil || check != "ok" {
@@ -134,7 +141,12 @@ func Restore(archive, dataDir, keyFile string) error {
 		return e
 	}
 	invalid := rows.Next()
+	readErr := rows.Err()
 	rows.Close()
+	if readErr != nil {
+		db.Close()
+		return readErr
+	}
 	if invalid {
 		db.Close()
 		return fmt.Errorf("backup database contains invalid references")

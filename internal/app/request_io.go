@@ -196,11 +196,12 @@ func (a *App) receiveRequest(w http.ResponseWriter, r *http.Request, identity fu
 		return func() {}, nil
 	}
 	receipt := r.Method == "POST" && strings.HasSuffix(r.URL.Path, "/receipts")
+	restore := r.Method == "POST" && r.URL.Path == "/api/backups/restore/preview"
 	appearance := r.Method == "PUT" && strings.HasPrefix(r.URL.Path, "/api/admin/appearance/")
 	if identity != nil {
 		a.mu.Lock()
 		u, err := identity(r)
-		if err == nil && appearance && !u.Admin {
+		if err == nil && (appearance || restore) && !u.Admin {
 			err = forbidden()
 		}
 		if err == nil && receipt {
@@ -214,6 +215,9 @@ func (a *App) receiveRequest(w http.ResponseWriter, r *http.Request, identity fu
 		if err != nil {
 			return nil, err
 		}
+	}
+	if restore {
+		return a.receiveRestore(w, r)
 	}
 	if appearance {
 		// Unlimited assets are prepared one at a time, outside the DB lock.

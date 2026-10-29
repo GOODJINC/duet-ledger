@@ -502,12 +502,12 @@ export function SettingsView({
               msg("가입·초대 관리"),
             )}
             {row(
-              msg("서버 운영 백업"),
+              msg("백업과 복원"),
               msg(
                 "모든 사용자의 자료·사진을 백업·복원해요. 관리자만 사용할 수 있어요.",
               ),
               () => open("backup"),
-              msg("백업"),
+              msg("관리"),
             )}
           </div>
         </section>

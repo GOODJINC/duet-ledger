@@ -10,6 +10,8 @@
 - Added permanent deletion and empty-trash actions for records and accounts. **Permanent deletion cannot be undone.** Only owners of every involved account may purge a record; account purging cannot remove another account's transfer history or balance.
 - Save quick entries and transaction edits with Ctrl+Enter, or Command+Enter on Mac.
 - **Storage upgrades automatically to schema 8.** Save an operational backup and the original master.key before updating. Existing backups may retain copies of permanently deleted data.
+- Added administrator backup creation/download and web restoration with a preview, reauthentication, an automatic pre-restore backup and transactional rollback on failure.
+- Administrators can securely download `master.key` after reauthentication. Backups from another server use their original key for import while retaining the installed key. Updated Korean and English recovery guides.
 
 ## 0.1.1 · 2026-10-28
 

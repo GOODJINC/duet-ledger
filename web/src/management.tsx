@@ -4,7 +4,7 @@ import { useTask } from "./use-task";
 import { msg, intlLocale } from "./i18n";
 import { copyText } from "./clipboard";
 import { useEffect, useState, useRef, type FormEvent } from "react";
-import { api, post, download, setCSRF, type User, type Sharing } from "./api";
+import { api, post, setCSRF, type User, type Sharing } from "./api";
 import { PasswordInput, Modal, Icon, ErrorText, Busy } from "./ui";
 import type { DialogProps } from "./dialogs";
 export function LifecycleDialog(p: DialogProps) {
@@ -676,84 +676,7 @@ export function ImportDialog(p: DialogProps) {
     </Modal>
   );
 }
-export function BackupDialog(p: DialogProps) {
-  const [backups, setBackups] = useState<
-    { name: string; size: number; created_at: string }[]
-  >([]);
-  const task = useTask();
-  async function load() {
-    setBackups(await api("/backups"));
-  }
-  useEffect(() => {
-    load().catch((e) => task.setError(e.message));
-  }, []);
-  return (
-    <Modal
-      title={msg("기록을 안전하게 보관해요.")}
-      subtitle={msg("서버 관리자 전용 · 운영 백업")}
-      onClose={p.close}
-    >
-      <div className="inline-warning">
-        <strong>{msg("다른 사용자의 비공개 자료도 모두 포함됩니다.")}</strong>
-        <br />
-        {msg("백업 ZIP은 암호화되지 않습니다. 안전한 곳에 보관해 주세요.")}
-        <br />
-        <code>master.key</code>
-        {msg("는 ZIP에 포함되지 않으므로 별도로 보관해야 합니다.")}
-      </div>
-      <p className="setting-explainer">
-        {msg(
-          "거래와 영수증을 함께 백업합니다. 서버 실행 중 하루마다 자동 백업하며, 자동 정리 시 수동 생성분을 포함한 최근 7개만 남깁니다. 필요한 백업은 다른 장치에도 보관하세요.",
-        )}
-      </p>
-      <ErrorText error={task.error} />
-      <button
-        className="primary-button entry-submit"
-        disabled={task.busy}
-        onClick={() =>
-          task.run(async () => {
-            await post("/backups");
-            await load();
-            p.notify(msg("백업을 만들고 파일 검증을 마쳤어요."));
-          })
-        }
-      >
-        <Busy busy={task.busy}>{msg("지금 운영 백업 만들기")}</Busy>
-      </button>
-      <section className="subform">
-        <h3>{msg("저장된 백업")}</h3>
-        {backups.map((b) => (
-          <div className="management-row" key={b.name}>
-            <div>
-              <strong>
-                {new Date(b.created_at).toLocaleString(intlLocale())}
-              </strong>
-              <p>{(b.size / 1024 / 1024).toFixed(2)} MB</p>
-            </div>
-            <button
-              className="secondary-button"
-              onClick={() =>
-                task.run(() => download(`/backups/${b.name}`, b.name))
-              }
-              disabled={task.busy}
-            >
-              <Icon name="download" />
-              {msg("다운로드")}
-            </button>
-          </div>
-        ))}
-        {!backups.length && (
-          <p className="setting-explainer">{msg("아직 백업이 없어요.")}</p>
-        )}
-      </section>
-      <div className="modal-note">
-        {msg(
-          "복원은 새 데이터 폴더에서 서버 명령으로 진행합니다. 기존 자료를 덮어쓰는 웹 복원 기능은 제공하지 않아요. 저장소의 실행 안내 문서를 참고하세요.",
-        )}
-      </div>
-    </Modal>
-  );
-}
+export { BackupDialog } from "./backups";
 export function SecurityDialog(p: DialogProps) {
   const currentPasswordRef = useRef<HTMLInputElement>(null);
   const [section, setSection] = useState<"password" | "totp">("password");

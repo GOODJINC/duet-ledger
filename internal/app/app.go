@@ -34,6 +34,8 @@ type App struct {
 	rateMu         sync.Mutex
 	appearanceMu   sync.Mutex
 	receiptMu      sync.Mutex
+	restoreMu      sync.Mutex
+	restorePlan    *restorePlan
 	spool          spoolBudget
 	master         []byte
 	lockFile       *os.File
@@ -139,6 +141,18 @@ func New(c Config) (result *App, err error) {
 			a.Close()
 		}
 	}()
+	// Staging directories contain no active data and cannot survive a restart.
+	entries, err := os.ReadDir(abs)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() && (strings.HasPrefix(entry.Name(), ".duet-restore-preview-") || strings.HasPrefix(entry.Name(), ".duet-restore-upload-")) {
+			if err = os.RemoveAll(filepath.Join(abs, entry.Name())); err != nil {
+				return nil, err
+			}
+		}
+	}
 	a.master, err = loadSecret(filepath.Join(abs, "master.key"), 32)
 	if err != nil {
 		return nil, err
@@ -159,6 +173,7 @@ func New(c Config) (result *App, err error) {
 	return a, nil
 }
 func (a *App) Close() error {
+	a.clearRestorePlan()
 	if a.DB != nil {
 		a.DB.Close()
 	}
@@ -318,6 +333,9 @@ func (a *App) Routes() http.Handler {
 	add("POST /api/import/json", a.importJSON, true)
 	add("GET /api/backups", a.listBackups, true)
 	add("POST /api/backups", a.createBackup, true)
+	add("POST /api/backups/key", a.downloadMasterKey, true)
+	add("POST /api/backups/restore/preview", a.previewRestore, true)
+	add("POST /api/backups/restore/confirm", a.confirmRestore, true)
 	add("GET /api/backups/{name}", a.downloadBackup, true)
 	add("GET /api/audit", a.listAudit, true)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {

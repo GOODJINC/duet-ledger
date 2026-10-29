@@ -2062,6 +2062,258 @@
         }
       }
     },
+    "/api/backups/key": {
+      "post": {
+        "summary": "Download the installed master key after administrator reauthentication",
+        "description": "Browser administrator session only; API app passwords and MCP are not accepted. Rate limited to ten security operations per ten minutes per administrator and client IP. Never store the returned secret in logs.",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "writeOnly": true
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Required when 2FA is enabled. A fresh verification or recovery code."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "key"
+                  ],
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "contentEncoding": "base64",
+                      "description": "The 32-byte master.key file, base64 encoded."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/413/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_api_backups_key"
+      }
+    },
+    "/api/backups/restore/preview": {
+      "post": {
+        "summary": "Validate and preview a server backup",
+        "description": "Administrator only. Supply either a saved backup name or an archive upload. Uploads are streamed to the data volume, one at a time, up to 512 MiB. Extracted data is limited to 10 GiB. The original key is optional for backups matching this server's key. Verifies database integrity, schema compatibility and referenced receipt hashes. Does not replace live data. Preview is bound to the current session, expires after ten minutes and is discarded on restart.",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Saved backup basename; mutually exclusive with archive."
+                  },
+                  "archive": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Operational ZIP, up to 512 MiB; mutually exclusive with name."
+                  },
+                  "key": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Original 32-byte master.key; optional when using the installed key."
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "archive"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "token",
+                    "created_at",
+                    "users",
+                    "accounts",
+                    "transactions",
+                    "receipts",
+                    "expires_at"
+                  ],
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "users": {
+                      "type": "integer"
+                    },
+                    "accounts": {
+                      "type": "integer"
+                    },
+                    "transactions": {
+                      "type": "integer"
+                    },
+                    "receipts": {
+                      "type": "integer"
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/413/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_api_backups_restore_preview"
+      }
+    },
+    "/api/backups/restore/confirm": {
+      "post": {
+        "summary": "Back up current data and restore a checked backup",
+        "description": "Administrator reauthentication and confirm=true are required. Preview must belong to the same active session. An automatic backup must succeed before applying any replacement. Data replacement uses one transaction; failure rolls back live rows. Invalidates every session, pending invitation and API app password. Retains the installed master.key and rewraps imported TOTP secrets. Success clears the current session cookie; sign in again with credentials from the restored backup. Pre-restore backups follow the normal seven-file retention policy.",
+        "security": [
+          {
+            "cookieAuth": [],
+            "csrfHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "password",
+                  "confirm"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "writeOnly": true
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Required when 2FA is enabled. A fresh verification or recovery code."
+                  },
+                  "confirm": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "backup"
+                  ],
+                  "properties": {
+                    "backup": {
+                      "type": "string",
+                      "description": "Filename of the automatic pre-restore rescue backup."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; 400/401/403/404/409/413/429/500",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_api_backups_restore_confirm"
+      }
+    },
     "/api/backups/{name}": {
       "get": {
         "summary": "Download operational backup",
