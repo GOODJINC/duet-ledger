@@ -224,5 +224,8 @@
   "백업의 영수증 파일을 확인해 주세요.": "Check the backup’s receipt files.",
   "복원 확인 시간이 지났어요. 백업을 다시 확인해 주세요.": "The restore preview has expired or is unavailable. Check the backup again.",
   "모든 사용자 자료가 백업 시점으로 바뀌는지 확인해 주세요.": "Confirm that all users’ data will be replaced with the selected backup.",
-  "현재 자료 백업에 실패해 복원하지 않았어요. 저장 공간과 권한을 확인해 주세요.": "The current data could not be backed up, so restoration was not started. Check available disk space and permissions."
+  "현재 자료 백업에 실패해 복원하지 않았어요. 저장 공간과 권한을 확인해 주세요.": "The current data could not be backed up, so restoration was not started. Check available disk space and permissions.",
+  "로그인한 계정이 바뀌었어요. 원래 계정에서 대기 기록을 확인해 주세요.": "The signed-in account has changed. Review pending records under the original account.",
+  "서버 자료가 복원되었어요. 대기 기록을 확인한 뒤 다시 입력해 주세요.": "The server data has been restored. Review pending records before entering them again.",
+  "요청 식별자를 확인해 주세요.": "Check the request identifier."
 }

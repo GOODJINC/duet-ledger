@@ -20,6 +20,7 @@ const pages = [
   "installation",
   "usage",
   "appearance",
+  "offline",
   "operations",
   "api",
   "mcp",

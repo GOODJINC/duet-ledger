@@ -29,6 +29,8 @@ Content-Type: application/json
 
 Do not use the sign-in password or Basic authentication. Never put keys in URLs, prompts, logs or Git. Use HTTPS on the public internet.
 
+External API calls require a server connection. The web app's offline outbox does not store API requests. If a creation result is uncertain, retry with the same input and `Idempotency-Key`.
+
 ## Using Postman
 
 Set `base_url` to `http://SERVER:18088` and `account_id` to an allowed account ID in a collection or environment. Select **Bearer Token** in Authorization and enter the app password. Do not save real keys in synchronized or shared collections or variables.

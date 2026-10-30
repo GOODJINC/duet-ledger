@@ -1,3 +1,4 @@
+import { saveOfflineEntry, isPinned, pinTransaction } from "./offline";
 import { isWritableAccount } from "./accounts";
 import { purgeMessage, type PurgeResult } from "./api";
 import { today, currentTime } from "./dates";
@@ -337,6 +338,30 @@ export function EntryDialog(
         throw new Error(msg("선택한 가계부의 계좌를 선택해 주세요."));
       if (kind !== "transfer" && !category)
         throw new Error(msg("분류를 먼저 설정해 주세요."));
+      if (!savedId) {
+        const result = await saveOfflineEntry({
+          path: tx ? `/transactions/${tx.id}` : "/transactions",
+          payload: buildInput(),
+          requestKey,
+          base: tx,
+          photo: file || undefined,
+          removedPhotos,
+          photoTarget,
+        });
+        if (result.queued || result.id) {
+          await p.refresh().catch(() => {});
+          p.notify(
+            result.queued
+              ? msg("기기에 저장했어요. 서버 연결 후 자동으로 전송해요.")
+              : tx
+                ? msg("기록을 수정했어요.")
+                : msg("기록을 저장했어요."),
+          );
+          exit.complete();
+          p.close();
+          return;
+        }
+      }
       let id = savedId;
       let photoId = savedPhotoId;
       if (!id) {
@@ -1433,6 +1458,12 @@ export function DetailDialog(
   p: DialogProps & { transaction: Transaction; edit: () => void },
 ) {
   const t = p.transaction;
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    isPinned(t)
+      .then(setPinned)
+      .catch(() => {});
+  }, [t.id]);
   const task = useTask();
   async function toggle() {
     await task.run(async () => {
@@ -1454,6 +1485,24 @@ export function DetailDialog(
       subtitle={`${t.date}${t.time ? " " + t.time : ""} · ${msg(kindNames[t.kind] || t.kind)} · ${t.creator}`}
       onClose={p.close}
     >
+      {!t.pending && (
+        <button
+          className="secondary-button offline-pin"
+          onClick={() =>
+            task.run(async () => {
+              await pinTransaction(t, !pinned);
+              setPinned(!pinned);
+            })
+          }
+        >
+          {pinned ? msg("오프라인 보관 해제") : msg("오프라인에 계속 보관")}
+        </button>
+      )}
+      {t.pending && (
+        <div className="inline-warning">
+          {msg("전송 대기 기록이에요. 구름 아이콘에서 상태를 확인해 주세요.")}
+        </div>
+      )}
       {t.original_currency && (
         <div className="modal-note">
           {msg("결제 원금액")}{" "}

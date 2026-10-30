@@ -2,6 +2,15 @@
 
 [한국어](CHANGELOG.md)
 
+## 0.3.0 · Unreleased
+
+- Added per-browser offline storage: seven recent days by default, optional 30/90 days, 30-day retention of viewed historical records and individually pinned records.
+- Added cached search, viewing and totals, plus a durable outbox for new transactions, edits and attached photos. Operations synchronize when the app reconnects. Account balances remain the last confirmed server values.
+- A cloud indicator shows server connectivity, pending counts, errors, exports and cancellation. Conflicts, revoked access and restored datasets retain pending work without overwriting server changes.
+- Retry identifiers prevent duplicates after lost responses or multiple-tab synchronization. Storage is isolated by account and excludes passwords, session tokens and CSRF secrets.
+- Storage schema remains at version 8. **Server backups do not contain device-local pending work.** Sync or export before clearing browser data or restoring the server.
+- Added Korean/English offline, troubleshooting and update/recovery guidance, plus automated browser regression coverage. Background upload while the app is closed is not guaranteed; offline reopening requires HTTPS.
+
 ## 0.2.0 · 2026-10-29
 
 - Account opening balances become transactions dated at account creation: positive amounts are income and negative amounts are expenses. View, edit, trash and restore them like ordinary entries. Zero amounts create no entry.

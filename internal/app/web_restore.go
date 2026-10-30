@@ -476,6 +476,9 @@ func (a *App) applyRestore(plan *restorePlan) error {
 			return err
 		}
 	}
+	if _, err = tx.Exec("INSERT INTO server_settings(key,value) VALUES('data_generation',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", newID()); err != nil {
+		return err
+	}
 	if err = tx.Commit(); err != nil {
 		return err
 	}

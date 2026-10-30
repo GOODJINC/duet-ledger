@@ -33,6 +33,7 @@ npm --prefix web run build
 npm --prefix web test
 go test ./...
 go vet ./...
+mkdir -p bin
 go build -o bin/duet-ledger ./cmd/duet-ledger
 node scripts/smoke.mjs
 node --test scripts/image-metadata.test.mjs
@@ -47,7 +48,9 @@ Use standalone `compose.dev.yaml` with `.env.dev` for development. It uses a sep
 - `app.tsx`: 화면 전환·조회 조건·자료 로딩·팝업 연결.
 - `settings.tsx`: 계정·브라우저·관리 설정. `navigation.ts`: 경로·메뉴 정의.
 - `ledger-views.tsx`: 거래 목록·행·달력. `dashboard-panels.tsx`: 요약·차트·계좌 패널.
-- `dates.ts`, `accounts.ts`: 공통 날짜·시간 처리와 화면의 입력 가능 계좌 판단.
+- `dates.ts`, `accounts.ts`, `currency-data.ts`: 날짜·시간, 입력 가능 계좌, 공통 통화 단위.
+- `offline-store.ts`: IndexedDB와 탭 간 전송 잠금. `offline.ts`: 사용자별 보관·대기함·재전송 정책.
+- `offline-report.ts`: 저장된 자료의 조회·집계. `offline-ui.tsx`: 연결 상태와 브라우저별 오프라인 설정.
 
 컴포넌트는 해당 모듈에서 직접 가져옵니다. 앱 시작 파일을 재사용 모듈로 가져오지 않습니다. 권한 검증의 최종 책임은 서버에 있습니다.
 
@@ -74,9 +77,38 @@ npm --prefix web run docs:check
 
 1. 앱·화면·npm 패키지·OpenAPI·라이선스 고지·Compose·환경 예제의 버전을 맞춥니다. `node scripts/check-compose.mjs`로 확인하고 한·영 매뉴얼과 변경 기록(`CHANGELOG.md`, `CHANGELOG.en.md`)을 갱신합니다. 릴리즈할 때는 변경 기록의 ‘배포 준비 중’을 실제 릴리즈 날짜로 바꿉니다.
 2. 전체 검사를 통과한 변경 사항을 커밋·푸시합니다. **main 푸시는 검사만 실행하며 이미지를 게시하지 않습니다.**
-3. 일치하는 `vVERSION` 태그로 GitHub Release를 발행합니다. 예: `v0.2.0`. 정식 버전은 사전 릴리즈로 표시하지 않습니다. 알파·베타·RC만 사전 릴리즈로 표시합니다.
+3. 일치하는 `vVERSION` 태그로 GitHub Release를 발행합니다. 예: `v0.3.0`. 정식 버전은 사전 릴리즈로 표시하지 않습니다. 알파·베타·RC만 사전 릴리즈로 표시합니다.
 4. Actions의 GHCR AMD64·ARM64 이미지 게시 완료를 확인합니다. 최초 게시 후 패키지는 Public으로 설정합니다. 사용자는 이미지가 게시된 뒤 업데이트합니다.
 
 Push/PR runs checks. A published Release or manual default-branch workflow publishes images. Version tags cannot be overwritten; only stable releases update `latest`. Publishing uses the workflow's `GITHUB_TOKEN` with `packages: write`.
 
 기여 라이선스는 [AGPL-3.0-only](LICENSE)입니다. Contributions use AGPL-3.0-only.
+
+## 오프라인 브라우저 회귀 · Offline browser regression
+
+독립적인 임시 폴더와 임의의 로컬 포트만 사용합니다. 실행 중인 서버나 운영 자료에는 연결하지 않습니다. 프런트엔드 빌드 후 실행 파일을 만든 다음 실행합니다. Chromium 설치가 필요하며 이 검사용 의존성은 배포 이미지에 포함하지 않습니다.
+
+```bash
+npm --prefix web ci
+npm --prefix web run build
+mkdir -p bin
+go build -o bin/duet-ledger ./cmd/duet-ledger
+cd web
+npx playwright install chromium
+npm run test:offline
+```
+
+The test launches a disposable server, signs in with synthetic users and checks offline reload, historical records, pending edits/creates/photos, reconnection, conflicts, lost responses, multiple tabs and account isolation. It never targets an existing installation. The binary path can be supplied as an argument to `web/scripts/offline-smoke.cjs`.
+
+## 검증 범위 · Verification scope
+
+| 검사                   | 확인하는 범위                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Go 테스트·vet·race     | 서버 권한·버전/자료 기준 검사, 재전송과 계좌 이동, 백업·복원 및 동시성                                                                                    |
+| 프런트엔드 단위 테스트 | 저장 자료의 필터·집계, 대기함 보존·계정 분리·오류/재로그인 처리                                                                                           |
+| `test:offline`         | 실제 Chromium의 IndexedDB·서비스워커, 오프라인 재실행, 과거 조회·기간 정리·개별 보관, 거래/사진 재연결 전송, 충돌, 응답 유실, 여러 탭, 로그아웃·계정 전환 |
+| 번역·문서·빌드 검사    | 문구·자리표시자, 한·영 매뉴얼 링크, 버전 일치와 배포용 정적 파일                                                                                          |
+
+브라우저 검사는 실제 사용자의 자료 대신 임시 서버와 가상 계정만 사용합니다. 자동 검사가 실제 iOS·Brave 기기의 모든 동작을 보장하지는 않습니다. 브라우저 저장소 회수, OS 강제 종료, 장시간 백그라운드, 디스크 고갈·전원 손실은 별도 확인 대상입니다. 미전송 기록의 내보내기와 HTTPS 요구사항을 사용자 문서에서 제거하지 마세요.
+
+Browser tests use a disposable server and synthetic accounts. They do not guarantee every behavior on physical iOS or Brave devices. Storage eviction, OS termination, prolonged background use, disk exhaustion and power loss require separate validation. Keep export guidance and HTTPS requirements in user documentation. The offline suite is run explicitly with `test:offline`; the existing GitHub workflow does not run that browser suite automatically.

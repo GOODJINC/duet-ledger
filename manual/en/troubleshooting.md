@@ -22,6 +22,22 @@
 | 413 / request too large                           | Sign-in/registration input is limited to 64KiB. For attachments, check app and proxy format/size limits                                     |
 | 503 / `busy`                                      | Concurrent processing capacity was reached. Wait before retrying; do not delete your data volume                                            |
 
+## Cloud indicator and offline issues
+
+| Symptom                                          | What to check                                                                                                                                                               |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Internet works but the cloud is crossed out      | Check the ledger server, container, proxy and VPN. Select **Reconnect and sync** from the cloud menu                                                                        |
+| Cannot reopen the app offline                    | Sign in and load data at the same HTTPS address first. An already-open HTTP page is different from offline reopening                                                        |
+| Missing historical records or smaller totals     | Only stored records are shown and totaled. Reconnect to view the needed period or pin individual transactions                                                               |
+| Account balance did not change after saving      | Check pending operations. Balances are the last server values; device storage is not server confirmation                                                                    |
+| Pending work requires sign-in                    | Sign in with the original account. Switching accounts does not send the original account's operations                                                                       |
+| Edit conflict, changed access or restored server | Export pending work and review current server records and permissions. Nothing is automatically overwritten; cancelling a pending operation does not delete a server record |
+| Transaction saved but photo changes remain       | Check photo format, size and edit access, then retry the existing operation instead of creating another transaction                                                         |
+| Device storage unavailable                       | Check browser storage permissions, private browsing and available space. Do not clear site data before exporting pending work                                               |
+| Cannot turn off offline storage                  | Sync pending operations, or export them and explicitly cancel them first                                                                                                    |
+
+**Clearing site data or browser storage can lose unsent work.** Review and export pending records using the cloud icon first. See [Offline use](offline.md) for retention and limitations.
+
 ## Requesting support
 
 Use [GitHub Issues](https://github.com/GOODJINC/duet-ledger/issues). Include the app version, installation method, OS/browser, reproduction steps, expected behavior and actual result. For mobile issues, include screen size and text scaling.

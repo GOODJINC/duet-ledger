@@ -19,7 +19,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 type Config struct {
 	DataDir, PublicURL string
@@ -52,6 +52,7 @@ type queryer interface {
 	QueryRow(string, ...any) *sql.Row
 }
 type User struct {
+	DataGeneration    string `json:"data_generation"`
 	sessionDuration   time.Duration
 	sessionPersistent bool
 	API               *APIScope      `json:"-"`
@@ -169,6 +170,9 @@ func New(c Config) (result *App, err error) {
 	if err = a.migrate(); err != nil {
 		return nil, err
 	}
+	if _, err = a.DB.Exec("INSERT OR IGNORE INTO server_settings(key,value) VALUES('data_generation',?)", newID()); err != nil {
+		return nil, err
+	}
 	_ = os.Chmod(filepath.Join(abs, "duet.sqlite"), 0600)
 	return a, nil
 }
@@ -226,6 +230,11 @@ func (a *App) wrap(h handler, auth bool) http.HandlerFunc {
 		var u *User
 		if identity != nil {
 			u, err = identity(r)
+		}
+		if err == nil && u != nil {
+			response.Header().Set("X-Duet-Data-Generation", u.DataGeneration)
+			response.Header().Set("X-Duet-User", u.ID)
+			err = checkOfflineIdentity(r, u)
 		}
 		if err == nil {
 			err = h(response, r, u)

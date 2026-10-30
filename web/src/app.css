@@ -3020,3 +3020,81 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.connection-status {
+  position: relative;
+  flex-shrink: 0;
+}
+.connection-button {
+  position: relative;
+  color: var(--green, #34795b);
+}
+.connection-button.disconnected {
+  color: #b57439;
+}
+.connection-count {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  min-width: 15px;
+  padding: 1px 3px;
+  font-size: 10px;
+  border-radius: 12px;
+  background: var(--green, #34795b);
+  color: white;
+}
+.connection-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: min(340px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 60;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 12px 40px #0002;
+}
+.connection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.connection-popover p {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.connection-popover .backup-actions {
+  flex-wrap: wrap;
+}
+.pending-entry {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.pending-entry strong {
+  font-size: 14px;
+}
+.offline-days {
+  max-width: 150px;
+}
+.offline-pin {
+  margin-bottom: 14px;
+}
+.offline-report-note {
+  margin-bottom: 16px;
+}
+@media (max-width: 760px) {
+  .connection-popover {
+    position: fixed;
+    top: 72px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-height: calc(100dvh - 110px);
+  }
+}

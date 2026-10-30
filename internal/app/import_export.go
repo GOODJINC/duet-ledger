@@ -135,6 +135,10 @@ func (a *App) exportData(w http.ResponseWriter, r *http.Request, u *User) error 
 	if len(filtered) > 100 || len(items) > 20000 {
 		return bad("JSON 자료 이동은 계좌 100개·거래 2만 건까지예요. 계좌를 나누어 내보내거나 전체 운영 백업을 사용해 주세요.")
 	}
+	for i := range items {
+		items[i].SyncID = ""
+		items[i].DataGeneration = ""
+	}
 	data, err := json.Marshal(Export{"duet-ledger", 2, now(), filtered, items})
 	if err != nil {
 		return err

@@ -1,6 +1,17 @@
+import {
+  offlineOwner,
+  currentOfflineGeneration,
+  offlineState,
+  offlineResponse,
+  rememberResponse,
+  noteConnection,
+  suspendOfflineUser,
+  setOfflineTransport,
+} from "./offline";
 import { msg, getLocale, intlLocale } from "./i18n";
 export type ExchangeRate = { from: string; to: string; rate: string };
 export type User = {
+  data_generation?: string;
   api_enabled?: boolean;
   default_account_id?: string;
   exchange_rates?: ExchangeRate[];
@@ -74,6 +85,9 @@ export type Leg = {
   receipts: Receipt[];
 };
 export type Transaction = {
+  data_generation?: string;
+  sync_id?: string;
+  pending?: boolean;
   can_purge?: boolean;
   original_currency?: string;
   original_amount?: string;
@@ -95,6 +109,7 @@ export type Transaction = {
   legs: Leg[];
 };
 export type Report = {
+  offline?: boolean;
   missing_currencies?: string[];
   items: Transaction[];
   count: number;
@@ -159,6 +174,7 @@ export class APIError extends Error {
 export async function api<T = unknown>(
   path: string,
   options: RequestInit = {},
+  networkOnly = false,
 ): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Accept-Language", getLocale());
@@ -166,25 +182,75 @@ export async function api<T = unknown>(
     headers.set("Content-Type", "application/json");
   if (options.method && options.method !== "GET")
     headers.set("X-CSRF-Token", csrf);
-  const response = await fetch("/api" + path, {
-    ...options,
-    headers,
-    credentials: "same-origin",
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    let error = {
-      error: "request_failed",
-      message: msg("처리하지 못했어요. 연결 상태를 확인해 주세요."),
-    };
-    try {
-      error = await response.json();
-    } catch {}
-    if (response.status === 401 && error.error === "login_required")
-      window.dispatchEvent(new Event("duet-ledger:unauthorized"));
-    throw new APIError(response.status, error.error, msg(error.message));
+  const owner = offlineOwner();
+  if (
+    !networkOnly &&
+    (!options.method || options.method === "GET") &&
+    (!navigator.onLine || offlineState().connection === "offline")
+  )
+    return (await offlineResponse(path)) as T;
+  const method = options.method || "GET";
+  const controller = new AbortController();
+  const timer =
+    method === "GET" && !options.signal
+      ? setTimeout(() => controller.abort(), 10000)
+      : undefined;
+  try {
+    const response = await fetch("/api" + path, {
+      ...options,
+      headers,
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: options.signal || (timer ? controller.signal : undefined),
+    });
+    noteConnection(true);
+    if (!response.ok) {
+      let error = {
+        error: "request_failed",
+        message: msg("처리하지 못했어요. 연결 상태를 확인해 주세요."),
+      };
+      try {
+        error = await response.json();
+      } catch {}
+      if (response.status === 401 && error.error === "login_required") {
+        if (owner === offlineOwner()) {
+          await suspendOfflineUser();
+          window.dispatchEvent(new Event("duet-ledger:unauthorized"));
+        }
+      }
+      if (response.status >= 500) {
+        noteConnection(false);
+        if (method === "GET" && !networkOnly)
+          return (await offlineResponse(path)) as T;
+      }
+      throw new APIError(response.status, error.error, msg(error.message));
+    }
+    const value = await response.json();
+    if (path === "/me" && value.csrf) setCSRF(value.csrf);
+    const responseOwner = response.headers?.get("X-Duet-User");
+    const responseGeneration = response.headers?.get("X-Duet-Data-Generation");
+    const current = currentOfflineGeneration();
+    if (
+      method === "GET" &&
+      (!networkOnly || !path.startsWith("/transactions?")) &&
+      (path === "/me" ||
+        ((!responseOwner || responseOwner === owner) &&
+          (!responseGeneration || !current || responseGeneration === current)))
+    )
+      await rememberResponse(path, value, owner);
+    if (path === "/logout") await suspendOfflineUser(true);
+    if (path === "/status" && value.initialized === false && owner)
+      await suspendOfflineUser(true);
+    return value as T;
+  } catch (error) {
+    if (error instanceof APIError) throw error;
+    noteConnection(false);
+    if (method === "GET" && !networkOnly)
+      return (await offlineResponse(path)) as T;
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
-  return (await response.json()) as T;
 }
 export const post = <T = unknown>(
   path: string,
@@ -208,17 +274,7 @@ export async function download(path: string, filename: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export const currencyScales: Record<string, number> = {
-  KRW: 0,
-  USD: 2,
-  EUR: 2,
-  JPY: 0,
-  GBP: 2,
-  CNY: 2,
-  TWD: 2,
-  VND: 0,
-  KWD: 3,
-};
+export { currencyScales } from "./currency-data";
 export function formatMoney(
   value: string | bigint,
   scale = 0,
@@ -315,3 +371,15 @@ export type EntryPresetInput = {
   exchange_rate?: string;
 };
 export type EntryPreset = { id: string; input: EntryPresetInput };
+
+setOfflineTransport(
+  <T>(path: string, options: RequestInit = {}): Promise<T> => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    return api<T>(
+      path,
+      { ...options, signal: controller.signal },
+      true,
+    ).finally(() => clearTimeout(timeout));
+  },
+);

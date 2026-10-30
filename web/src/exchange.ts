@@ -1,4 +1,5 @@
-import { currencyScales, type ExchangeRate } from "./api";
+import type { ExchangeRate } from "./api";
+import { currencyScales } from "./currency-data";
 type Factor = [bigint, bigint];
 export function rateFraction(rate: string): Factor | null {
   if (!/^\d{1,13}(\.\d{1,12})?$/.test(rate)) return null;

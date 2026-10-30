@@ -30,6 +30,8 @@ type Leg struct {
 	Receipts      []ReceiptRef `json:"receipts"`
 }
 type Transaction struct {
+	DataGeneration   string `json:"data_generation,omitempty"`
+	SyncID           string `json:"sync_id,omitempty"`
 	OriginalCurrency string `json:"original_currency,omitempty"`
 	OriginalAmount   string `json:"original_amount,omitempty"`
 	ExchangeRate     string `json:"exchange_rate,omitempty"`
@@ -455,14 +457,46 @@ func (a *App) updateTransaction(w http.ResponseWriter, r *http.Request, u *User)
 	if err := decode(r, &v); err != nil {
 		return err
 	}
+	key, digest, err := offlineUpdateKey(r, u, v)
+	if err != nil {
+		return err
+	}
 	tx, err := a.DB.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	event, version, deleted, err := a.editableEvent(tx, u, r.PathValue("id"))
+	var unavailable *apiError
+	if err != nil && key != "" && errors.As(err, &unavailable) && unavailable.Status == 404 {
+		// Moving an entry can replace its original posting ID. An acknowledged key
+		// still identifies that event, but current edit access must be checked again.
+		var savedDigest, savedEvent, pid string
+		e := tx.QueryRow("SELECT digest,event_id FROM request_keys WHERE user_id=? AND key=?", u.ID, key).Scan(&savedDigest, &savedEvent)
+		if e == nil && savedDigest == digest {
+			if e = tx.QueryRow("SELECT id FROM postings WHERE event_id=? LIMIT 1", savedEvent).Scan(&pid); e == nil {
+				event, version, deleted, err = a.editableEvent(tx, u, pid)
+			}
+		}
+	}
 	if err != nil {
 		return err
+	}
+	replay, e := replayOfflineUpdate(tx, u, key, digest, event)
+	if e != nil {
+		return e
+	}
+	if replay {
+		ids, e := eventPostings(tx, event)
+		if e != nil {
+			return e
+		}
+		pid := ids[v.AccountID]
+		if pid == "" {
+			return missing()
+		}
+		writeJSON(w, 200, map[string]any{"id": pid, "posting_ids": ids})
+		return nil
 	}
 	if deleted {
 		return conflict("휴지통에서 먼저 복구해 주세요.")
@@ -494,6 +528,11 @@ func (a *App) updateTransaction(w http.ResponseWriter, r *http.Request, u *User)
 	postingIDs, err := eventPostings(tx, event)
 	if err != nil {
 		return err
+	}
+	if key != "" {
+		if _, err = tx.Exec("INSERT INTO request_keys VALUES(?,?,?,?)", u.ID, key, digest, event); err != nil {
+			return err
+		}
 	}
 	if err = tx.Commit(); err != nil {
 		return err
@@ -645,6 +684,10 @@ func (a *App) readTransactions(q queryer, u *User, params url.Values) ([]Transac
 		if err = rows.Scan(&item.eventID, &item.Kind, &item.Date, &item.Time, &item.Timezone, &item.Currency, &item.Scale, &item.Version, &item.Creator, &item.CreatorUsername, &item.Deleted, &leg.ID, &leg.AccountID, &amount, &leg.Title, &leg.Category, &leg.Note, &leg.CategoryName, &item.OriginalCurrency, &item.OriginalAmount, &item.ExchangeRate); err != nil {
 			rows.Close()
 			return nil, err
+		}
+		if u.API == nil {
+			item.SyncID = item.eventID
+			item.DataGeneration = u.DataGeneration
 		}
 		leg.Amount = strconv.FormatInt(amount, 10)
 		leg.Receipts = []ReceiptRef{}

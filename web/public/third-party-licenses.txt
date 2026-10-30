@@ -1,5 +1,5 @@
 THIRD-PARTY LICENSE NOTICES
-Duet Ledger 0.2.0
+Duet Ledger 0.3.0
 
 The project license does not replace the licenses below.
 

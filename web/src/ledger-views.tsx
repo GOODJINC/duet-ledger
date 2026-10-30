@@ -113,6 +113,12 @@ function TransactionRow({
           <span className="transaction-meta">
             {displayCategory(firstLeg.category, firstLeg.category_name)} ·{" "}
             {transaction.creator}
+            {transaction.pending && (
+              <span className="offline-pending-label">
+                {" "}
+                · {msg("전송 대기")}
+              </span>
+            )}
             {transaction.time ? " · " + transaction.time : ""}
             {transaction.legs.some((l) => l.receipts.length > 0) && (
               <Icon name="camera" />

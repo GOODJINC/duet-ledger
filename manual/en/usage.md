@@ -13,7 +13,7 @@ One user account can use multiple ledgers. Personal ledgers start private; share
 
 Selecting a ledger restricts accounts and quick-entry destinations to that ledger. All ledgers combines accounts you can access.
 
-To change an opening balance, select the account's creation month or year, search for **opening_balance** in the ledger and edit that transaction. Opening money is not counted twice. Updating to 0.2.0 converts existing opening balances into transactions at account creation: **current balances stay the same, but historical income/expense totals change.** Very large openings are split within the transaction amount limit.
+To change an opening balance, select the account's creation month or year, search for **Opening balance** in the ledger and edit that transaction. Opening money is not counted twice. Updating to 0.2.0 converts existing opening balances into transactions at account creation: **current balances stay the same, but historical income/expense totals change.** Very large openings are split within the transaction amount limit.
 
 ## Transactions and receipts
 
@@ -102,3 +102,5 @@ Select **Keep me signed in for 30 days** on the sign-in screen for a 30-day sess
 CSV export follows the current filters. JSON export is for moving records across all dates, without photos, login details or sharing permissions. Preview imports before applying. **A complete server restore requires an operational backup and its original `master.key`.** See [Operations](operations.md).
 
 Shared CSS and fonts are administrator-only. See the [appearance guide](appearance.md) for the CSS sample, font uploads and interface recovery.
+
+Configure [offline storage and synchronization](offline.md) for this browser. Use the cloud icon for connection state and pending operations.

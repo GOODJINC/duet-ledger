@@ -140,6 +140,9 @@ func (a *App) user(id string) (*User, error) {
 	if err == nil {
 		u.ExchangeRates, err = a.exchangeRates(id)
 	}
+	if err == nil {
+		u.DataGeneration, err = dataGeneration(a.DB)
+	}
 	u.APIEnabled = a.apiEnabled()
 	u.TOTP = secret != ""
 	return u, err

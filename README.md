@@ -6,14 +6,15 @@ Docker로 운영하는 개인·공유 가계부입니다. 계정 하나로 여�
 
 - 수입·지출·이체, 검색·달력·통계, 영수증 첨부
 - 조회자·편집자 권한, 여러 통화와 환율, 한국어·영어
-- 모바일 웹·PWA, REST API·MCP
+- 모바일 웹·PWA, 오프라인 조회·입력·수정과 재연결 동기화
+- REST API·MCP
 - 컨테이너 하나와 SQLite, 서버 백업·복원
 
-혼자 사용할 때는 공유 설정이 필요하지 않습니다. 공유를 시작할 때는 각자 계정을 만들고 초대합니다. 은행 자동 연동과 오프라인 거래 입력은 지원하지 않습니다.
+혼자 사용할 때는 공유 설정이 필요하지 않습니다. 공유를 시작할 때는 각자 계정을 만들고 초대합니다. 은행 자동 연동은 지원하지 않습니다. [오프라인 조회·입력과 동기화](manual/ko/offline.md)를 지원하며 앱을 다시 여는 오프라인 사용에는 HTTPS가 필요합니다.
 
 ## 설치
 
-서버에서 다음 명령을 실행하고 `http://localhost:18088`로 접속합니다.
+[Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 사용할 버전의 이미지 게시가 완료됐는지 확인합니다. 서버에서 다음 명령을 실행하고 `http://localhost:18088`로 접속합니다.
 
 ```bash
 mkdir -p duet-ledger
@@ -30,13 +31,15 @@ Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와
 
 ## 매뉴얼
 
-[설치](manual/ko/installation.md) · [사용법](manual/ko/usage.md) · [업데이트·백업·복원](manual/ko/operations.md) · [디자인 설정](manual/ko/appearance.md) · [API](manual/ko/api.md) · [MCP](manual/ko/mcp.md) · [문제 해결](manual/ko/troubleshooting.md)
+[설치](manual/ko/installation.md) · [사용법](manual/ko/usage.md) · [업데이트·백업·복원](manual/ko/operations.md) · [디자인 설정](manual/ko/appearance.md) · [오프라인·동기화](manual/ko/offline.md) · [API](manual/ko/api.md) · [MCP](manual/ko/mcp.md) · [문제 해결](manual/ko/troubleshooting.md)
 
 앱의 사용자 메뉴 → **도움말 및 지원**에서도 볼 수 있습니다.
 
 ## 자료 보관
 
 자료는 `duet-ledger-data` 볼륨에 저장됩니다. **`docker compose down -v`는 자료를 삭제할 수 있습니다.** 운영 백업 ZIP과 원래 `master.key`를 별도로 보관하세요. [키 위치와 보관 방법](manual/ko/operations.md#masterkey)을 확인하고 중요한 자료는 정기적으로 백업하세요.
+
+**기기의 미전송 기록은 서버 백업에 포함되지 않습니다.** 브라우저 자료를 삭제하거나 서버를 복원하기 전에 구름 아이콘에서 동기화하거나 대기 기록을 내보내세요.
 
 [오류·기능 제안](https://github.com/GOODJINC/duet-ledger/issues) · [보안 제보](SECURITY.md) · [기여](CONTRIBUTING.md)
 

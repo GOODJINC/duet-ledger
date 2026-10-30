@@ -9,6 +9,7 @@
 | [API](api.md)                         | App passwords, Postman, transactions, statistics and receipts  |
 | [MCP](mcp.md)                         | AI client connections and tools                                |
 | [Troubleshooting](troubleshooting.md) | Connectivity, settings, permissions and support                |
+| [Offline](offline.md)                 | Device storage, pending changes, sync and conflicts            |
 
 Start with **installation → create an account → add transactions → make a backup**. Sharing is optional.
 

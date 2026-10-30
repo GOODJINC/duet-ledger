@@ -46,7 +46,7 @@ DUET_LEDGER_PORT=18888
 
 `curl`은 Compose 파일을 그대로 저장합니다. 파일의 `${변수:-기본값}`은 오류가 아니라 Docker Compose의 설정 문법입니다. `.env`나 실행 환경에 값이 없으면 `:-` 뒤의 기본값을 사용합니다. 파일을 다시 써서 값을 치환하는 방식은 아닙니다.
 
-예를 들어 `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.2.0}`은 기본 이미지 `ghcr.io/goodjinc/duet-ledger:0.2.0`을 사용합니다. `DUET_LEDGER_BIND`의 기본값은 `127.0.0.1`, `DUET_LEDGER_PORT`는 `18088`입니다. 같은 이름의 터미널 환경변수가 있으면 `.env`보다 우선합니다.
+예를 들어 `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.3.0}`은 기본 이미지 `ghcr.io/goodjinc/duet-ledger:0.3.0`을 사용합니다. `DUET_LEDGER_BIND`의 기본값은 `127.0.0.1`, `DUET_LEDGER_PORT`는 `18088`입니다. 같은 이름의 터미널 환경변수가 있으면 `.env`보다 우선합니다.
 
 ```bash
 docker compose config
@@ -65,7 +65,7 @@ DUET_LEDGER_SECURE_COOKIE=true
 
 `PUBLIC_URL`은 경로와 끝의 `/` 없는 실제 접속 주소입니다. HTTPS 준비 전에 보안 쿠키를 켜면 HTTP 로그인이 유지되지 않을 수 있습니다.
 
-PWA 설치는 신뢰할 수 있는 HTTPS 주소로 접속한 뒤 브라우저의 앱 설치 메뉴를 사용합니다. VPN으로 연결해도 주소가 일반 HTTP이면 설치가 제한될 수 있습니다. 오프라인 거래 입력은 지원하지 않습니다.
+PWA 설치는 신뢰할 수 있는 HTTPS 주소로 접속한 뒤 브라우저의 앱 설치 메뉴를 사용합니다. VPN으로 연결해도 주소가 일반 HTTP이면 설치가 제한될 수 있습니다. 오프라인 조회·입력과 동기화는 [오프라인 안내](offline.md)를 참고하세요.
 
 ## 프록시와 로그인 제한
 

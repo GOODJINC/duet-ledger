@@ -1,3 +1,4 @@
+import { ConnectionStatus } from "./offline-ui";
 import { isWritableAccount } from "./accounts";
 import { useTask } from "./use-task";
 import { purgeMessage, type PurgeResult } from "./api";
@@ -142,7 +143,7 @@ export function Application({
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [online, setOnline] = useState(navigator.onLine);
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem("duet-ledger-theme") || "light",
   );
@@ -355,6 +356,13 @@ export function Application({
     };
   }, [refresh]);
   useEffect(() => {
+    const sync = () => {
+      void refresh().catch(() => {});
+    };
+    window.addEventListener("duet-offline-updated", sync);
+    return () => window.removeEventListener("duet-offline-updated", sync);
+  }, [refresh]);
+  useEffect(() => {
     const timer = setTimeout(() => setSearchTerm(search), 250);
     return () => clearTimeout(timer);
   }, [search]);
@@ -368,15 +376,6 @@ export function Application({
     document.body.dataset.theme = theme;
     localStorage.setItem("duet-ledger-theme", theme);
   }, [theme]);
-  useEffect(() => {
-    const on = () => setOnline(navigator.onLine);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", on);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", on);
-    };
-  }, []);
   useEffect(() => {
     setCurrency(user.default_currency || "KRW");
     setAccountFilter("");
@@ -576,6 +575,7 @@ export function Application({
         <span>{selectedLedger?.name || msg("모아 보기")}</span>
         <Icon name="down" />
       </button>
+      <ConnectionStatus userId={user.id} />
       <div className="user-menu-wrap" ref={userMenuRef}>
         <button
           className="profile-button"
@@ -732,19 +732,12 @@ export function Application({
             </header>
           )}
           <main id="main-content">
-            {!online && (
-              <div className="inline-warning" role="status">
+            <ErrorText error={error} />
+            {report.offline && (
+              <div className="inline-warning offline-report-note">
                 {msg(
-                  "인터넷 연결을 확인해 주세요. 오프라인에서는 기록을 저장할 수 없어요.",
+                  "기기에 저장된 내역만 보여주고 집계해요. 계좌 잔액은 마지막 서버 조회 기준이며, 최근 변경은 반영되지 않았을 수 있어요.",
                 )}
-              </div>
-            )}
-            {error && (
-              <div className="error-banner" role="alert">
-                {msg(error)}
-                <button onClick={() => refresh().catch(() => {})}>
-                  {msg("다시 불러오기")}
-                </button>
               </div>
             )}
             {joined && (
@@ -1059,7 +1052,7 @@ export function Application({
                       >
                         {msg("현재 범위 휴지통 비우기")}
                       </button>
-                    <ErrorText error={purgeTask.error} />
+                      <ErrorText error={purgeTask.error} />
                     </div>
                   )}
                 {view === "calendar" ? (
@@ -1302,7 +1295,7 @@ export function Application({
           <footer className="app-footer">
             <span>{msg("기록이 쌓이면, 일상이 보이니까.")}</span>
             <span>
-              Duet Ledger <span className="footer-dot">·</span> 0.2.0
+              Duet Ledger <span className="footer-dot">·</span> 0.3.0
             </span>
           </footer>
         </div>

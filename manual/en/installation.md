@@ -46,7 +46,7 @@ Apply with `docker compose up -d`, then open `http://SERVER_IP:18888`. Allow the
 
 `curl` saves the Compose file unchanged. `${VARIABLE:-default}` is standard Docker Compose syntax. Compose substitutes the value when it runs, using the default after `:-` when no non-empty value is provided. It does not rewrite the downloaded file.
 
-For example, `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.2.0}` defaults to `ghcr.io/goodjinc/duet-ledger:0.2.0`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
+For example, `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.3.0}` defaults to `ghcr.io/goodjinc/duet-ledger:0.3.0`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
 
 ```bash
 docker compose config
@@ -65,7 +65,7 @@ DUET_LEDGER_SECURE_COOKIE=true
 
 Use the actual origin without a path or trailing slash. Enabling secure cookies before HTTPS is ready can prevent HTTP sign-in from persisting.
 
-Install the PWA using the browser's install-app menu at the trusted HTTPS address. Plain HTTP may remain restricted even over a VPN. Offline transaction entry is not supported.
+Install the PWA using the browser's install-app menu at the trusted HTTPS address. Plain HTTP may remain restricted even over a VPN. See [Offline use](offline.md) for cached records, pending entries and synchronization.
 
 ## Proxies and login limits
 

@@ -1,9 +1,28 @@
-const CACHE='duet-ledger-shell-v2';
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/','/icon.svg','/icon-192.png','/icon-512.png'])));self.skipWaiting();});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("duet-ledger-shell-")&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
-self.addEventListener('fetch',e=>{
- const u=new URL(e.request.url);
- if(e.request.method!=='GET'||u.origin!==self.location.origin||u.pathname.startsWith('/api/')||u.pathname==='/healthz')return;
- if(e.request.mode==='navigate'){e.respondWith(fetch(e.request).catch(()=>caches.match('/')));return;}
- if(u.pathname.startsWith('/assets/')||u.pathname==='/icon.svg')e.respondWith(caches.open(CACHE).then(async c=>{const hit=await c.match(e.request);if(hit)return hit;const r=await fetch(e.request);if(r.ok)await c.put(e.request,r.clone());return r;}));
+const CACHE='duet-ledger-shell-'+(new URL(self.location.href).searchParams.get('v')||'v3');
+const APP_PATHS=new Set(['/','/home','/ledger','/stats','/accounts','/settings','/account','/admin']);
+self.addEventListener('install',event=>{
+ event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);const response=await fetch('/',{cache:'reload'});
+  if(!response.ok)throw new Error('Shell unavailable');
+  const html=await response.clone().text();await cache.put('/',response);
+  const assets=[...html.matchAll(/(?:src|href)="(\/assets\/[^"?#]+\.(?:js|css))"/g)].map(m=>m[1]);
+  await cache.addAll([...new Set([...assets,'/icon.svg','/icon-192.png','/icon-512.png'])]);
+  await self.skipWaiting();
+ })());
+});
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('duet-ledger-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{
+ const url=new URL(event.request.url);
+ if(event.request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/')||url.pathname==='/healthz'||url.pathname==='/mcp')return;
+ if(event.request.mode==='navigate'&&APP_PATHS.has(url.pathname.replace(/\/$/,'')||'/')){
+  event.respondWith((async()=>{
+   try{const response=await fetch(event.request);if(response.status<500)return response;}
+   catch{}
+   return await caches.match('/')||new Response('Offline',{status:503});
+  })());return;
+ }
+ if(url.pathname.startsWith('/assets/')||url.pathname==='/icon.svg')event.respondWith((async()=>{
+  const cache=await caches.open(CACHE);const hit=await cache.match(event.request);if(hit)return hit;
+  const response=await fetch(event.request);if(response.ok)await cache.put(event.request,response.clone());return response;
+ })());
 });

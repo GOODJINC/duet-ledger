@@ -10,6 +10,8 @@ Follow [API authentication](api.md#connection-and-authentication) to enable API 
 
 **Cloud AI services may receive queried records and receipt images.**
 
+MCP calls require a server connection. The web app's offline outbox does not store an AI client's calls. If a save result is uncertain, retry with the same input and `request_id`.
+
 ## Connect Codex CLI
 
 Example for Bash. Replace `192.168.1.10` with your server's IP or domain. Use `127.0.0.1` only when the CLI runs on the server itself.

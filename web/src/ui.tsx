@@ -11,6 +11,8 @@ import {
   type PointerEvent,
 } from "react";
 import {
+  Cloud,
+  CloudOff,
   Eye,
   EyeOff,
   Home,
@@ -63,6 +65,8 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 const icons = {
+  cloud: Cloud,
+  "cloud-off": CloudOff,
   home: Home,
   book: BookOpen,
   chart: ChartColumn,

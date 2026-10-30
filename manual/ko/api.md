@@ -29,6 +29,8 @@ Content-Type: application/json
 
 일반 로그인 비밀번호나 Basic 인증은 사용하지 않습니다. 키를 URL·프롬프트·로그·Git에 넣지 마세요. 공개 인터넷에서는 HTTPS를 사용합니다.
 
+외부 API 호출에는 서버 연결이 필요합니다. 웹 앱의 오프라인 전송 대기함은 API 요청을 대신 보관하지 않습니다. 생성 결과가 불확실하면 같은 입력과 `Idempotency-Key`로 재시도하세요.
+
 ## Postman 사용
 
 컬렉션 또는 환경에 `base_url`을 `http://서버주소:18088`, `account_id`를 사용할 계좌 ID로 설정하면 예제를 그대로 재사용할 수 있습니다. Authorization의 **Bearer Token**에 앱 비밀번호를 넣습니다. 클라우드에 동기화하거나 공유하는 변수·컬렉션에는 실제 키를 저장하지 마세요.

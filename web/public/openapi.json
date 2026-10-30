@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Duet Ledger API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Duet Ledger web session API and scoped external /api/v1 app-password API. Amounts are integer strings. API access defaults off; an administrator must enable it. Every external request intersects the app-password account allowlist with current user access. Remote MCP is available at /mcp using the same app-password permissions. External API calls, including validation failures, count before body reception toward 120 requests/minute/key. Ordinary request/response temporary files share a 32MiB server budget; capacity exhaustion returns 503 busy. Request history never stores bodies, keys or search terms."
   },
   "servers": [
@@ -189,7 +189,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Browser session profile includes data_generation, an opaque dataset generation used to guard offline replay. Passwords, cookies and CSRF secrets must not be persisted in offline storage."
       },
       "patch": {
         "summary": "Update profile",
@@ -1036,7 +1037,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["all", "private", "shared"]
+              "enum": [
+                "all",
+                "private",
+                "shared"
+              ]
             }
           },
           {
@@ -1107,7 +1112,8 @@
             },
             "description": "Convert totals/categories/daily and add item display_currency/display_scale and leg display_amount. Original amounts and account currencies stay unchanged. Items without a conversion rate are listed in missing_currencies and excluded from converted aggregates."
           }
-        ]
+        ],
+        "description": "Browser responses include sync_id and data_generation for device caching. These fields are omitted from scoped /api/v1 responses and JSON migration exports. Offline cached reports may contain only a subset of server history."
       },
       "post": {
         "summary": "Create financial transaction atomically",
@@ -1147,6 +1153,22 @@
               "maxLength": 128
             },
             "description": "Reusing a key with different inputs returns 409."
+          },
+          {
+            "name": "X-Duet-User",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional browser offline-replay guard. Must match the authenticated user; mismatch returns 409 user_changed."
+          },
+          {
+            "name": "X-Duet-Data-Generation",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional browser offline-replay guard from the source snapshot. A restored dataset returns 409 data_changed instead of applying stale pending work."
           }
         ],
         "requestBody": {
@@ -1200,6 +1222,31 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "X-Duet-User",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional browser offline-replay guard. Must match the authenticated user; mismatch returns 409 user_changed."
+          },
+          {
+            "name": "X-Duet-Data-Generation",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional browser offline-replay guard from the source snapshot. A restored dataset returns 409 data_changed instead of applying stale pending work."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "description": "Required with the offline generation header. Repeating an already acknowledged edit does not increment its version again. Current access is rechecked; changed input or target returns 409."
           }
         ],
         "requestBody": {
@@ -1212,7 +1259,7 @@
             }
           }
         },
-        "description": "Returns id and posting_ids (account ID to posting ID) for authorized affected accounts. Existing refund/adjustment records may retain their original kind; ordinary records cannot be converted to a retired kind."
+        "description": "Returns id and posting_ids (account ID to posting ID) for authorized affected accounts. Existing refund/adjustment records may retain their original kind; ordinary records cannot be converted to a retired kind. Browser offline clients retain their original expected version and request key. Conflicts must be reviewed instead of automatically overwriting the server."
       }
     },
     "/api/transactions/{id}/trash": {

@@ -16,12 +16,12 @@ The restart policy starts the container after reboots when Docker is running. `/
 
 ## Updating
 
-Read the [changelog](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.en.md) and save a backup with its original `master.key`. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) to confirm that the target image has been published.
+First sync or export pending operations using the cloud icon on every device. Then read the [changelog](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.en.md) and save a backup with its original `master.key`. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) to confirm that the target image has been published.
 
-Set the version in `.env` beside your Compose file. For example, to update to 0.2.0:
+Set the version in `.env` beside your Compose file. For example, to update to 0.3.0:
 
 ```dotenv
-DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.2.0
+DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.3.0
 ```
 
 In a Docker management interface, change its environment variable or `image` tag. A `DUET_LEDGER_IMAGE` value in `.env` or the shell overrides the Compose default. Prefer an exact version over `latest` to control when you update.
@@ -37,9 +37,13 @@ Pulling a fixed tag does not switch versions. Publishing an image does not autom
 
 Keep the volume and environment settings. **An old image alone is not a safe rollback after schema migration.** Use a compatible app and a pre-update data copy. Never delete the production volume during updates.
 
-## Updating to 0.2.0
+## Updating to 0.3.0
 
-Storage upgrades to schema 8. Existing opening balances become income (positive) or expense (negative) entries dated at account creation. Current balances stay the same, but income/expense totals for those dates change. Keep a pre-update backup and review the changed reports.
+Updating from 0.2.0 **keeps storage schema 8** and does not convert opening balances again. Existing accounts, records, sharing relationships and app passwords are preserved.
+
+Updating directly from 0.1.1 or earlier also applies the intervening changes. Storage upgrades to schema 8 and existing opening balances become income (positive) or expenses (negative) dated at account creation. Current balances stay the same, but historical income/expense totals change. Keep a pre-update backup and review the reports.
+
+Refresh the app after updating to load the new interface. Offline storage defaults to enabled with seven recent days; change it under **Settings → Offline records** and disable it on shared devices. Export pending work before clearing site data to troubleshoot an outdated interface. See [Offline use](offline.md).
 
 ## Moving Docker installations
 
@@ -80,6 +84,8 @@ chmod 600 ./private-backup/master.key
 The ZIP includes all users’ records, receipts and shared appearance files. **It is not encrypted and does not include the key.** Keep both files private and label them so you know which installation they belong to. CSV/JSON exports do not replace a server backup.
 
 Automatic backups run daily while the server is running. Cleanup retains the latest seven files, including manual and pre-restore backups. **Download important copies to another device.**
+
+**Sync or export pending operations on every device before restoring.** Server backups do not contain device-local pending work. Restoration blocks automatic replay from the older dataset. [Offline guide](offline.md)
 
 ### Restore through the web interface
 

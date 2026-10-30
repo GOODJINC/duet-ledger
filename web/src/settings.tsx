@@ -1,3 +1,4 @@
+import { OfflineSettings } from "./offline-ui";
 import { isWritableAccount } from "./accounts";
 import { useEffect, useState, type FormEvent } from "react";
 import { msg } from "./i18n";
@@ -369,6 +370,7 @@ export function SettingsView({
               )}
             </div>
           </section>
+          <OfflineSettings userId={user.id} />
           <section className="panel" data-settings-scope="browser">
             <div className="setting-group">
               <h2 className="settings-section-title">

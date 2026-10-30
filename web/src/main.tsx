@@ -1,3 +1,5 @@
+import { version as appVersion } from "../package.json";
+import { activateOfflineUser } from "./offline";
 import { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { msg, getLocale, useLocale, setLocale as setLanguage } from "./i18n";
@@ -34,6 +36,7 @@ function Root() {
       if (s.initialized) {
         try {
           const u = await api<User>("/me");
+          await activateOfflineUser(u);
           setCSRF(u.csrf);
           setLanguage(u.locale);
           setUser(u);
@@ -64,7 +67,9 @@ function Root() {
   }, []);
   useEffect(() => {
     if ("serviceWorker" in navigator)
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker
+        .register("/sw.js?v=" + encodeURIComponent(appVersion))
+        .catch(() => {});
   }, []);
   if (loading)
     return (
@@ -91,6 +96,7 @@ function Root() {
         registrationOpen={registrationOpen}
         invite={invite}
         onLogin={(u, isJoin) => {
+          void activateOfflineUser(u);
           setCSRF(u.csrf);
           setLanguage(u.locale);
           setUser(u);
@@ -104,6 +110,7 @@ function Root() {
     );
   return (
     <Application
+      key={user.id}
       user={user}
       setUser={setUser}
       invite={invite}

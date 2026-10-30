@@ -166,6 +166,14 @@ func Restore(archive, dataDir, keyFile string) error {
 			return err
 		}
 	}
+	if _, err = db.Exec("DELETE FROM server_settings WHERE key='data_generation'"); err != nil {
+		var exists int
+		_ = db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE name='server_settings'").Scan(&exists)
+		if exists != 0 {
+			db.Close()
+			return err
+		}
+	}
 	if err = revokeAppPasswords(db, ""); err != nil {
 		db.Close()
 		return err
