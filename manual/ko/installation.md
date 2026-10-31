@@ -13,7 +13,7 @@ Docker Engine과 Compose 플러그인이 필요합니다. 이미지는 AMD64·AR
 ```bash
 mkdir -p duet-ledger
 cd duet-ledger
-curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+curl -fL https://raw.githubusercontent.com/daytivehq/duet-ledger/main/compose.yaml -o compose.yaml
 docker compose up -d
 docker compose ps
 ```
@@ -46,7 +46,7 @@ DUET_LEDGER_PORT=18888
 
 `curl`은 Compose 파일을 그대로 저장합니다. 파일의 `${변수:-기본값}`은 오류가 아니라 Docker Compose의 설정 문법입니다. `.env`나 실행 환경에 값이 없으면 `:-` 뒤의 기본값을 사용합니다. 파일을 다시 써서 값을 치환하는 방식은 아닙니다.
 
-예를 들어 `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.3.0}`은 기본 이미지 `ghcr.io/goodjinc/duet-ledger:0.3.0`을 사용합니다. `DUET_LEDGER_BIND`의 기본값은 `127.0.0.1`, `DUET_LEDGER_PORT`는 `18088`입니다. 같은 이름의 터미널 환경변수가 있으면 `.env`보다 우선합니다.
+예를 들어 `${DUET_LEDGER_IMAGE:-ghcr.io/daytivehq/duet-ledger:0.3.0}`은 기본 이미지 `ghcr.io/daytivehq/duet-ledger:0.3.0`을 사용합니다. `DUET_LEDGER_BIND`의 기본값은 `127.0.0.1`, `DUET_LEDGER_PORT`는 `18088`입니다. 같은 이름의 터미널 환경변수가 있으면 `.env`보다 우선합니다.
 
 ```bash
 docker compose config

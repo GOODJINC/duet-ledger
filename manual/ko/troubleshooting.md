@@ -40,8 +40,8 @@
 
 ## 지원을 요청할 때
 
-[GitHub Issues](https://github.com/GOODJINC/duet-ledger/issues)에 앱 버전, 설치 방식, OS·브라우저, 문제 재현 순서, 예상한 결과와 실제 결과를 적어 주세요. 모바일은 화면 크기·글씨 배율도 알려 주세요.
+[GitHub Issues](https://github.com/daytivehq/duet-ledger/issues)에 앱 버전, 설치 방식, OS·브라우저, 문제 재현 순서, 예상한 결과와 실제 결과를 적어 주세요. 모바일은 화면 크기·글씨 배율도 알려 주세요.
 
-**비밀번호·앱 비밀번호·쿠키·백업·master.key·실제 금융 자료는 올리지 마세요.** 화면과 로그는 개인 내용을 가린 뒤 공유합니다. 보안 문제는 공개 이슈에 상세 공격 방법을 올리기 전에 [저장소 보안 안내](https://github.com/GOODJINC/duet-ledger/blob/main/SECURITY.md)를 확인하세요.
+**비밀번호·앱 비밀번호·쿠키·백업·master.key·실제 금융 자료는 올리지 마세요.** 화면과 로그는 개인 내용을 가린 뒤 공유합니다. 보안 문제는 공개 이슈에 상세 공격 방법을 올리기 전에 [저장소 보안 안내](https://github.com/daytivehq/duet-ledger/blob/main/SECURITY.md)를 확인하세요.
 
-버전 변경 사항은 [CHANGELOG](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md), 키 권한·오류는 [API](api.md), AI 연결은 [MCP](mcp.md), 복원·계정 복구는 [운영](operations.md)을 참고합니다.
+버전 변경 사항은 [CHANGELOG](https://github.com/daytivehq/duet-ledger/blob/main/CHANGELOG.md), 키 권한·오류는 [API](api.md), AI 연결은 [MCP](mcp.md), 복원·계정 복구는 [운영](operations.md)을 참고합니다.

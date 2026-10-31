@@ -13,7 +13,7 @@ Run on the server:
 ```bash
 mkdir -p duet-ledger
 cd duet-ledger
-curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+curl -fL https://raw.githubusercontent.com/daytivehq/duet-ledger/main/compose.yaml -o compose.yaml
 docker compose up -d
 docker compose ps
 ```
@@ -46,7 +46,7 @@ Apply with `docker compose up -d`, then open `http://SERVER_IP:18888`. Allow the
 
 `curl` saves the Compose file unchanged. `${VARIABLE:-default}` is standard Docker Compose syntax. Compose substitutes the value when it runs, using the default after `:-` when no non-empty value is provided. It does not rewrite the downloaded file.
 
-For example, `${DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:0.3.0}` defaults to `ghcr.io/goodjinc/duet-ledger:0.3.0`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
+For example, `${DUET_LEDGER_IMAGE:-ghcr.io/daytivehq/duet-ledger:0.3.0}` defaults to `ghcr.io/daytivehq/duet-ledger:0.3.0`. The default bind address is `127.0.0.1` and host port is `18088`. An exported shell variable takes precedence over `.env`.
 
 ```bash
 docker compose config

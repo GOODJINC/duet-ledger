@@ -13,4 +13,4 @@
 
 Start with **installation → create an account → add transactions → make a backup**. Sharing is optional.
 
-[Changelog](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.en.md) · [Support](https://github.com/GOODJINC/duet-ledger/issues) · [한국어](../ko/index.md)
+[Changelog](https://github.com/daytivehq/duet-ledger/blob/main/CHANGELOG.en.md) · [Support](https://github.com/daytivehq/duet-ledger/issues) · [한국어](../ko/index.md)

@@ -16,12 +16,12 @@ docker compose restart duet-ledger
 
 ## 업데이트
 
-먼저 각 기기의 구름 아이콘에서 전송 대기 기록을 동기화하거나 내보냅니다. 이어서 [변경 기록](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md)을 읽고 운영 백업과 `master.key`를 별도로 보관합니다. [Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 대상 버전의 이미지 게시 완료를 확인합니다.
+먼저 각 기기의 구름 아이콘에서 전송 대기 기록을 동기화하거나 내보냅니다. 이어서 [변경 기록](https://github.com/daytivehq/duet-ledger/blob/main/CHANGELOG.md)을 읽고 운영 백업과 `master.key`를 별도로 보관합니다. [Releases](https://github.com/daytivehq/duet-ledger/releases)에서 대상 버전의 이미지 게시 완료를 확인합니다.
 
 Compose와 같은 폴더의 `.env`에서 버전을 지정합니다. 예를 들어 0.3.0으로 업데이트하려면 다음 값을 사용합니다.
 
 ```dotenv
-DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:0.3.0
+DUET_LEDGER_IMAGE=ghcr.io/daytivehq/duet-ledger:0.3.0
 ```
 
 Docker 관리 화면을 사용한다면 해당 화면의 환경변수 또는 `image` 태그를 바꿉니다. `.env`나 실행 환경에 `DUET_LEDGER_IMAGE`가 있으면 Compose 파일의 기본 이미지보다 우선합니다. 업데이트 시점을 직접 선택하려면 `latest` 대신 정확한 버전을 사용하세요.
@@ -36,6 +36,12 @@ docker compose logs --tail 100 duet-ledger
 버전 태그를 고정한 경우 pull만으로 다른 버전으로 바뀌지는 않습니다. 실행 중인 컨테이너는 새 이미지 게시만으로 자동 교체되지 않습니다.
 
 기존 데이터 볼륨·환경변수는 유지합니다. 구조가 자동 변경될 수 있으므로 **이전 이미지로만 바꾸는 것은 안전한 되돌리기가 아닙니다.** 되돌릴 때는 업데이트 전 자료 사본과 호환되는 앱 이미지를 함께 사용하세요.
+
+## 이전 이미지 주소에서 전환
+
+기존 `ghcr.io/goodjinc/duet-ledger`를 사용하는 설치는 새 이미지의 게시와 공개 다운로드를 확인한 뒤 `.env`의 `DUET_LEDGER_IMAGE` 또는 Compose의 `image`를 `ghcr.io/daytivehq/duet-ledger:0.3.0`으로 바꾸고 위 업데이트 명령을 실행합니다. `latest`도 소유자 경로를 바꿔야 합니다. **같은 버전을 유지하려면 해당 버전이 새 경로에도 게시됐는지 먼저 확인하세요.**
+
+저장소 이전만으로 기존 설치의 이미지 주소가 자동 변경되지는 않습니다. 기존 Compose 프로젝트 이름·데이터 볼륨·환경변수·접속 주소는 유지합니다. 자료 초기화나 백업 복원은 필요하지 않습니다. **`docker compose down -v`는 자료 볼륨을 삭제하므로 사용하지 마세요.**
 
 ## 0.3.0으로 업데이트할 때
 

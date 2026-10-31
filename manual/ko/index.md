@@ -13,4 +13,4 @@
 
 처음에는 **설치 → 계좌 만들기 → 거래 입력 → 백업** 순서로 시작하세요. 공유는 선택 사항입니다.
 
-[변경 기록](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.md) · [문의](https://github.com/GOODJINC/duet-ledger/issues) · [English](../en/index.md)
+[변경 기록](https://github.com/daytivehq/duet-ledger/blob/main/CHANGELOG.md) · [문의](https://github.com/daytivehq/duet-ledger/issues) · [English](../en/index.md)

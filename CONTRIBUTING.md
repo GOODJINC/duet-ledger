@@ -1,6 +1,6 @@
 # 기여 · Contributing
 
-[GitHub Issues](https://github.com/GOODJINC/duet-ledger/issues)에 재현 순서·앱 버전·예상 결과와 실제 결과를 적어 주세요. 기능 변경은 관련 이슈를 연결한 작은 PR로 제안합니다. 비밀번호와 금융 자료는 제거해 주세요.
+[GitHub Issues](https://github.com/daytivehq/duet-ledger/issues)에 재현 순서·앱 버전·예상 결과와 실제 결과를 적어 주세요. 기능 변경은 관련 이슈를 연결한 작은 PR로 제안합니다. 비밀번호와 금융 자료는 제거해 주세요.
 
 Report issues with reproduction steps, version and expected/actual behavior. Keep pull requests focused and link related issues. Remove credentials and financial data.
 
@@ -9,7 +9,7 @@ Report issues with reproduction steps, version and expected/actual behavior. Kee
 Go(`go.mod` 기준), Node.js22, npm과 Docker Compose를 사용합니다. 소스에서 실행할 때는 독립된 개발용 Compose를 사용합니다.
 
 ```bash
-git clone https://github.com/GOODJINC/duet-ledger.git
+git clone https://github.com/daytivehq/duet-ledger.git
 cd duet-ledger
 cp .env.dev.example .env.dev
 docker compose --env-file .env.dev -f compose.dev.yaml up -d --build
@@ -83,6 +83,21 @@ npm --prefix web run docs:check
 Push/PR runs checks. A published Release or manual default-branch workflow publishes images. Version tags cannot be overwritten; only stable releases update `latest`. Publishing uses the workflow's `GITHUB_TOKEN` with `packages: write`.
 
 기여 라이선스는 [AGPL-3.0-only](LICENSE)입니다. Contributions use AGPL-3.0-only.
+
+## 저장소·이미지 소유자 이전 · Repository and image ownership
+
+저장소는 `daytivehq/duet-ledger`, 새 이미지 경로는 `ghcr.io/daytivehq/duet-ledger`입니다. GHCR 패키지는 저장소 이전으로 소유자가 바뀌지 않습니다. 기존 이미지는 전환이 끝날 때까지 삭제하지 않습니다.
+
+1. 기존 저장소 **Settings → General → Danger Zone → Transfer**에서 새 소유자로 `daytivehq`를 선택합니다. 조직에 저장소를 만들 권한이 필요하며, 같은 이름의 저장소를 미리 만들지 않습니다. 커밋·이슈·릴리즈는 이전됩니다.
+2. 이전 완료 후 로컬 연결을 바꿉니다: `git remote set-url origin https://github.com/daytivehq/duet-ledger.git`. 조직의 Actions 정책이 외부 액션과 패키지 게시를 허용하는지 확인합니다.
+3. 주소 변경 커밋을 새 저장소의 `main`에 푸시합니다. 푸시는 검사만 실행합니다. 기존 태그·릴리즈는 옛 코드이므로 다시 실행해 새 경로를 게시하려 하지 않습니다.
+4. **Actions → Docker image → Run workflow → main**으로 조직 경로에 현재 버전을 최초 게시합니다. 워크플로는 실제 저장소 이름과 조직 유형을 자동 사용하며 `GITHUB_TOKEN`으로 게시합니다. 새 경로에 같은 버전이 이미 있으면 덮어쓰지 않고 다음 버전을 릴리즈합니다.
+5. 조직 **Packages → duet-ledger → Package settings**에서 공개 배포용 패키지를 **Public**으로 설정합니다. 게시 권한 오류가 나면 조직의 패키지 생성 정책과 패키지의 **Manage Actions access**에서 저장소의 쓰기 권한을 확인합니다. 워크플로를 수정한 커밋이 포함된 버전인지도 확인합니다.
+6. 로그인하지 않은 환경에서 새 이미지를 내려받을 수 있는지 확인한 뒤 사용자에게 [이미지 주소 전환](manual/ko/operations.md#이전-이미지-주소에서-전환)을 안내합니다. 실행 중인 서버는 별도로 업데이트하기 전까지 유지됩니다.
+
+GitHub 공식 안내: [저장소 이전](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository) · [패키지 이전과 권한](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-repository-transfers).
+
+Transfer the existing repository instead of creating a new one. Update the local remote after transfer, push the URL changes to the new default branch, then manually run **Docker image** from `main`. Historical release tags still contain the old source. GHCR packages remain with their original owner, so publish under the new organization and set the new package to Public. Verify organization package policies and Actions access if publishing fails. Keep old images available until users have switched; preserve their data volumes and environment variables. See [image migration](manual/en/operations.md#switching-from-the-previous-image-location).
 
 ## 오프라인 브라우저 회귀 · Offline browser regression
 

@@ -14,12 +14,12 @@ For personal use, no sharing setup is needed. To share, invite each person using
 
 ## Installation
 
-Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) to confirm that the image for your chosen version has been published. Run on the server and open `http://localhost:18088`:
+Check [Releases](https://github.com/daytivehq/duet-ledger/releases) to confirm that the image for your chosen version has been published. Run on the server and open `http://localhost:18088`:
 
 ```bash
 mkdir -p duet-ledger
 cd duet-ledger
-curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+curl -fL https://raw.githubusercontent.com/daytivehq/duet-ledger/main/compose.yaml -o compose.yaml
 docker compose up -d
 ```
 
@@ -27,7 +27,7 @@ Compose resolves `${…}` settings when it runs. Use `.env` to change the port a
 
 **The first account becomes the administrator.** Create it on a trusted network before public exposure. See [Installation](manual/en/installation.md) for remote access, ports and HTTPS.
 
-For an existing installation, follow [Updating](manual/en/operations.md#updating): back up your data, then change the image version. Check [Releases](https://github.com/GOODJINC/duet-ledger/releases) for published versions.
+For an existing installation, follow [Updating](manual/en/operations.md#updating): back up your data, then change the image version. Check [Releases](https://github.com/daytivehq/duet-ledger/releases) for published versions.
 
 ## Manuals
 
@@ -41,6 +41,6 @@ Records are stored in the `duet-ledger-data` volume. **`docker compose down -v` 
 
 **Unsent device records are not included in server backups.** Use the cloud icon to sync or export pending work before clearing browser data or restoring the server.
 
-[Issues and feature requests](https://github.com/GOODJINC/duet-ledger/issues) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
+[Issues and feature requests](https://github.com/daytivehq/duet-ledger/issues) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
 [AGPL-3.0-only](LICENSE) · [Third-party notices](web/public/third-party-licenses.txt)

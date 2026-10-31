@@ -14,12 +14,12 @@ Docker로 운영하는 개인·공유 가계부입니다. 계정 하나로 여�
 
 ## 설치
 
-[Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 사용할 버전의 이미지 게시가 완료됐는지 확인합니다. 서버에서 다음 명령을 실행하고 `http://localhost:18088`로 접속합니다.
+[Releases](https://github.com/daytivehq/duet-ledger/releases)에서 사용할 버전의 이미지 게시가 완료됐는지 확인합니다. 서버에서 다음 명령을 실행하고 `http://localhost:18088`로 접속합니다.
 
 ```bash
 mkdir -p duet-ledger
 cd duet-ledger
-curl -fL https://raw.githubusercontent.com/GOODJINC/duet-ledger/main/compose.yaml -o compose.yaml
+curl -fL https://raw.githubusercontent.com/daytivehq/duet-ledger/main/compose.yaml -o compose.yaml
 docker compose up -d
 ```
 
@@ -27,7 +27,7 @@ Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와
 
 **첫 계정이 관리자**가 됩니다. 신뢰하는 네트워크에서 계정을 만든 뒤 외부에 공개하세요. 다른 PC 접속·포트·HTTPS 설정은 [설치 안내](manual/ko/installation.md)를 참고하세요.
 
-기존 설치는 [업데이트 안내](manual/ko/operations.md#업데이트)에 따라 백업 후 이미지 버전을 변경하세요. 게시된 버전은 [Releases](https://github.com/GOODJINC/duet-ledger/releases)에서 확인할 수 있습니다.
+기존 설치는 [업데이트 안내](manual/ko/operations.md#업데이트)에 따라 백업 후 이미지 버전을 변경하세요. 게시된 버전은 [Releases](https://github.com/daytivehq/duet-ledger/releases)에서 확인할 수 있습니다.
 
 ## 매뉴얼
 
@@ -41,6 +41,6 @@ Compose 파일의 `${…}`는 실행 시 적용되는 설정입니다. 포트와
 
 **기기의 미전송 기록은 서버 백업에 포함되지 않습니다.** 브라우저 자료를 삭제하거나 서버를 복원하기 전에 구름 아이콘에서 동기화하거나 대기 기록을 내보내세요.
 
-[오류·기능 제안](https://github.com/GOODJINC/duet-ledger/issues) · [보안 제보](SECURITY.md) · [기여](CONTRIBUTING.md)
+[오류·기능 제안](https://github.com/daytivehq/duet-ledger/issues) · [보안 제보](SECURITY.md) · [기여](CONTRIBUTING.md)
 
 [AGPL-3.0-only](LICENSE) · [서드파티 라이선스](web/public/third-party-licenses.txt)

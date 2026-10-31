@@ -3,15 +3,15 @@ import assert from "node:assert/strict";
 import { imageMetadata } from "./image-metadata.mjs";
 const input = {
   source: 'const Version = "0.1.0-alpha.12"',
-  repository: "GOODJINC/duet-ledger",
+  repository: "daytivehq/duet-ledger",
   event: "workflow_dispatch",
   ref: "refs/heads/main",
 };
 test("prereleases publish their exact version and channel without latest", () => {
   assert.deepEqual(imageMetadata(input), {
     version: "0.1.0-alpha.12",
-    image: "ghcr.io/goodjinc/duet-ledger",
-    tags: "ghcr.io/goodjinc/duet-ledger:0.1.0-alpha.12\nghcr.io/goodjinc/duet-ledger:alpha",
+    image: "ghcr.io/daytivehq/duet-ledger",
+    tags: "ghcr.io/daytivehq/duet-ledger:0.1.0-alpha.12\nghcr.io/daytivehq/duet-ledger:alpha",
   });
   for (const channel of ["beta", "rc"])
     assert.ok(
@@ -48,6 +48,20 @@ test("stable releases publish latest only when the release matches the binary", 
     }),
   );
 });
+test("organization publishing uses the current repository owner", () => {
+  assert.deepEqual(
+    imageMetadata({
+      ...input,
+      repository: "daytivehq/duet-ledger",
+      source: 'const Version = "0.3.0"',
+    }),
+    {
+      version: "0.3.0",
+      image: "ghcr.io/daytivehq/duet-ledger",
+      tags: "ghcr.io/daytivehq/duet-ledger:0.3.0\nghcr.io/daytivehq/duet-ledger:latest",
+    },
+  );
+});
 test("unreviewed branches and push/PR events cannot publish", () => {
   assert.throws(() => imageMetadata({ ...input, ref: "refs/heads/feature" }));
   for (const event of ["push", "pull_request"])
@@ -57,7 +71,7 @@ test("unreviewed branches and push/PR events cannot publish", () => {
 import { checkImageVersion } from "./check-image-version.mjs";
 test("first image is allowed but an existing version cannot be overwritten", async () => {
   const params = {
-    repository: "GOODJINC/duet-ledger",
+    repository: "daytivehq/duet-ledger",
     version: "0.1.0-alpha.12",
     token: "test",
   };

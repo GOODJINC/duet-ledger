@@ -40,8 +40,8 @@
 
 ## Requesting support
 
-Use [GitHub Issues](https://github.com/GOODJINC/duet-ledger/issues). Include the app version, installation method, OS/browser, reproduction steps, expected behavior and actual result. For mobile issues, include screen size and text scaling.
+Use [GitHub Issues](https://github.com/daytivehq/duet-ledger/issues). Include the app version, installation method, OS/browser, reproduction steps, expected behavior and actual result. For mobile issues, include screen size and text scaling.
 
-**Never upload passwords, app passwords, cookies, backups, master.key or real financial data.** Redact screenshots and logs. For vulnerabilities, read the repository's [security policy](https://github.com/GOODJINC/duet-ledger/blob/main/SECURITY.md) before publicly posting exploit details.
+**Never upload passwords, app passwords, cookies, backups, master.key or real financial data.** Redact screenshots and logs. For vulnerabilities, read the repository's [security policy](https://github.com/daytivehq/duet-ledger/blob/main/SECURITY.md) before publicly posting exploit details.
 
-See the [changelog (Korean)](https://github.com/GOODJINC/duet-ledger/blob/main/CHANGELOG.en.md), [API](api.md), [MCP](mcp.md) and [operations](operations.md) guides for detailed changes, permissions, connections and recovery.
+See the [changelog (Korean)](https://github.com/daytivehq/duet-ledger/blob/main/CHANGELOG.en.md), [API](api.md), [MCP](mcp.md) and [operations](operations.md) guides for detailed changes, permissions, connections and recovery.

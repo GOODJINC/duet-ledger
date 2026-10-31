@@ -10,7 +10,7 @@ const appSource = await readFile(
 const version = appSource.match(/^const Version = "([^"]+)"/m)?.[1];
 if (
   !version ||
-  !main.includes(`DUET_LEDGER_IMAGE:-ghcr.io/goodjinc/duet-ledger:${version}`)
+  !main.includes(`DUET_LEDGER_IMAGE:-ghcr.io/daytivehq/duet-ledger:${version}`)
 )
   throw new Error("Default image tag must match the app version.");
 const schema = JSON.parse(
@@ -38,7 +38,7 @@ const example = await readFile(
 );
 if (
   !example.includes(
-    `DUET_LEDGER_IMAGE=ghcr.io/goodjinc/duet-ledger:${version}\n`,
+    `DUET_LEDGER_IMAGE=ghcr.io/daytivehq/duet-ledger:${version}\n`,
   )
 )
   throw new Error("Example image version must match the app version.");
